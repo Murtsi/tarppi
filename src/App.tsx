@@ -778,7 +778,6 @@ function App() {
               <CityPicker
                 value={scanCityInput}
                 onChange={handleScanCity}
-                allLabel={t('scorerAllCities')}
                 placeholder={t('scorerCustomCityPlaceholder')}
                 disabled={scorerLoading}
               />

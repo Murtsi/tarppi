@@ -1176,6 +1176,22 @@ button.danger {
   font-size: 0.85rem;
 }
 
+.city-picker-group-label {
+  padding: 0.35rem 0.75rem 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray);
+  cursor: default;
+  user-select: none;
+}
+
+.city-picker-option.region {
+  font-weight: 500;
+  color: var(--primary-light);
+}
+
 /* Scan meta info banner */
 .scan-meta {
   padding: 0.6rem 0.9rem;

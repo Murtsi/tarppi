@@ -1,20 +1,32 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import KIDE_CITIES from '../lib/kide/kide-cities.json'
 
+type KideCity = { id: string | null; name: string; nameKey?: string }
+
 type CityPickerProps = {
   value: string
-  onChange: (city: string) => void
-  allLabel: string
+  onChange: (cityId: string) => void
   placeholder: string
   disabled?: boolean
 }
 
-export default function CityPicker({ value, onChange, allLabel, placeholder, disabled }: CityPickerProps) {
+// Separate regions (id contains "Cities") from individual cities
+const REGIONS = (KIDE_CITIES as KideCity[]).filter(
+  (c) => c.id !== null && c.id.includes('Cities'),
+)
+const CITIES = (KIDE_CITIES as KideCity[]).filter(
+  (c) => c.id !== null && !c.id.includes('Cities'),
+)
+
+function findCity(id: string): KideCity | undefined {
+  return (KIDE_CITIES as KideCity[]).find((c) => c.id === id || c.name === id)
+}
+
+export default function CityPicker({ value, onChange, placeholder, disabled }: CityPickerProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const wrapperRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const listRef = useRef<HTMLUListElement>(null)
 
   // Close on outside click
   useEffect(() => {
@@ -28,16 +40,24 @@ export default function CityPicker({ value, onChange, allLabel, placeholder, dis
   }, [])
 
   // Filter cities based on search text
-  const filtered = useMemo(() => {
-    if (!search.trim()) return KIDE_CITIES as string[]
+  const filteredCities = useMemo(() => {
+    if (!search.trim()) return CITIES
     const q = search.toLowerCase()
-    return (KIDE_CITIES as string[]).filter((c) => c.toLowerCase().includes(q))
+    return CITIES.filter((c) => c.name.toLowerCase().includes(q))
   }, [search])
 
-  const displayValue = value || allLabel
+  const filteredRegions = useMemo(() => {
+    if (!search.trim()) return REGIONS
+    const q = search.toLowerCase()
+    return REGIONS.filter((c) => c.name.toLowerCase().includes(q))
+  }, [search])
 
-  const handleSelect = (city: string) => {
-    onChange(city)
+  const displayValue = value
+    ? (findCity(value)?.name ?? value)
+    : 'Everywhere'
+
+  const handleSelect = (city: KideCity) => {
+    onChange(city.id ?? '')
     setSearch('')
     setOpen(false)
   }
@@ -67,30 +87,51 @@ export default function CityPicker({ value, onChange, allLabel, placeholder, dis
             autoFocus
           />
 
-          <ul className="city-picker-list" ref={listRef}>
-            {/* "All of Finland" option */}
+          <ul className="city-picker-list">
+            {/* "Everywhere" option */}
             <li
               className={`city-picker-option ${value === '' ? 'selected' : ''}`}
-              onClick={() => handleSelect('')}
+              onClick={() => handleSelect({ id: null, name: 'Everywhere' })}
             >
-              📍 {allLabel}
+              🌍 Everywhere
             </li>
 
-            {/* Divider */}
-            <li className="city-picker-divider" />
+            {/* Regions */}
+            {filteredRegions.length > 0 && (
+              <>
+                <li className="city-picker-divider" />
+                <li className="city-picker-group-label">Regions</li>
+                {filteredRegions.map((region) => (
+                  <li
+                    key={region.id}
+                    className={`city-picker-option region ${region.id === value ? 'selected' : ''}`}
+                    onClick={() => handleSelect(region)}
+                  >
+                    📍 {region.name}
+                  </li>
+                ))}
+              </>
+            )}
 
-            {filtered.length === 0 ? (
-              <li className="city-picker-empty">—</li>
-            ) : (
-              filtered.map((city) => (
-                <li
-                  key={city}
-                  className={`city-picker-option ${city === value ? 'selected' : ''}`}
-                  onClick={() => handleSelect(city)}
-                >
-                  {city}
-                </li>
-              ))
+            {/* Individual cities */}
+            {filteredCities.length > 0 && (
+              <>
+                <li className="city-picker-divider" />
+                <li className="city-picker-group-label">Cities</li>
+                {filteredCities.map((city) => (
+                  <li
+                    key={city.id}
+                    className={`city-picker-option ${city.id === value ? 'selected' : ''}`}
+                    onClick={() => handleSelect(city)}
+                  >
+                    {city.name}
+                  </li>
+                ))}
+              </>
+            )}
+
+            {filteredRegions.length === 0 && filteredCities.length === 0 && (
+              <li className="city-picker-empty">No matches</li>
             )}
           </ul>
         </div>
