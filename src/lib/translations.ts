@@ -318,6 +318,24 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     comingSoonLippupisteDesc: 'Track concerts, sports and theater events on lippupiste.fi.',
     comingSoonStayTuned: 'Stay tuned for updates!',
 
+    // Misc labels
+    eventLabel: 'Event',
+    ticketSingular: 'ticket',
+    ticketPlural: 'tickets',
+    ticketCount: '{n} {unit}',
+    soldOutSuffix: '(Sold out)',
+    leftSuffix: '({n} left)',
+    expiresLabel: 'Expires:',
+    statusIdle: 'Idle',
+    statusMonitoring: 'Monitoring',
+    statusStopped: 'Stopped',
+    soldOutFiltered: 'sold-out filtered out',
+    statusUpcoming: 'Upcoming',
+    statusOnSale: 'On sale',
+    statusSellingFast: 'Selling fast',
+    statusAlmostSoldOut: 'Almost sold out',
+    statusPaused: 'Paused',
+
     // Histogram / score distribution
     histogramTitle: 'Score Distribution',
     histogramEvents: 'events',
@@ -641,6 +659,24 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     comingSoonLippupiste: 'Lippupiste.fi',
     comingSoonLippupisteDesc: 'Seuraa konsertteja, urheilua ja teatteritapahtumia lippupiste.fi:ssä.',
     comingSoonStayTuned: 'Pysy kuulolla!',
+
+    // Misc labels
+    eventLabel: 'Tapahtuma',
+    ticketSingular: 'lippu',
+    ticketPlural: 'lippua',
+    ticketCount: '{n} {unit}',
+    soldOutSuffix: '(Loppuunmyyty)',
+    leftSuffix: '({n} jäljellä)',
+    expiresLabel: 'Vanhenee:',
+    statusIdle: 'Odottaa',
+    statusMonitoring: 'Seuranta käynnissä',
+    statusStopped: 'Pysäytetty',
+    soldOutFiltered: 'loppuunmyytyä suodatettu',
+    statusUpcoming: 'Tulossa',
+    statusOnSale: 'Myynnissä',
+    statusSellingFast: 'Myy nopeasti',
+    statusAlmostSoldOut: 'Lähes loppuunmyyty',
+    statusPaused: 'Tauolla',
 
     // Histogram / score distribution
     histogramTitle: 'Pistejakauma',

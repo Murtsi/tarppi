@@ -36,7 +36,14 @@ const formatMs = (ms: number): string => {
 
 // ─── Token Guide Modal Component ───────────────────────────────────────────────
 
-const TokenGuideContent = ({ onClose, t }: { onClose: () => void; t: (key: string) => string }) => (
+const TokenGuideContent = ({ onClose, t }: { onClose: () => void; t: (key: string) => string }) => {
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
+  return (
   <div className="info-modal-overlay" onClick={onClose}>
     <div className="info-modal token-guide-modal" onClick={(e) => e.stopPropagation()}>
       <button className="info-close-btn" onClick={onClose}>✕</button>
@@ -96,11 +103,19 @@ const TokenGuideContent = ({ onClose, t }: { onClose: () => void; t: (key: strin
       </button>
     </div>
   </div>
-)
+  )
+}
 
 // ─── Info Modal Component ──────────────────────────────────────────────────────
 
-const InfoModalContent = ({ onClose, t }: { onClose: () => void; t: (key: string) => string }) => (
+const InfoModalContent = ({ onClose, t }: { onClose: () => void; t: (key: string) => string }) => {
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
+  return (
   <div className="info-modal-overlay" onClick={onClose}>
     <div className="info-modal" onClick={(e) => e.stopPropagation()}>
       <button className="info-close-btn" onClick={onClose}>✕</button>
@@ -142,7 +157,8 @@ const InfoModalContent = ({ onClose, t }: { onClose: () => void; t: (key: string
       </div>
     </div>
   </div>
-)
+  )
+}
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -338,14 +354,14 @@ const VariantList = ({ variants, t }: { variants: KideVariant[]; t: (k: string) 
   )
 }
 
-function salesStatusBadge(status?: SalesStatus): { label: string; className: string } | null {
+function salesStatusBadge(status: SalesStatus | undefined, t: (k: string) => string): { label: string; className: string } | null {
   if (!status) return null
   switch (status) {
-    case 'upcoming': return { label: 'Upcoming', className: 'status-upcoming' }
-    case 'on_sale': return { label: 'On sale', className: 'status-on-sale' }
-    case 'selling_fast': return { label: 'Selling fast', className: 'status-selling-fast' }
-    case 'almost_sold_out': return { label: 'Almost sold out', className: 'status-almost-sold-out' }
-    case 'paused': return { label: 'Paused', className: 'status-paused' }
+    case 'upcoming': return { label: t('statusUpcoming'), className: 'status-upcoming' }
+    case 'on_sale': return { label: t('statusOnSale'), className: 'status-on-sale' }
+    case 'selling_fast': return { label: t('statusSellingFast'), className: 'status-selling-fast' }
+    case 'almost_sold_out': return { label: t('statusAlmostSoldOut'), className: 'status-almost-sold-out' }
+    case 'paused': return { label: t('statusPaused'), className: 'status-paused' }
     default: return null
   }
 }
@@ -396,6 +412,7 @@ function App() {
   const [showTokenGuide, setShowTokenGuide] = useState(false)
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   const [showQtyPicker, setShowQtyPicker] = useState(false)
+  const qtyPickerRef = useRef<HTMLDivElement>(null)
 
   const [language, setLanguage] = useState<LanguageCode>(() => {
     const saved = localStorage.getItem('kidehiiri-language') as LanguageCode | null
@@ -495,6 +512,25 @@ function App() {
   useEffect(() => {
     localStorage.setItem('kidehiiri-token', authToken)
   }, [authToken])
+
+  // ── Close qty picker on outside click / Escape ─────────────────────────
+  useEffect(() => {
+    if (!showQtyPicker) return
+    const handleClick = (e: MouseEvent) => {
+      if (qtyPickerRef.current && !qtyPickerRef.current.contains(e.target as Node)) {
+        setShowQtyPicker(false)
+      }
+    }
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowQtyPicker(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleEsc)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleEsc)
+    }
+  }, [showQtyPicker])
 
   // ── Init: fetch properties + auto-validate token ──────────────────────────
   useEffect(() => {
@@ -1104,6 +1140,25 @@ function App() {
                     step === index ? 'step-active' : '',
                     step > index ? 'step-complete' : '',
                   ].join(' ')}
+                  onClick={() => {
+                    if (index < step) {
+                      if (step === 4 && status === 'monitoring') {
+                        setStatus('stopped')
+                        setActiveMonitoringDelayMs(0)
+                        appendLog(t('monitoringStoppedLeft'))
+                      }
+                      setShowSuccessMessage(false)
+                      setStep(index as Step)
+                    }
+                  }}
+                  role={index < step ? 'button' : undefined}
+                  tabIndex={index < step ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (index < step && (e.key === 'Enter' || e.key === ' ')) {
+                      e.preventDefault()
+                      setStep(index as Step)
+                    }
+                  }}
                 >
                   <span>{index + 1}</span>
                   {label}
@@ -1137,7 +1192,7 @@ function App() {
                     </div>
                   )}
                   <div className="event-card-info">
-                    <p className="event-card-label">Event</p>
+                    <p className="event-card-label">{t('eventLabel')}</p>
                     <p className="event-card-name">{eventName}</p>
                     {eventVariants.length > 0 && (
                       <label className="variant-select-label">
@@ -1149,7 +1204,7 @@ function App() {
                         >
                           {eventVariants.map((v) => (
                             <option key={v.inventoryId} value={v.inventoryId} disabled={v.availability === 0}>
-                              {v.name} — €{(v.price / 100).toFixed(2)}{v.availability === 0 ? ' (Sold out)' : ` (${v.availability} left)`}
+                              {v.name} — €{(v.price / 100).toFixed(2)}{v.availability === 0 ? ` ${t('soldOutSuffix')}` : ` ${t('leftSuffix', { n: v.availability })}`}
                             </option>
                           ))}
                         </select>
@@ -1169,7 +1224,7 @@ function App() {
                       {tokenEmail && <p className="token-email">{tokenEmail}</p>}
                       {tokenExpiresAt && (
                         <p className={`token-expires ${tokenExpiresAt < new Date() ? 'expired' : ''}`}>
-                          Expires: {tokenExpiresAt.toLocaleDateString()}
+                          {t('expiresLabel')} {tokenExpiresAt.toLocaleDateString()}
                         </p>
                       )}
                     </div>
@@ -1216,13 +1271,13 @@ function App() {
 
               <div>
                 <label style={{ marginBottom: '0.25rem' }}>{t('quantity')}</label>
-                <div className="qty-picker-wrapper">
+                <div className="qty-picker-wrapper" ref={qtyPickerRef}>
                   <button
                     type="button"
                     className={`qty-picker-trigger ${showQtyPicker ? 'open' : ''}`}
                     onClick={() => setShowQtyPicker(!showQtyPicker)}
                   >
-                    <span>{quantity} {quantity === 1 ? 'ticket' : 'tickets'}</span>
+                    <span>{quantity} {quantity === 1 ? t('ticketSingular') : t('ticketPlural')}</span>
                     <span className="arrow">▼</span>
                   </button>
                   {showQtyPicker && (
@@ -1234,7 +1289,7 @@ function App() {
                           className={quantity === n ? 'selected' : ''}
                           onClick={() => { setQuantity(n); setShowQtyPicker(false) }}
                         >
-                          {n} {n === 1 ? 'ticket' : 'tickets'}
+                          {n} {n === 1 ? t('ticketSingular') : t('ticketPlural')}
                         </button>
                       ))}
                       <div className="qty-custom-row">
@@ -1312,7 +1367,7 @@ function App() {
               <div className="summary-grid">
                 <div><strong>{t('eventUrlLabel')}</strong><p>{eventUrl}</p></div>
                 <div><strong>{t('authTokenLabel')}</strong><p>{authToken ? maskToken(authToken) : t('notSetLabel')}</p></div>
-                <div><strong>{t('quantityLabel')}</strong><p>{quantity} ticket(s)</p></div>
+                <div><strong>{t('quantityLabel')}</strong><p>{quantity} {quantity === 1 ? t('ticketSingular') : t('ticketPlural')}</p></div>
                 <div><strong>{t('estimatedTotalLabel')}</strong><p>€{estimatedTotal.toFixed(2)}</p></div>
                 <div><strong>{t('delayLabel')}</strong><p>{delayMs} ms</p></div>
                 <div><strong>{t('keywordsLabel')}</strong><p>{keywords.length ? keywords.join(', ') : t('noKeywordFilter')}</p></div>
@@ -1345,7 +1400,7 @@ function App() {
               )}
 
               <div className="summary-grid">
-                <div><strong>{t('statusLabel')}</strong><p>{status}</p></div>
+                <div><strong>{t('statusLabel')}</strong><p><span className={`monitor-status monitor-status-${status}`}>{status === 'idle' ? t('statusIdle') : status === 'monitoring' ? t('statusMonitoring') : t('statusStopped')}</span></p></div>
                 <div><strong>{t('matchesFoundLabel')}</strong><p>{matchCount}</p></div>
                 <div><strong>{t('lastCheckedLabel')}</strong><p>{lastCheckedAt}</p></div>
                 <div><strong>{t('nextCheckInLabel')}</strong><p>{formatMs(nextCheckInMs)}</p></div>
@@ -1415,7 +1470,7 @@ function App() {
                 })}
                 {scanMeta.filtered_out_sold_out > 0 && (
                   <span className="scan-meta-sold-out">
-                    {' · '}{scanMeta.filtered_out_sold_out} sold-out filtered out
+                    {' · '}{scanMeta.filtered_out_sold_out} {t('soldOutFiltered')}
                   </span>
                 )}
                 {scanMeta.filtered_out_free > 0 && (
@@ -1488,7 +1543,7 @@ function App() {
                 {scorerView === 'top10' && (
                   <div className="scorer-results">
                     {scorerTop10.map((ev) => {
-                      const statusBadge = salesStatusBadge(ev.sales_status)
+                      const statusBadge = salesStatusBadge(ev.sales_status, t)
                       const eventDate = formatEventDate(ev.start_time)
                       const isExpanded = expandedEventId === ev.event_id
                       const variantData = eventVariantCache[ev.event_id]
@@ -1626,7 +1681,7 @@ function App() {
                             .sort((a, b) => (b.ai_score?.buy_probability ?? 0) - (a.ai_score?.buy_probability ?? 0) || b.resell_score - a.resell_score)
                             .map((ev) => {
                               const isExpanded = expandedEventId === ev.event_id
-                              const statusBadge = salesStatusBadge(ev.sales_status)
+                              const statusBadge = salesStatusBadge(ev.sales_status, t)
                               const eventDate = formatEventDate(ev.start_time)
                               const variantData = eventVariantCache[ev.event_id]
                               return (
@@ -1756,7 +1811,7 @@ function App() {
                       .sort((a, b) => b.resell_score - a.resell_score)
                       .map((ev) => {
                         const isExpanded = expandedEventId === ev.event_id
-                        const statusBadge = salesStatusBadge(ev.sales_status)
+                        const statusBadge = salesStatusBadge(ev.sales_status, t)
                         const eventDate = formatEventDate(ev.start_time)
                         const variantData = eventVariantCache[ev.event_id]
                         return (
