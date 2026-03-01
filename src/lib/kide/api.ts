@@ -11,7 +11,7 @@ import type {
   DeobfuscateResponse,
 } from './types'
 
-const API_URL = import.meta.env.VITE_API_URL || ''
+const API_URL = import.meta.env.kidehiiri.railway.internal || ''
 
 async function apiCall<T>(path: string, body: Record<string, unknown>): Promise<T> {
   const url = `${API_URL}${path}`
