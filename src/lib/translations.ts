@@ -1,0 +1,295 @@
+export type LanguageCode = 'en' | 'fi'
+
+export const translations: Record<LanguageCode, Record<string, string>> = {
+  en: {
+    // Header
+    appTitle: 'Kidehiiri',
+    appSubtitle: 'Automatic ticket buying bot for kide.app',
+    
+    // Steps
+    step1: 'Event',
+    step2: 'Delay',
+    step3: 'Keywords',
+    step4: 'Summary',
+    step5: 'Monitor',
+
+    // Step 0 - Event Configuration
+    chooseEventSource: 'Choose event source',
+    eventUrl: 'Event URL',
+    eventUrlPlaceholder: 'https://kide.app/events/...',
+    loadingEvent: '🔄 Loading event details...',
+    selectTicketType: 'Select ticket type',
+    authToken: 'Authorization token',
+    authTokenOptional: '(optional — only for validation)',
+    authTokenPlaceholder: 'Paste your kide.app Bearer token',
+    tokenWarning: '⚠️ WARNING: Copying and giving this value to any person/service severely compromises your account and may lead to you losing it permanently!',
+    quantity: 'Quantity to buy',
+    proxyUrl: 'Proxy URL',
+    proxyUrlOptional: '(optional — bypass rate limits)',
+    proxyUrlPlaceholder: 'http://proxy.example.com:8080',
+    proxyUrlHint: 'Leave empty to connect directly. Proxy helps avoid rate limiting from single IP.',
+    validateToken: 'Validate token',
+    validating: 'Validating...',
+    tokenStatus: 'Status:',
+    tokenNotChecked: 'Not checked',
+    tokenValid: 'Valid ✓',
+    tokenInvalid: 'Invalid ✗',
+    tokenError: 'Error',
+    tokenUser: 'User:',
+    tokenEmail: 'Email:',
+    tokenExpires: 'Expires:',
+
+    // Step 1 - Delay Configuration
+    setRefreshDelay: 'Set refresh delay',
+    pollInterval: 'Poll interval (milliseconds)',
+
+    // Step 2 - Keywords
+    filterByKeywords: 'Filter by keywords',
+    keywordsInput: 'Keywords (comma separated)',
+    keywordsPlaceholder: 'vappu, tampere',
+    requireAllKeywords: 'Require all keywords to match',
+
+    // Step 3 - Summary
+    summary: 'Summary',
+    eventUrlLabel: 'Event URL',
+    authTokenLabel: 'Auth token',
+    notSetLabel: 'Not set',
+    quantityLabel: 'Quantity',
+    estimatedTotalLabel: 'Estimated total',
+    delayLabel: 'Delay',
+    keywordsLabel: 'Keywords',
+    noKeywordFilter: 'No keyword filter',
+    matchModeLabel: 'Match mode',
+    matchModeAll: 'All keywords',
+    matchModeAny: 'Any keyword',
+    proxyLabel: 'Proxy',
+    directConnection: 'Direct connection',
+
+    // Step 4 - Monitor
+    monitor: 'Monitor',
+    statusLabel: 'Status',
+    matchesFoundLabel: 'Matches found',
+    lastCheckedLabel: 'Last checked',
+    nextCheckInLabel: 'Next check in',
+    notCheckedYet: 'Not checked yet',
+    successMessage: 'Success! {quantity} ticket(s) added to cart',
+    successMessageWithName: '{ticket}',
+    viewCart: '🛒 View Cart',
+    buyMore: '🔄 Buy {quantity} Again',
+    startMonitoring: '▶️ Start monitoring',
+    monitorAnother: '🔄 Monitor Another',
+    stopMonitoring: '⏹️ Stop monitoring',
+    
+    // Monitoring Status
+    monitoringStarted: 'Monitoring started (buying {quantity} ticket(s))',
+    monitoringStopped: 'Monitoring stopped',
+    monitoringStoppedLeft: 'Monitoring stopped (left monitor step)',
+    monitoringResumed: 'Monitoring resumed',
+
+    // Logs
+    ready: 'Ready',
+    foundTicket: '🎯 Found selected ticket: {name}!',
+    addingToCart: '🛒 Adding {quantity} to cart...',
+    successCart: '✅ Success! Tickets added to cart',
+    successAdded: '✅ Success! Tickets added to cart',
+    noMatch: 'No match — {available}/{total} available',
+    checkError: 'Check error: {error}',
+    errorParseEvent: 'Error: could not parse event ID from URL',
+    errorEmptyUrl: 'Error: event URL is empty',
+    errorEmptyToken: 'Error: authorization token is empty or missing',
+    errorNoVariant: 'Error: no ticket variant selected',
+    errorFetchEvent: 'Failed to fetch event details:',
+    errorAddToCart: 'Failed to add to cart: {message}',
+    errorAddToCartException: 'Error while adding to cart: {error}',
+    tokenValidationEmpty: 'Token validation: token is empty',
+    tokenValidationInvalid: 'Token validation: invalid or expired',
+    tokenValidationSuccess: 'Token validation: success',
+    tokenValidationError: 'Token validation error: {error}',
+    errorParsingUrl: 'Invalid token format',
+    errorTokenValidity: 'Token is not a valid JWT',
+    tokenExpiredInvalid: 'Token expired or invalid',
+    alreadyInCart: 'Already in cart or unavailable',
+    networkError: 'Network error',
+
+    // Info Modal
+    technicalDetails: 'Technical Details',
+    howItWorks: '🎫 How It Works',
+    howItWorksText: 'Kidehiiri monitors Kide.app for event availability and automatically adds tickets to your cart when they go on sale. You then complete the checkout manually.',
+    authentication: '🔐 Authentication',
+    authenticationText: 'Your Bearer token is used to authenticate with the Kide.app API. Never share it with anyone. The app only sends requests to the backend server which proxies to api.kide.app.',
+    pollingInterval: '⏱️ Polling Interval',
+    pollingIntervalText: 'The app checks for availability every N milliseconds (default: 1200ms). Minimum recommended: 200ms.',
+    keywordFilter: '🔍 Keyword Filter',
+    keywordFilterText: 'Filter by ticket type names. Use AND logic to require all keywords, or OR logic to match any keyword.',
+    statusIndicators: '📊 Status Indicators',
+    statusNotChecked: 'Not checked: Token hasn\'t been validated yet',
+    statusValid: 'Valid: Token is active and authenticated',
+    statusInvalid: 'Invalid: Token is expired or malformed',
+    tips: '💡 Tips',
+    tip1: 'Test with a single event first',
+    tip2: 'Have your payment method ready for quick checkout',
+    tip3: 'Open kide.app/checkout in another tab beforehand',
+    tip4: 'Respect rate limits (don\'t set interval below 200ms)',
+
+    // Buttons
+    back: 'Back',
+    next: 'Next',
+    reviewMonitor: 'Review & Monitor',
+    changeToken: 'Change Token',
+
+    // Language
+    language: 'Language',
+  },
+
+  fi: {
+    // Header
+    appTitle: 'Kidehiiri',
+    appSubtitle: 'Automaattinen lipunostaja kide.app:iin',
+    
+    // Steps
+    step1: 'Tapahtuma',
+    step2: 'Viive',
+    step3: 'Avainsanat',
+    step4: 'Yhteenveto',
+    step5: 'Monitoroi',
+
+    // Step 0 - Event Configuration
+    chooseEventSource: 'Valitse tapahtuman lähde',
+    eventUrl: 'Tapahtuman URL',
+    eventUrlPlaceholder: 'https://kide.app/events/...',
+    loadingEvent: '🔄 Ladataan tapahtuman tietoja...',
+    selectTicketType: 'Valitse lipun tyyppi',
+    authToken: 'Valtuutustoken',
+    authTokenOptional: '(valinnainen — vain validointia varten)',
+    authTokenPlaceholder: 'Liitä kide.app:in Bearer-token',
+    tokenWarning: '⚠️ VAROITUS: Tämän arvon kopioiminen ja antaminen kenelle tahansa henkilölle/palvelulle vaarantaa tilisi vakavasti ja voi johtaa sen menettämiseen!',
+    quantity: 'Ostettavaksi valittujen lippujen määrä',
+    proxyUrl: 'Proxy URL',
+    proxyUrlOptional: '(valinnainen — ohita nopeudenrajoitukset)',
+    proxyUrlPlaceholder: 'http://proxy.example.com:8080',
+    proxyUrlHint: 'Jätä tyhjäksi suoraan muodostettavaa yhteyttä varten. Proxy auttaa välttämään IP-pohjaisen nopeudenrajoituksen.',
+    validateToken: 'Vahvista token',
+    validating: 'Vahvistetaan...',
+    tokenStatus: 'Tila:',
+    tokenNotChecked: 'Ei tarkistettu',
+    tokenValid: 'Kelvollinen ✓',
+    tokenInvalid: 'Virheellinen ✗',
+    tokenError: 'Virhe',
+    tokenUser: 'Käyttäjä:',
+    tokenEmail: 'Sähköposti:',
+    tokenExpires: 'Vanhenee:',
+
+    // Step 1 - Delay Configuration
+    setRefreshDelay: 'Aseta päivitysviive',
+    pollInterval: 'Kyselyn väli (millisekuntia)',
+
+    // Step 2 - Keywords
+    filterByKeywords: 'Suodata avainsanoilla',
+    keywordsInput: 'Avainsanat (pilkulla erotettu)',
+    keywordsPlaceholder: 'vappu, tampere',
+    requireAllKeywords: 'Vaadi kaikkien avainsanojen vastaavuus',
+
+    // Step 3 - Summary
+    summary: 'Yhteenveto',
+    eventUrlLabel: 'Tapahtuman URL',
+    authTokenLabel: 'Valtuutustoken',
+    notSetLabel: 'Ei asetettu',
+    quantityLabel: 'Määrä',
+    estimatedTotalLabel: 'Arvioidut kokonaiskustannukset',
+    delayLabel: 'Viive',
+    keywordsLabel: 'Avainsanat',
+    noKeywordFilter: 'Ei avainsanasuodinta',
+    matchModeLabel: 'Vastaavuustila',
+    matchModeAll: 'Kaikki avainsanat',
+    matchModeAny: 'Mikä tahansa avainsana',
+    proxyLabel: 'Proxy',
+    directConnection: 'Suora yhteys',
+
+    // Step 4 - Monitor
+    monitor: 'Monitoroi',
+    statusLabel: 'Tila',
+    matchesFoundLabel: 'Löydetyt vastaavuudet',
+    lastCheckedLabel: 'Viimeksi tarkistettu',
+    nextCheckInLabel: 'Seuraava tarkistus suoritetaan',
+    notCheckedYet: 'Ei vielä tarkistettu',
+    successMessage: 'Onnistui! {quantity} lippu(a) lisätty ostoskoriin',
+    successMessageWithName: '{ticket}',
+    viewCart: '🛒 Näytä ostoskori',
+    buyMore: '🔄 Osta {quantity} uudelleen',
+    startMonitoring: '▶️ Aloita monitorointi',
+    monitorAnother: '🔄 Monitoroi toista',
+    stopMonitoring: '⏹️ Lopeta monitorointi',
+    
+    // Monitoring Status
+    monitoringStarted: 'Monitorointi aloitettu (ostetaan {quantity} lippu(a))',
+    monitoringStopped: 'Monitorointi lopetettu',
+    monitoringStoppedLeft: 'Monitorointi lopetettu (poistunut monitorointisivulta)',
+    monitoringResumed: 'Monitorointi jatkettu',
+
+    // Logs
+    ready: 'Valmis',
+    foundTicket: '🎯 Löytyi valittu lippu: {name}!',
+    addingToCart: '🛒 Lisätään {quantity} ostoskoriin...',
+    successCart: '✅ Onnistui! Liput lisätty ostoskoriin',
+    successAdded: '✅ Onnistui! Liput lisätty ostoskoriin',
+    noMatch: 'Ei vastaavuuksia — {available}/{total} saatavilla',
+    checkError: 'Tarkistusvirhe: {error}',
+    errorParseEvent: 'Virhe: tapahtuman tunnusta ei voitu jäsentää URL-osoitteesta',
+    errorEmptyUrl: 'Virhe: tapahtuman URL-osoite on tyhjä',
+    errorEmptyToken: 'Virhe: valtuutustoken on tyhjä tai puuttuu',
+    errorNoVariant: 'Virhe: lipun tyyppiä ei ole valittu',
+    errorFetchEvent: 'Tapahtuman tietojen haku epäonnistui:',
+    errorAddToCart: 'Lisääminen ostoskoriin epäonnistui: {message}',
+    errorAddToCartException: 'Virhe lisättäessä ostoskoriin: {error}',
+    tokenValidationEmpty: 'Tokenin vahvistus: token on tyhjä',
+    tokenValidationInvalid: 'Tokenin vahvistus: virheellinen tai vanhentunut',
+    tokenValidationSuccess: 'Tokenin vahvistus: onnistui',
+    tokenValidationError: 'Tokenin vahvistusvirhe: {error}',
+    errorParsingUrl: 'Virheellinen tokenin muoto',
+    errorTokenValidity: 'Token ei ole kelvollinen JWT',
+    tokenExpiredInvalid: 'Token on vanhentunut tai virheellinen',
+    alreadyInCart: 'Jo ostoskorissa tai ei saatavilla',
+    networkError: 'Verkon virhe',
+
+    // Info Modal
+    technicalDetails: 'Tekniset tiedot',
+    howItWorks: '🎫 Kuinka se toimii',
+    howItWorksText: 'Kidehiiri valvoo kide.app:ia tapahtumien saatavuuden osalta ja lisää liput automaattisesti ostoskoriin niiden tultua myynnille. Tämän jälkeen voit tehdä kaupan itse.',
+    authentication: '🔐 Tunnistaminen',
+    authenticationText: 'Bearer-tokenia käytetään kide.app API:n kanssa todentamiseen. Älä koskaan jaa sitä kenelle tahansa. Sovellus lähettää pyynnöt palvelimen kautta api.kide.app:iin.',
+    pollingInterval: '⏱️ Kyselyväli',
+    pollingIntervalText: 'Sovellus tarkistaa saatavuuden N millisekunnin välein (oletus: 1200ms). Suositeltu minimi: 200ms.',
+    keywordFilter: '🔍 Avainsanasuodatin',
+    keywordFilterText: 'Suodata lipun tyyppinimillä. Käytä AND-logiikkaa kaikkien avainsanojen vaatimiseen tai OR-logiikkaa minkä tahansa avainsanan vastaavuuteen.',
+    statusIndicators: '📊 Tilaindikaattorit',
+    statusNotChecked: 'Ei tarkistettu: Tokenia ei ole vielä vahvistettu',
+    statusValid: 'Kelvollinen: Token on aktiivinen ja autentikoitu',
+    statusInvalid: 'Virheellinen: Token on vanhentunut tai virheellisesti muotoiltu',
+    tips: '💡 Vinkkejä',
+    tip1: 'Testaa ensin yksittäisellä tapahtumalla',
+    tip2: 'Pidä maksutapasi valmiina nopeaa kassaa varten',
+    tip3: 'Avaa kide.app/checkout toisessa välilehdessä etukäteen',
+    tip4: 'Kunnioita nopeudenrajoituksia (älä aseta väliä alle 200ms)',
+
+    // Buttons
+    back: 'Takaisin',
+    next: 'Seuraava',
+    reviewMonitor: 'Tarkista ja monitoroi',
+    changeToken: 'Vaihda token',
+
+    // Language
+    language: 'Kieli',
+  },
+}
+
+export const getTranslation = (lang: LanguageCode, key: string, params?: Record<string, string | number>): string => {
+  let text = translations[lang][key] || translations['en'][key] || key
+  
+  if (params) {
+    Object.entries(params).forEach(([paramKey, paramValue]) => {
+      text = text.replace(`{${paramKey}}`, String(paramValue))
+    })
+  }
+  
+  return text
+}
