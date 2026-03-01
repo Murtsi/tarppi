@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { extractEventId, fetchEventProducts, maskToken, validateToken, addToCart, fetchExtraProperties, scoreEvents } from './lib/kide/api'
+import { extractEventId, fetchEventProducts, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity } from './lib/kide/api'
 import { getTranslation, type LanguageCode } from './lib/translations'
-import type { ScoredEvent, TopEvent, EventFeatures } from './lib/kide/types'
+import type { ScoredEvent, TopEvent } from './lib/kide/types'
+import CityPicker from './components/CityPicker'
 import './App.css'
 
 type AppTab = 'sniper' | 'scorer'
@@ -78,64 +79,7 @@ const InfoModalContent = ({ onClose, t }: { onClose: () => void; t: (key: string
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
-const SAMPLE_EVENTS: EventFeatures[] = [
-  {
-    event_id: 'a58700c1-9185-4639-a68a-226eae91f662',
-    name: 'AaltoApprot III',
-    organiser: 'Turun ammattikorkeakoulun opiskelijakunta - TUO',
-    start_time: '2026-04-16T18:00:00+03:00',
-    base_price_eur: 16,
-    max_price_eur: 25,
-    likes_total: 93,
-    hours_since_published: 48,
-    tickets_total: 400,
-    tickets_sold_estimate: 400,
-    is_sold_out: true,
-    sellout_minutes: 3,
-    city: 'Turku',
-    category: 'student_party',
-    organiser_historical_events: 20,
-    organiser_historical_sellout_rate: 0.7,
-    organiser_social_ig_post_likes: 520,
-    organiser_social_ig_post_comments: 32,
-  },
-  {
-    event_id: 'b12300c1-1111-4639-a68a-226eae91f611',
-    name: 'HYY Wappu Afterparty',
-    organiser: 'HYY',
-    start_time: '2026-04-30T22:00:00+03:00',
-    base_price_eur: 12,
-    max_price_eur: 12,
-    likes_total: 210,
-    hours_since_published: 24,
-    tickets_total: 600,
-    tickets_sold_estimate: 600,
-    is_sold_out: true,
-    sellout_minutes: 1,
-    city: 'Helsinki',
-    category: 'student_party',
-    organiser_historical_events: 45,
-    organiser_historical_sellout_rate: 0.85,
-    organiser_social_ig_post_likes: 1200,
-    organiser_social_ig_post_comments: 88,
-  },
-  {
-    event_id: 'c99900c1-2222-4639-a68a-226eae91f622',
-    name: 'Casual Friday Drinks',
-    organiser: 'Random Org',
-    start_time: '2026-05-02T17:00:00+03:00',
-    base_price_eur: 5,
-    likes_total: 8,
-    hours_since_published: 120,
-    tickets_total: 100,
-    tickets_sold_estimate: 30,
-    is_sold_out: false,
-    city: 'Oulu',
-    category: 'casual',
-    organiser_historical_events: 2,
-    organiser_historical_sellout_rate: 0.1,
-  },
-]
+
 
 // ─── Breakdown bar component ──────────────────────────────────────────────
 
@@ -209,7 +153,7 @@ function App() {
   })
 
   // ── Scorer state ──────────────────────────────────────────────────────────
-  const [scorerInput, setScorerInput] = useState('')
+  const [scanCityInput, setScanCityInput] = useState('Helsinki')
   const [scorerLoading, setScorerLoading] = useState(false)
   const [scorerError, setScorerError] = useState('')
   const [scoredEvents, setScoredEvents] = useState<ScoredEvent[]>([])
@@ -217,6 +161,7 @@ function App() {
   const [scorerStats, setScorerStats] = useState<{ total: number; buy_count: number; maybe_count: number; skip_count: number; avg_score: number } | null>(null)
   const [scorerView, setScorerView] = useState<'top10' | 'all'>('top10')
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
+  const [scanMeta, setScanMeta] = useState<{ scanned_count: number; filtered_count: number; city: string } | null>(null)
 
   const t = (key: string, params?: Record<string, string | number>) =>
     getTranslation(language, key, params)
@@ -515,55 +460,37 @@ function App() {
   }
 
   // ── Scorer handlers ───────────────────────────────────────────────────────
-  const handleScoreEvents = async () => {
+  const handleScanCity = async () => {
     setScorerError('')
-
-    let parsed: EventFeatures[]
-    try {
-      parsed = JSON.parse(scorerInput)
-    } catch {
-      setScorerError(t('scorerParseError'))
-      return
-    }
-
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      setScorerError(t('scorerEmptyArray'))
-      return
-    }
-
-    const invalid = parsed.filter((e) => !e.event_id || !e.name)
-    if (invalid.length > 0) {
-      setScorerError(t('scorerMissingFields'))
-      return
-    }
-
     setScorerLoading(true)
+    setScanMeta(null)
+
     try {
-      const result = await scoreEvents(parsed)
+      const result = await scanCity(scanCityInput.trim())
       setScoredEvents(result.events)
       setScorerTop10(result.top_10)
       setScorerStats(result.stats)
+      setScanMeta({
+        scanned_count: result.scanned_count,
+        filtered_count: result.filtered_count,
+        city: result.city,
+      })
       setScorerView('top10')
       setExpandedEventId(null)
     } catch (err) {
-      setScorerError(err instanceof Error ? err.message : 'Scoring failed')
+      setScorerError(err instanceof Error ? err.message : 'Scan failed')
     } finally {
       setScorerLoading(false)
     }
   }
 
-  const handleLoadSample = () => {
-    setScorerInput(JSON.stringify(SAMPLE_EVENTS, null, 2))
-    setScorerError('')
-  }
-
   const handleClearScorer = () => {
-    setScorerInput('')
     setScoredEvents([])
     setScorerTop10([])
     setScorerStats(null)
     setScorerError('')
     setExpandedEventId(null)
+    setScanMeta(null)
   }
 
   const handleSnipeEvent = (eventId: string) => {
@@ -853,18 +780,16 @@ function App() {
             <h2>{t('scorerTitle')}</h2>
             <p className="scorer-subtitle">{t('scorerSubtitle')}</p>
 
-            {/* Input area */}
+            {/* City picker — Finland only */}
             <div className="scorer-input-area">
-              <label>
-                {t('scorerInputLabel')}
-                <textarea
-                  className="scorer-textarea"
-                  rows={10}
-                  placeholder={t('scorerInputPlaceholder')}
-                  value={scorerInput}
-                  onChange={(e) => { setScorerInput(e.target.value); setScorerError('') }}
-                />
-              </label>
+              <label>{t('scorerCityLabel')}</label>
+              <CityPicker
+                value={scanCityInput}
+                onChange={setScanCityInput}
+                allLabel={t('scorerAllCities')}
+                placeholder={t('scorerCustomCityPlaceholder')}
+                disabled={scorerLoading}
+              />
 
               {scorerError && <p className="scorer-error">{scorerError}</p>}
 
@@ -872,19 +797,27 @@ function App() {
                 <button
                   type="button"
                   className="btn-primary"
-                  onClick={handleScoreEvents}
-                  disabled={scorerLoading || !scorerInput.trim()}
+                  onClick={handleScanCity}
+                  disabled={scorerLoading}
                 >
-                  {scorerLoading ? t('scorerAnalyzing') : t('scorerAnalyze')}
+                  {scorerLoading ? t('scorerScanning') : t('scorerScan')}
                 </button>
-                <button type="button" className="btn-secondary" onClick={handleLoadSample}>
-                  {t('scorerLoadSample')}
-                </button>
-                <button type="button" className="btn-secondary" onClick={handleClearScorer}>
+                <button type="button" className="btn-secondary" onClick={handleClearScorer} disabled={scorerLoading}>
                   {t('scorerClear')}
                 </button>
               </div>
             </div>
+
+            {/* Scan meta info */}
+            {scanMeta && (
+              <div className="scan-meta">
+                {t('scorerScanMeta', {
+                  filtered: scanMeta.filtered_count,
+                  total: scanMeta.scanned_count,
+                  city: scanMeta.city,
+                })}
+              </div>
+            )}
 
             {/* Stats banner */}
             {scorerStats && (
@@ -1025,7 +958,7 @@ function App() {
             )}
 
             {/* Empty state */}
-            {!scorerLoading && scoredEvents.length === 0 && !scorerError && (
+            {!scorerLoading && scoredEvents.length === 0 && !scorerError && !scanMeta && (
               <p className="scorer-empty">{t('scorerNoResults')}</p>
             )}
           </section>

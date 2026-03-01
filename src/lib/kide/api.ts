@@ -11,6 +11,7 @@ import type {
   DeobfuscateResponse,
   EventFeatures,
   ScorerResponse,
+  ScanResponse,
 } from './types'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -77,6 +78,13 @@ export async function fetchExtraProperties(): Promise<DeobfuscateResponse> {
  */
 export async function scoreEvents(events: EventFeatures[]): Promise<ScorerResponse> {
   return apiCall<ScorerResponse>('/api/score', { events })
+}
+
+/**
+ * Scan Kide.app events by city, auto-extract features, and score them.
+ */
+export async function scanCity(city: string): Promise<ScanResponse> {
+  return apiCall<ScanResponse>('/api/scan', { city, productType: 1 })
 }
 
 /**

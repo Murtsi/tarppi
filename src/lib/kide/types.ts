@@ -112,3 +112,11 @@ export type ScorerResponse = {
     avg_score: number
   }
 }
+
+// ─── Scan Types ──────────────────────────────────────────────────────────────
+
+export type ScanResponse = ScorerResponse & {
+  scanned_count: number
+  filtered_count: number
+  city: string
+}
