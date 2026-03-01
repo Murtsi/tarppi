@@ -1967,12 +1967,14 @@ function App() {
                     {/* Session cookie (optional — for auto-cart) */}
                     <div className="sniper-field">
                       <label>{t('tikettiSniperCookieLabel')}</label>
-                      <input
-                        type="password"
+                      <textarea
+                        className="cookie-textarea"
                         value={tikettiSessionCookie}
                         onChange={(e) => setTikettiSessionCookie(e.target.value)}
                         placeholder={t('tikettiSniperCookiePlaceholder')}
                         disabled={tikettiSniperStatus === 'monitoring'}
+                        rows={3}
+                        spellCheck={false}
                       />
                       <p className="field-hint">{t('tikettiSniperCookieHint')}</p>
                     </div>
