@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity, adminLogin, adminVerify, fetchTikettiEvents, triggerTikettiScrape, fetchTikettiEvent } from './lib/kide/api'
+import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity, adminLogin, adminVerify, fetchTikettiEvents, triggerTikettiScrape, fetchTikettiEvent, addToTikettiCart } from './lib/kide/api'
 import { getTranslation, type LanguageCode } from './lib/translations'
 import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant, TikettiEvent, TikettiEventDetail } from './lib/kide/types'
 import CityPicker from './components/CityPicker'
@@ -439,6 +439,8 @@ function App() {
   const [tikettiSniperDelayMs, setTikettiSniperDelayMs] = useState(2000)
   const [tikettiSniperError, setTikettiSniperError] = useState('')
   const [tikettiSniperSuccess, setTikettiSniperSuccess] = useState(false)
+  const [tikettiSessionCookie, setTikettiSessionCookie] = useState('')
+  const [tikettiSniperQty, setTikettiSniperQty] = useState(1)
   const tikettiSniperIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const t = (key: string, params?: Record<string, string | number>) =>
@@ -953,8 +955,26 @@ function App() {
           return
         }
 
-        // Tickets are available! Alert the user
-        addTikettiLog(`🎉 TICKETS AVAILABLE! ${ticketsFree} free — go to tiketti.fi now!`)
+        // Tickets are available!
+        addTikettiLog(`🎉 TICKETS AVAILABLE! ${ticketsFree} free`)
+
+        // Try to add to cart if session cookie is provided
+        if (tikettiSessionCookie.trim()) {
+          addTikettiLog(`Attempting to add ${tikettiSniperQty} ticket(s) to cart...`)
+          try {
+            const cartRes = await addToTikettiCart(tikettiSniperUrl, tikettiSniperQty, tikettiSessionCookie)
+            if (cartRes.success) {
+              addTikettiLog(`✅ ${cartRes.message}`)
+            } else {
+              addTikettiLog(`⚠️ Cart failed: ${cartRes.message} — go to tiketti.fi manually!`)
+            }
+          } catch (cartErr) {
+            addTikettiLog(`⚠️ Cart error: ${cartErr instanceof Error ? cartErr.message : 'Unknown'} — go to tiketti.fi manually!`)
+          }
+        } else {
+          addTikettiLog('No cookies provided — go to tiketti.fi now to buy!')
+        }
+
         setTikettiSniperSuccess(true)
         setTikettiSniperStatus('stopped')
         if (tikettiSniperIntervalRef.current) clearInterval(tikettiSniperIntervalRef.current)
@@ -983,7 +1003,7 @@ function App() {
 
     // Set up polling
     tikettiSniperIntervalRef.current = setInterval(doCheck, tikettiSniperDelayMs)
-  }, [tikettiSniperEvent, tikettiSniperUrl, tikettiSniperDelayMs, addTikettiLog])
+  }, [tikettiSniperEvent, tikettiSniperUrl, tikettiSniperDelayMs, tikettiSessionCookie, tikettiSniperQty, addTikettiLog])
 
   const handleTikettiSniperStop = useCallback(() => {
     if (tikettiSniperIntervalRef.current) {
@@ -1944,8 +1964,32 @@ function App() {
                       <p>{t('tikettiSniperHowItWorks')}</p>
                     </div>
 
-                    {/* Delay setting */}
+                    {/* Session cookie (optional — for auto-cart) */}
+                    <div className="sniper-field">
+                      <label>{t('tikettiSniperCookieLabel')}</label>
+                      <input
+                        type="password"
+                        value={tikettiSessionCookie}
+                        onChange={(e) => setTikettiSessionCookie(e.target.value)}
+                        placeholder={t('tikettiSniperCookiePlaceholder')}
+                        disabled={tikettiSniperStatus === 'monitoring'}
+                      />
+                      <p className="field-hint">{t('tikettiSniperCookieHint')}</p>
+                    </div>
+
+                    {/* Quantity + delay */}
                     <div className="sniper-row">
+                      <div className="sniper-field sniper-field-small">
+                        <label>{t('tikettiSniperQtyLabel')}</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={10}
+                          value={tikettiSniperQty}
+                          onChange={(e) => setTikettiSniperQty(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                          disabled={tikettiSniperStatus === 'monitoring'}
+                        />
+                      </div>
                       <div className="sniper-field sniper-field-small">
                         <label>{t('tikettiSniperDelayLabel')}</label>
                         <input
