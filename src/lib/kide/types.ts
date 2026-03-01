@@ -101,11 +101,14 @@ export type ScoredEvent = {
   organiser_id?: string
   sales_status?: SalesStatus
   start_time?: string
+  sales_start_time?: string
   base_price_eur?: number | null
   max_price_eur?: number | null
   likes_total?: number | null
   availability_pct?: number | null
   hours_since_published?: number | null
+  city?: string | null
+  media_url?: string | null
   resell_score: number
   decision: 'BUY' | 'MAYBE' | 'SKIP'
   should_trigger_ticket_bot: boolean
@@ -153,5 +156,6 @@ export type ScanResponse = ScorerResponse & {
   scanned_count: number
   filtered_count: number
   filtered_out_sold_out: number
+  filtered_out_free: number
   city: string
 }

@@ -1699,3 +1699,128 @@ button.danger {
     width: auto;
   }
 }
+
+/* ─── Event detail grid (expanded view) ──────────────────────────────────── */
+
+.event-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.detail-label {
+  font-size: 0.7rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.detail-value {
+  font-size: 0.85rem;
+  color: var(--light);
+  font-weight: 500;
+}
+
+/* ─── Variant list (ticket options) ──────────────────────────────────────── */
+
+.variant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.variant-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.82rem;
+}
+
+.variant-name {
+  flex: 1;
+  color: var(--light);
+  font-weight: 500;
+}
+
+.variant-price {
+  color: var(--success);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.variant-avail {
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.variant-avail-ok {
+  color: var(--success);
+}
+
+.variant-avail-none {
+  color: var(--danger);
+}
+
+.variants-loading {
+  font-size: 0.8rem;
+  color: var(--gray);
+  padding: 0.5rem 0;
+}
+
+.variants-error {
+  font-size: 0.8rem;
+  color: var(--danger);
+  padding: 0.5rem 0;
+}
+
+.variants-empty {
+  font-size: 0.8rem;
+  color: var(--gray);
+  padding: 0.5rem 0;
+}
+
+/* ─── Breakdown explanation text ─────────────────────────────────────────── */
+
+.breakdown-explain {
+  font-size: 0.7rem;
+  color: var(--gray);
+  margin-top: 0.15rem;
+  padding-left: 0.1rem;
+  line-height: 1.3;
+}
+
+/* ─── Score weights info ─────────────────────────────────────────────────── */
+
+.score-weight-info {
+  font-size: 0.68rem;
+  color: var(--gray);
+  opacity: 0.7;
+  text-align: center;
+  margin: 0.75rem 0 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ─── Free events meta ───────────────────────────────────────────────────── */
+
+.scan-meta-free {
+  color: var(--gray);
+  opacity: 0.7;
+}

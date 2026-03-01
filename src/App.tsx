@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { extractEventId, fetchEventProducts, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity } from './lib/kide/api'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity } from './lib/kide/api'
 import { getTranslation, type LanguageCode } from './lib/translations'
-import type { ScoredEvent, TopEvent, SalesStatus, AiScore } from './lib/kide/types'
+import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant } from './lib/kide/types'
 import CityPicker from './components/CityPicker'
 import './App.css'
 
@@ -142,6 +142,79 @@ const AiBadge = ({ ai }: { ai?: AiScore }) => {
   )
 }
 
+/** Score category explanation text. */
+function scoreExplanation(key: string, value: number, t: (k: string) => string): string {
+  if (key === 'popularity') {
+    if (value >= 80) return t('explainPopHigh')
+    if (value >= 50) return t('explainPopMed')
+    return t('explainPopLow')
+  }
+  if (key === 'demand') {
+    if (value >= 80) return t('explainDemandHigh')
+    if (value >= 50) return t('explainDemandMed')
+    return t('explainDemandLow')
+  }
+  if (key === 'pricing') {
+    if (value >= 70) return t('explainPriceHigh')
+    if (value >= 40) return t('explainPriceMed')
+    return t('explainPriceLow')
+  }
+  if (key === 'timing') {
+    if (value >= 80) return t('explainTimingHigh')
+    if (value >= 50) return t('explainTimingMed')
+    return t('explainTimingLow')
+  }
+  if (key === 'organiser') {
+    if (value >= 60) return t('explainOrgHigh')
+    if (value >= 40) return t('explainOrgMed')
+    return t('explainOrgLow')
+  }
+  return ''
+}
+
+/** Breakdown bar with explanation. */
+const BreakdownBarExplained = ({ label, value, explainKey, t }: { label: string; value: number; explainKey: string; t: (k: string) => string }) => (
+  <div className="breakdown-item">
+    <div className="breakdown-label">
+      <span>{label}</span>
+      <span className="breakdown-value">{value}</span>
+    </div>
+    <div className="breakdown-track">
+      <div
+        className="breakdown-fill"
+        style={{
+          width: `${value}%`,
+          backgroundColor: value >= 75 ? 'var(--success)' : value >= 50 ? 'var(--warning)' : 'var(--danger)',
+        }}
+      />
+    </div>
+    <div className="breakdown-explain">{scoreExplanation(explainKey, value, t)}</div>
+  </div>
+)
+
+/** Variant list in expanded event detail. */
+const VariantList = ({ variants, t }: { variants: KideVariant[]; t: (k: string) => string }) => {
+  if (variants.length === 0) return <p className="variants-empty">{t('noVariants')}</p>
+  return (
+    <div className="variant-list">
+      {variants.map((v) => {
+        const priceEur = (v.pricePerItem ?? v.price ?? 0) / 100
+        return (
+          <div key={v.inventoryId} className="variant-row">
+            <span className="variant-name">{v.name}</span>
+            <span className="variant-price">
+              {priceEur > 0 ? `€${priceEur.toFixed(2)}` : t('freeLabel')}
+            </span>
+            <span className={`variant-avail ${v.availability > 0 ? 'variant-avail-ok' : 'variant-avail-none'}`}>
+              {v.availability > 0 ? `${v.availability} ${t('availableLabel')}` : t('soldOutLabel')}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function salesStatusBadge(status?: SalesStatus): { label: string; className: string } | null {
   if (!status) return null
   switch (status) {
@@ -210,7 +283,8 @@ function App() {
   const [scorerStats, setScorerStats] = useState<{ total: number; buy_count: number; maybe_count: number; skip_count: number; avg_score: number } | null>(null)
   const [scorerView, setScorerView] = useState<'top10' | 'all' | 'ai'>('top10')
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
-  const [scanMeta, setScanMeta] = useState<{ scanned_count: number; filtered_count: number; filtered_out_sold_out: number; city: string } | null>(null)
+  const [scanMeta, setScanMeta] = useState<{ scanned_count: number; filtered_count: number; filtered_out_sold_out: number; filtered_out_free: number; city: string } | null>(null)
+  const [eventVariantCache, setEventVariantCache] = useState<Record<string, { variants: KideVariant[]; loading: boolean; error?: string }>>({})
 
   const t = (key: string, params?: Record<string, string | number>) =>
     getTranslation(language, key, params)
@@ -524,6 +598,7 @@ function App() {
         scanned_count: result.scanned_count,
         filtered_count: result.filtered_count,
         filtered_out_sold_out: result.filtered_out_sold_out ?? 0,
+        filtered_out_free: result.filtered_out_free ?? 0,
         city: result.city,
       })
       setScorerView('top10')
@@ -541,6 +616,28 @@ function App() {
     setActiveTab('sniper')
     setStep(0)
   }
+
+  /** Toggle expand + fetch variant data on first expand. */
+  const handleToggleExpand = useCallback((eventId: string) => {
+    setExpandedEventId((prev) => {
+      const opening = prev !== eventId
+      if (opening && !eventVariantCache[eventId]) {
+        // Mark loading
+        setEventVariantCache((c) => ({ ...c, [eventId]: { variants: [], loading: true } }))
+        fetchEventDetail(eventId)
+          .then((data) => {
+            setEventVariantCache((c) => ({ ...c, [eventId]: { variants: data.variants, loading: false } }))
+          })
+          .catch((err) => {
+            setEventVariantCache((c) => ({
+              ...c,
+              [eventId]: { variants: [], loading: false, error: err instanceof Error ? err.message : 'Failed to load' },
+            }))
+          })
+      }
+      return opening ? eventId : null
+    })
+  }, [eventVariantCache])
 
   const steps = [t('step1'), t('step2'), t('step3'), t('step4'), t('step5')]
 
@@ -849,6 +946,11 @@ function App() {
                     {' · '}{scanMeta.filtered_out_sold_out} sold-out filtered out
                   </span>
                 )}
+                {scanMeta.filtered_out_free > 0 && (
+                  <span className="scan-meta-free">
+                    {' · '}{scanMeta.filtered_out_free} {t('freeEventsFiltered')}
+                  </span>
+                )}
               </div>
             )}
 
@@ -911,9 +1013,16 @@ function App() {
                     {scorerTop10.map((ev) => {
                       const statusBadge = salesStatusBadge(ev.sales_status)
                       const eventDate = formatEventDate(ev.start_time)
+                      const isExpanded = expandedEventId === ev.event_id
+                      const variantData = eventVariantCache[ev.event_id]
+                      // Find the full scored event for breakdown data
+                      const fullEvent = scoredEvents.find((e) => e.event_id === ev.event_id)
                       return (
                         <div key={ev.event_id} className={`scorer-card ${decisionClass(effectiveLabel(ev))}`}>
-                          <div className="scorer-card-header">
+                          <div
+                            className="scorer-card-header scorer-card-clickable"
+                            onClick={() => handleToggleExpand(ev.event_id)}
+                          >
                             <span className="scorer-rank">#{ev.rank}</span>
                             <div className="scorer-card-info">
                               <span className="scorer-event-name">{ev.name}</span>
@@ -936,14 +1045,88 @@ function App() {
                               </span>
                             </div>
                           </div>
-                          {(effectiveLabel(ev) === 'BUY' || effectiveLabel(ev) === 'MAYBE') && (
-                            <button
-                              type="button"
-                              className="btn-snipe"
-                              onClick={() => handleSnipeEvent(ev.event_id)}
-                            >
-                              {t('scorerTriggerBot')}
-                            </button>
+
+                          {isExpanded && (
+                            <div className="scorer-breakdown">
+                              {/* Event details */}
+                              {fullEvent && (
+                                <div className="event-detail-grid">
+                                  {fullEvent.base_price_eur != null && fullEvent.max_price_eur != null && fullEvent.max_price_eur !== fullEvent.base_price_eur && (
+                                    <div className="detail-item"><span className="detail-label">💰 {t('priceRange')}</span><span className="detail-value">€{fullEvent.base_price_eur} – €{fullEvent.max_price_eur}</span></div>
+                                  )}
+                                  {fullEvent.availability_pct != null && (
+                                    <div className="detail-item"><span className="detail-label">📊 {t('availabilityLabel')}</span><span className="detail-value">{fullEvent.availability_pct}% {t('remaining')}</span></div>
+                                  )}
+                                  {fullEvent.sales_start_time && (
+                                    <div className="detail-item"><span className="detail-label">🕐 {t('salesStart')}</span><span className="detail-value">{formatEventDate(fullEvent.sales_start_time) || fullEvent.sales_start_time}</span></div>
+                                  )}
+                                  {fullEvent.city && (
+                                    <div className="detail-item"><span className="detail-label">📍 {t('cityLabel')}</span><span className="detail-value">{fullEvent.city}</span></div>
+                                  )}
+                                  {fullEvent.hours_since_published != null && (
+                                    <div className="detail-item"><span className="detail-label">🕒 {t('publishedAgo')}</span><span className="detail-value">{fullEvent.hours_since_published < 24 ? `${Math.round(fullEvent.hours_since_published)}h` : `${Math.round(fullEvent.hours_since_published / 24)}d`} {t('ago')}</span></div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Ticket variants */}
+                              <h4>🎫 {t('ticketOptions')}</h4>
+                              {variantData?.loading && <p className="variants-loading">{t('loadingVariants')}</p>}
+                              {variantData?.error && <p className="variants-error">{variantData.error}</p>}
+                              {variantData && !variantData.loading && !variantData.error && (
+                                <VariantList variants={variantData.variants} t={t} />
+                              )}
+
+                              {/* AI probabilities */}
+                              {ev.ai_score && (
+                                <div className="ai-probabilities">
+                                  <h4>{t('scorerAiConfidence')}</h4>
+                                  <div className="ai-prob-bars">
+                                    <div className="ai-prob-item">
+                                      <span className="ai-prob-label">BUY</span>
+                                      <div className="breakdown-track"><div className="breakdown-fill" style={{ width: `${ev.ai_score.buy_probability * 100}%`, backgroundColor: aiConfidenceColor(ev.ai_score.buy_probability) }} /></div>
+                                      <span className="ai-prob-value">{pctStr(ev.ai_score.buy_probability)}</span>
+                                    </div>
+                                    <div className="ai-prob-item">
+                                      <span className="ai-prob-label">MAYBE</span>
+                                      <div className="breakdown-track"><div className="breakdown-fill" style={{ width: `${ev.ai_score.maybe_probability * 100}%`, backgroundColor: 'var(--warning)' }} /></div>
+                                      <span className="ai-prob-value">{pctStr(ev.ai_score.maybe_probability)}</span>
+                                    </div>
+                                    <div className="ai-prob-item">
+                                      <span className="ai-prob-label">SKIP</span>
+                                      <div className="breakdown-track"><div className="breakdown-fill" style={{ width: `${ev.ai_score.skip_probability * 100}%`, backgroundColor: 'var(--danger)' }} /></div>
+                                      <span className="ai-prob-value">{pctStr(ev.ai_score.skip_probability)}</span>
+                                    </div>
+                                  </div>
+                                  <span className="ai-model-version">model v{ev.ai_score.model_version}</span>
+                                </div>
+                              )}
+
+                              {/* Score breakdown with explanations */}
+                              {fullEvent && (
+                                <>
+                                  <h4>{t('scorerFeatures')}</h4>
+                                  <div className="breakdown-grid">
+                                    <BreakdownBarExplained label={t('scorerPopularity')} value={fullEvent.feature_breakdown.popularity} explainKey="popularity" t={t} />
+                                    <BreakdownBarExplained label={t('scorerDemand')} value={fullEvent.feature_breakdown.demand} explainKey="demand" t={t} />
+                                    <BreakdownBarExplained label={t('scorerPricing')} value={fullEvent.feature_breakdown.pricing} explainKey="pricing" t={t} />
+                                    <BreakdownBarExplained label={t('scorerTiming')} value={fullEvent.feature_breakdown.timing} explainKey="timing" t={t} />
+                                    <BreakdownBarExplained label={t('scorerOrganiser')} value={fullEvent.feature_breakdown.organiser} explainKey="organiser" t={t} />
+                                  </div>
+                                  <div className="score-weight-info">{t('scoreWeightsInfo')}</div>
+                                </>
+                              )}
+
+                              {(effectiveLabel(ev) === 'BUY' || effectiveLabel(ev) === 'MAYBE') && (
+                                <button
+                                  type="button"
+                                  className="btn-snipe"
+                                  onClick={() => handleSnipeEvent(ev.event_id)}
+                                >
+                                  {t('scorerTriggerBot')}
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                       )
@@ -968,11 +1151,12 @@ function App() {
                               const isExpanded = expandedEventId === ev.event_id
                               const statusBadge = salesStatusBadge(ev.sales_status)
                               const eventDate = formatEventDate(ev.start_time)
+                              const variantData = eventVariantCache[ev.event_id]
                               return (
                                 <div key={ev.event_id} className={`scorer-card ${decisionClass(effectiveLabel(ev))}`}>
                                   <div
                                     className="scorer-card-header scorer-card-clickable"
-                                    onClick={() => setExpandedEventId(isExpanded ? null : ev.event_id)}
+                                    onClick={() => handleToggleExpand(ev.event_id)}
                                   >
                                     <div className="scorer-card-info">
                                       <span className="scorer-event-name">{ev.name}</span>
@@ -998,6 +1182,34 @@ function App() {
 
                                   {isExpanded && (
                                     <div className="scorer-breakdown">
+                                      {/* Event details */}
+                                      <div className="event-detail-grid">
+                                        {ev.base_price_eur != null && ev.max_price_eur != null && ev.max_price_eur !== ev.base_price_eur && (
+                                          <div className="detail-item"><span className="detail-label">💰 {t('priceRange')}</span><span className="detail-value">€{ev.base_price_eur} – €{ev.max_price_eur}</span></div>
+                                        )}
+                                        {ev.availability_pct != null && (
+                                          <div className="detail-item"><span className="detail-label">📊 {t('availabilityLabel')}</span><span className="detail-value">{ev.availability_pct}% {t('remaining')}</span></div>
+                                        )}
+                                        {ev.sales_start_time && (
+                                          <div className="detail-item"><span className="detail-label">🕐 {t('salesStart')}</span><span className="detail-value">{formatEventDate(ev.sales_start_time) || ev.sales_start_time}</span></div>
+                                        )}
+                                        {ev.city && (
+                                          <div className="detail-item"><span className="detail-label">📍 {t('cityLabel')}</span><span className="detail-value">{ev.city}</span></div>
+                                        )}
+                                        {ev.hours_since_published != null && (
+                                          <div className="detail-item"><span className="detail-label">🕒 {t('publishedAgo')}</span><span className="detail-value">{ev.hours_since_published < 24 ? `${Math.round(ev.hours_since_published)}h` : `${Math.round(ev.hours_since_published / 24)}d`} {t('ago')}</span></div>
+                                        )}
+                                      </div>
+
+                                      {/* Ticket variants */}
+                                      <h4>🎫 {t('ticketOptions')}</h4>
+                                      {variantData?.loading && <p className="variants-loading">{t('loadingVariants')}</p>}
+                                      {variantData?.error && <p className="variants-error">{variantData.error}</p>}
+                                      {variantData && !variantData.loading && !variantData.error && (
+                                        <VariantList variants={variantData.variants} t={t} />
+                                      )}
+
+                                      {/* AI probabilities */}
                                       {ev.ai_score && (
                                         <div className="ai-probabilities">
                                           <h4>{t('scorerAiConfidence')}</h4>
@@ -1027,14 +1239,19 @@ function App() {
                                           <span className="ai-model-version">model v{ev.ai_score.model_version}</span>
                                         </div>
                                       )}
+
+                                      {/* Score breakdown with explanations */}
                                       <h4>{t('scorerFeatures')}</h4>
                                       <div className="breakdown-grid">
-                                        <BreakdownBar label={t('scorerPopularity')} value={ev.feature_breakdown.popularity} />
-                                        <BreakdownBar label={t('scorerDemand')} value={ev.feature_breakdown.demand} />
-                                        <BreakdownBar label={t('scorerPricing')} value={ev.feature_breakdown.pricing} />
-                                        <BreakdownBar label={t('scorerTiming')} value={ev.feature_breakdown.timing} />
-                                        <BreakdownBar label={t('scorerOrganiser')} value={ev.feature_breakdown.organiser} />
+                                        <BreakdownBarExplained label={t('scorerPopularity')} value={ev.feature_breakdown.popularity} explainKey="popularity" t={t} />
+                                        <BreakdownBarExplained label={t('scorerDemand')} value={ev.feature_breakdown.demand} explainKey="demand" t={t} />
+                                        <BreakdownBarExplained label={t('scorerPricing')} value={ev.feature_breakdown.pricing} explainKey="pricing" t={t} />
+                                        <BreakdownBarExplained label={t('scorerTiming')} value={ev.feature_breakdown.timing} explainKey="timing" t={t} />
+                                        <BreakdownBarExplained label={t('scorerOrganiser')} value={ev.feature_breakdown.organiser} explainKey="organiser" t={t} />
                                       </div>
+
+                                      <div className="score-weight-info">{t('scoreWeightsInfo')}</div>
+
                                       {(effectiveLabel(ev) === 'BUY' || effectiveLabel(ev) === 'MAYBE') && (
                                         <button
                                           type="button"
@@ -1064,11 +1281,12 @@ function App() {
                         const isExpanded = expandedEventId === ev.event_id
                         const statusBadge = salesStatusBadge(ev.sales_status)
                         const eventDate = formatEventDate(ev.start_time)
+                        const variantData = eventVariantCache[ev.event_id]
                         return (
                           <div key={ev.event_id} className={`scorer-card ${decisionClass(effectiveLabel(ev))}`}>
                             <div
                               className="scorer-card-header scorer-card-clickable"
-                              onClick={() => setExpandedEventId(isExpanded ? null : ev.event_id)}
+                              onClick={() => handleToggleExpand(ev.event_id)}
                             >
                               <div className="scorer-card-info">
                                 <span className="scorer-event-name">{ev.name}</span>
@@ -1094,6 +1312,34 @@ function App() {
 
                             {isExpanded && (
                               <div className="scorer-breakdown">
+                                {/* Event details */}
+                                <div className="event-detail-grid">
+                                  {ev.base_price_eur != null && ev.max_price_eur != null && ev.max_price_eur !== ev.base_price_eur && (
+                                    <div className="detail-item"><span className="detail-label">💰 {t('priceRange')}</span><span className="detail-value">€{ev.base_price_eur} – €{ev.max_price_eur}</span></div>
+                                  )}
+                                  {ev.availability_pct != null && (
+                                    <div className="detail-item"><span className="detail-label">📊 {t('availabilityLabel')}</span><span className="detail-value">{ev.availability_pct}% {t('remaining')}</span></div>
+                                  )}
+                                  {ev.sales_start_time && (
+                                    <div className="detail-item"><span className="detail-label">🕐 {t('salesStart')}</span><span className="detail-value">{formatEventDate(ev.sales_start_time) || ev.sales_start_time}</span></div>
+                                  )}
+                                  {ev.city && (
+                                    <div className="detail-item"><span className="detail-label">📍 {t('cityLabel')}</span><span className="detail-value">{ev.city}</span></div>
+                                  )}
+                                  {ev.hours_since_published != null && (
+                                    <div className="detail-item"><span className="detail-label">🕒 {t('publishedAgo')}</span><span className="detail-value">{ev.hours_since_published < 24 ? `${Math.round(ev.hours_since_published)}h` : `${Math.round(ev.hours_since_published / 24)}d`} {t('ago')}</span></div>
+                                  )}
+                                </div>
+
+                                {/* Ticket variants */}
+                                <h4>🎫 {t('ticketOptions')}</h4>
+                                {variantData?.loading && <p className="variants-loading">{t('loadingVariants')}</p>}
+                                {variantData?.error && <p className="variants-error">{variantData.error}</p>}
+                                {variantData && !variantData.loading && !variantData.error && (
+                                  <VariantList variants={variantData.variants} t={t} />
+                                )}
+
+                                {/* AI probabilities */}
                                 {ev.ai_score && (
                                   <div className="ai-probabilities">
                                     <h4>{t('scorerAiConfidence')}</h4>
@@ -1123,14 +1369,19 @@ function App() {
                                     <span className="ai-model-version">model v{ev.ai_score.model_version}</span>
                                   </div>
                                 )}
+
+                                {/* Score breakdown with explanations */}
                                 <h4>{t('scorerFeatures')}</h4>
                                 <div className="breakdown-grid">
-                                  <BreakdownBar label={t('scorerPopularity')} value={ev.feature_breakdown.popularity} />
-                                  <BreakdownBar label={t('scorerDemand')} value={ev.feature_breakdown.demand} />
-                                  <BreakdownBar label={t('scorerPricing')} value={ev.feature_breakdown.pricing} />
-                                  <BreakdownBar label={t('scorerTiming')} value={ev.feature_breakdown.timing} />
-                                  <BreakdownBar label={t('scorerOrganiser')} value={ev.feature_breakdown.organiser} />
+                                  <BreakdownBarExplained label={t('scorerPopularity')} value={ev.feature_breakdown.popularity} explainKey="popularity" t={t} />
+                                  <BreakdownBarExplained label={t('scorerDemand')} value={ev.feature_breakdown.demand} explainKey="demand" t={t} />
+                                  <BreakdownBarExplained label={t('scorerPricing')} value={ev.feature_breakdown.pricing} explainKey="pricing" t={t} />
+                                  <BreakdownBarExplained label={t('scorerTiming')} value={ev.feature_breakdown.timing} explainKey="timing" t={t} />
+                                  <BreakdownBarExplained label={t('scorerOrganiser')} value={ev.feature_breakdown.organiser} explainKey="organiser" t={t} />
                                 </div>
+
+                                <div className="score-weight-info">{t('scoreWeightsInfo')}</div>
+
                                 {(effectiveLabel(ev) === 'BUY' || effectiveLabel(ev) === 'MAYBE') && (
                                   <button
                                     type="button"

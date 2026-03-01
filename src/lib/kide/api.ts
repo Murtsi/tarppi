@@ -45,6 +45,13 @@ export async function fetchEventProducts(eventUrl: string): Promise<EventRespons
 }
 
 /**
+ * Fetch event detail by event ID (for scorer expanded view).
+ */
+export async function fetchEventDetail(eventId: string): Promise<EventResponse> {
+  return apiCall<EventResponse>('/api/event', { eventUrl: `https://kide.app/events/${eventId}` })
+}
+
+/**
  * Validate a Kide.app bearer token via the backend.
  */
 export async function validateToken(token: string): Promise<ValidateTokenResponse> {
