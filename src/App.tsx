@@ -3,7 +3,7 @@ import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, valida
 import { getTranslation, type LanguageCode } from './lib/translations'
 import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant, TikettiEvent } from './lib/kide/types'
 import CityPicker from './components/CityPicker'
-import { KidehiiriIcon } from './components/Logo'
+import { TicketSniperIcon } from './components/Logo'
 import './App.css'
 
 type MainSection = 'kide' | 'tiketti' | 'coming-soon'
@@ -879,7 +879,7 @@ function App() {
       <main className="app-shell">
         <header className="app-header">
           <div className="header-left">
-            <KidehiiriIcon size={36} />
+            <TicketSniperIcon size={40} />
             <div>
               <h1>{t('appTitle')}</h1>
               <p>{t('appSubtitle')}</p>

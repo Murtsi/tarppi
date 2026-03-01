@@ -41,6 +41,62 @@ export function KidehiiriIcon({ size = 40 }: { size?: number }) {
   )
 }
 
+/** Sniper variant: ticket with bullet hole and smoke */
+export function TicketSniperIcon({ size = 40 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 120 120"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="Kidehiiri Sniper"
+    >
+      <defs>
+        <radialGradient id="bulletHole" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#000000" />
+          <stop offset="60%" stopColor="#111111" />
+          <stop offset="100%" stopColor="#222222" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      {/* Ticket (tilted) */}
+      <g transform="rotate(-12, 60, 60)">
+        {/* Shadow */}
+        <rect x="23" y="28" width="76" height="48" rx="3" fill="#000000" opacity="0.15" transform="translate(2,3)" />
+        
+        {/* Main ticket */}
+        <rect x="23" y="28" width="76" height="48" rx="3" fill="#ffffff" stroke="#000000" strokeWidth="2" />
+        
+        {/* Perforated line */}
+        <line x1="43" y1="28" x2="43" y2="76" stroke="#000000" strokeWidth="1.2" strokeDasharray="3,2.5" />
+
+        {/* Serrated right edge */}
+        <path d="M99,28 Q102,31 99,34 Q102,37 99,40 Q102,43 99,46 Q102,49 99,52 Q102,55 99,58 Q102,61 99,64 Q102,67 99,70 Q102,73 99,76" fill="none" stroke="#000000" strokeWidth="1.2" />
+
+        {/* Crack lines */}
+        <g stroke="#000000" strokeWidth="0.7" opacity="0.7">
+          <line x1="62" y1="50" x2="52" y2="40" />
+          <line x1="64" y1="49" x2="61" y2="35" />
+          <line x1="67" y1="50" x2="78" y2="41" />
+          <line x1="68" y1="53" x2="79" y2="62" />
+          <line x1="64" y1="56" x2="57" y2="66" />
+          <line x1="60" y1="54" x2="50" y2="60" />
+        </g>
+
+        {/* Bullet hole */}
+        <circle cx="64" cy="52" r="7" fill="url(#bulletHole)" />
+        <circle cx="64" cy="52" r="5" fill="#000000" />
+        <circle cx="64" cy="52" r="7" fill="none" stroke="#000000" strokeWidth="1.2" />
+
+        {/* Smoke wisps */}
+        <path d="M62,28 Q58,22 62,16 Q66,10 62,4" fill="none" stroke="#000000" strokeWidth="1.2" strokeLinecap="round" opacity="0.4" />
+        <path d="M66,28 Q70,20 67,13" fill="none" stroke="#000000" strokeWidth="1" strokeLinecap="round" opacity="0.3" />
+      </g>
+    </svg>
+  )
+}
+
 /** Full logo: ticket-K + "idehiiri" text + mouse silhouette */
 export function KidehiiriLogo({ size = 32 }: { size?: number }) {
   return (
