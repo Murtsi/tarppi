@@ -281,8 +281,8 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tikettiEventsTab: 'Events',
 
     // Tiketti Sniper
-    tikettiSniperTitle: 'Tiketti.fi Sniper',
-    tikettiSniperSubtitle: 'Paste a Tiketti.fi event URL — monitor availability and auto-add to cart',
+    tikettiSniperTitle: 'Tiketti.fi Monitor',
+    tikettiSniperSubtitle: 'Paste a Tiketti.fi event URL — get alerted when tickets become available',
     tikettiSniperUrlLabel: 'Event URL',
     tikettiSniperFetchBtn: 'Fetch',
     tikettiSniperFetching: 'Loading...',
@@ -293,14 +293,13 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tikettiSniperTicketsFree: 'tickets free',
     tikettiSniperWaiting: 'Waiting for sale',
     tikettiSniperNoVariants: 'No ticket types found on this page',
-    tikettiSniperCookieLabel: 'Browser cookies',
-    tikettiSniperCookieHint: 'Full cookie string from DevTools (must include QueueIT cookies)',
-    tikettiSniperCookiePlaceholder: 'Paste all cookies from tiketti.fi (Network tab → Headers → Cookie)',
+    tikettiSniperHowItWorks: 'This monitor checks tiketti.fi for ticket availability. When tickets appear, you\'ll get an alert with a sound and a direct link to buy them on tiketti.fi. No login or cookies needed!',
     tikettiSniperQtyLabel: 'Quantity',
     tikettiSniperDelayLabel: 'Interval (ms)',
     tikettiSniperStartBtn: 'Start monitoring',
     tikettiSniperStopBtn: 'Stop',
-    tikettiSniperSuccess: 'Tickets added to cart! Go to tiketti.fi to complete checkout.',
+    tikettiSniperSuccessAlert: '🎉 Tickets are available! Open tiketti.fi now to buy them before they sell out.',
+    tikettiSniperGoToTiketti: '🎫 Open on tiketti.fi →',
     tikettiSniperLogsTitle: 'Activity log',
 
     // Coming Soon section
@@ -599,8 +598,8 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tikettiEventsTab: 'Tapahtumat',
 
     // Tiketti Sniper
-    tikettiSniperTitle: 'Tiketti.fi-botti',
-    tikettiSniperSubtitle: 'Liitä tiketti.fi-tapahtuman URL — seuraa saatavuutta ja lisää ostoskoriin automaattisesti',
+    tikettiSniperTitle: 'Tiketti.fi-seuranta',
+    tikettiSniperSubtitle: 'Liitä tiketti.fi-tapahtuman URL — saat hälytyksen kun lippuja tulee saataville',
     tikettiSniperUrlLabel: 'Tapahtuman URL',
     tikettiSniperFetchBtn: 'Hae',
     tikettiSniperFetching: 'Ladataan...',
@@ -611,14 +610,13 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tikettiSniperTicketsFree: 'lippua vapaana',
     tikettiSniperWaiting: 'Odottaa myyntiä',
     tikettiSniperNoVariants: 'Lipputyyppejä ei löytynyt sivulta',
-    tikettiSniperCookieLabel: 'Selaimen evästeet',
-    tikettiSniperCookieHint: 'Koko evästemerkkijono DevToolsista (tarvitsee myös QueueIT-evästeet)',
-    tikettiSniperCookiePlaceholder: 'Liitä kaikki tiketti.fi-evästeet (Network → Headers → Cookie)',
+    tikettiSniperHowItWorks: 'Tämä seuranta tarkistaa tiketti.fi:stä lippujen saatavuuden. Kun lippuja ilmestyy, saat äänihälytyksen ja suoran linkin ostamaan ne tiketti.fi:stä. Kirjautumista tai evästeitä ei tarvita!',
     tikettiSniperQtyLabel: 'Määrä',
     tikettiSniperDelayLabel: 'Väli (ms)',
     tikettiSniperStartBtn: 'Käynnistä seuranta',
     tikettiSniperStopBtn: 'Pysäytä',
-    tikettiSniperSuccess: 'Liput lisätty ostoskoriin! Mene tiketti.fi:hin viimeistelläksesi ostoksen.',
+    tikettiSniperSuccessAlert: '🎉 Lippuja on saatavilla! Avaa tiketti.fi nyt ja osta ne ennen kuin ne myydään loppuun.',
+    tikettiSniperGoToTiketti: '🎫 Avaa tiketti.fi →',
     tikettiSniperLogsTitle: 'Toimintaloki',
 
     // Coming Soon section

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity, adminLogin, adminVerify, fetchTikettiEvents, triggerTikettiScrape, fetchTikettiEvent, addToTikettiCart } from './lib/kide/api'
+import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity, adminLogin, adminVerify, fetchTikettiEvents, triggerTikettiScrape, fetchTikettiEvent } from './lib/kide/api'
 import { getTranslation, type LanguageCode } from './lib/translations'
 import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant, TikettiEvent, TikettiEventDetail } from './lib/kide/types'
 import CityPicker from './components/CityPicker'
@@ -429,9 +429,7 @@ function App() {
   // ── Tiketti Sniper state ──────────────────────────────────────────────────
   const [tikettiTab, setTikettiTab] = useState<TikettiSubTab>('sniper')
   const [tikettiSniperUrl, setTikettiSniperUrl] = useState('')
-  const [tikettiSessionCookie, setTikettiSessionCookie] = useState(() => localStorage.getItem('kidehiiri-tiketti-cookie') || '')
   const [tikettiSniperEvent, setTikettiSniperEvent] = useState<TikettiEventDetail | null>(null)
-  const [tikettiSniperQty, setTikettiSniperQty] = useState(1)
   const [tikettiSniperFetching, setTikettiSniperFetching] = useState(false)
   const [tikettiSniperStatus, setTikettiSniperStatus] = useState<'idle' | 'monitoring' | 'stopped'>('idle')
   const [tikettiSniperLogs, setTikettiSniperLogs] = useState<string[]>(['Ready'])
@@ -920,14 +918,11 @@ function App() {
   }, [tikettiSniperUrl, addTikettiLog])
 
   const handleTikettiSniperStart = useCallback(() => {
-    if (!tikettiSniperEvent || !tikettiSessionCookie.trim()) return
-
-    // Save cookie to localStorage
-    localStorage.setItem('kidehiiri-tiketti-cookie', tikettiSessionCookie)
+    if (!tikettiSniperEvent) return
 
     setTikettiSniperStatus('monitoring')
     setTikettiSniperSuccess(false)
-    addTikettiLog(`Monitoring started — qty: ${tikettiSniperQty}`)
+    addTikettiLog('Monitoring started — watching for tickets...')
     addTikettiLog(`Polling every ${tikettiSniperDelayMs}ms...`)
 
     const doCheck = async () => {
@@ -951,19 +946,26 @@ function App() {
           return
         }
 
-        // Tickets are available — try to add to cart!
-        addTikettiLog(`Tickets available! (${ticketsFree} free) — adding to cart...`)
-        const cartRes = await addToTikettiCart(
-          tikettiSniperUrl,
-          tikettiSniperQty,
-          tikettiSessionCookie,
-        )
-        addTikettiLog(`Cart: ${cartRes.message}`)
-        if (cartRes.success) {
-          setTikettiSniperSuccess(true)
-          setTikettiSniperStatus('stopped')
-          if (tikettiSniperIntervalRef.current) clearInterval(tikettiSniperIntervalRef.current)
-        }
+        // Tickets are available! Alert the user
+        addTikettiLog(`🎉 TICKETS AVAILABLE! ${ticketsFree} free — go to tiketti.fi now!`)
+        setTikettiSniperSuccess(true)
+        setTikettiSniperStatus('stopped')
+        if (tikettiSniperIntervalRef.current) clearInterval(tikettiSniperIntervalRef.current)
+
+        // Try to play an alert sound
+        try {
+          const ctx = new AudioContext()
+          for (const freq of [523.25, 659.25, 783.99]) {
+            const osc = ctx.createOscillator()
+            const gain = ctx.createGain()
+            osc.connect(gain)
+            gain.connect(ctx.destination)
+            osc.frequency.value = freq
+            gain.gain.value = 0.3
+            osc.start(ctx.currentTime + (freq - 523) / 500)
+            osc.stop(ctx.currentTime + (freq - 523) / 500 + 0.2)
+          }
+        } catch { /* audio not available */ }
       } catch (err) {
         addTikettiLog(`Error: ${err instanceof Error ? err.message : 'Unknown'}`)
       }
@@ -974,7 +976,7 @@ function App() {
 
     // Set up polling
     tikettiSniperIntervalRef.current = setInterval(doCheck, tikettiSniperDelayMs)
-  }, [tikettiSniperEvent, tikettiSessionCookie, tikettiSniperUrl, tikettiSniperQty, tikettiSniperDelayMs, addTikettiLog])
+  }, [tikettiSniperEvent, tikettiSniperUrl, tikettiSniperDelayMs, addTikettiLog])
 
   const handleTikettiSniperStop = useCallback(() => {
     if (tikettiSniperIntervalRef.current) {
@@ -1871,34 +1873,13 @@ function App() {
                       </span>
                     </div>
 
-                    {/* Step 2: Session cookie */}
-                    <div className="sniper-field">
-                      <label>
-                        {t('tikettiSniperCookieLabel')}
-                        <span className="field-hint">{t('tikettiSniperCookieHint')}</span>
-                      </label>
-                      <input
-                        type="password"
-                        value={tikettiSessionCookie}
-                        onChange={(e) => setTikettiSessionCookie(e.target.value)}
-                        placeholder={t('tikettiSniperCookiePlaceholder')}
-                        disabled={tikettiSniperStatus === 'monitoring'}
-                      />
+                    {/* How it works info box */}
+                    <div className="tiketti-sniper-info-box">
+                      <p>{t('tikettiSniperHowItWorks')}</p>
                     </div>
 
-                    {/* Quantity + Delay */}
+                    {/* Delay setting */}
                     <div className="sniper-row">
-                      <div className="sniper-field sniper-field-small">
-                        <label>{t('tikettiSniperQtyLabel')}</label>
-                        <input
-                          type="number"
-                          min={1}
-                          max={10}
-                          value={tikettiSniperQty}
-                          onChange={(e) => setTikettiSniperQty(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
-                          disabled={tikettiSniperStatus === 'monitoring'}
-                        />
-                      </div>
                       <div className="sniper-field sniper-field-small">
                         <label>{t('tikettiSniperDelayLabel')}</label>
                         <input
@@ -1919,7 +1900,6 @@ function App() {
                         <button
                           className="btn-primary btn-large"
                           onClick={handleTikettiSniperStart}
-                          disabled={!tikettiSessionCookie.trim()}
                         >
                           {t('tikettiSniperStartBtn')}
                         </button>
@@ -1931,7 +1911,17 @@ function App() {
                     </div>
 
                     {tikettiSniperSuccess && (
-                      <div className="tiketti-sniper-success">{t('tikettiSniperSuccess')}</div>
+                      <div className="tiketti-sniper-success">
+                        <p>{t('tikettiSniperSuccessAlert')}</p>
+                        <a
+                          href={tikettiSniperEvent.url || tikettiSniperUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-primary btn-large tiketti-go-btn"
+                        >
+                          {t('tikettiSniperGoToTiketti')}
+                        </a>
+                      </div>
                     )}
                   </div>
                 )}
