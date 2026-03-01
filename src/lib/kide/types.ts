@@ -26,6 +26,7 @@ export type EventResponse = {
     timeUntilSalesStart?: number
     dateSalesFrom?: string
     salesEnded?: boolean
+    mediaFilename?: string
   }
   variants: KideVariant[]
 }

@@ -389,10 +389,13 @@ function App() {
   const [lastMonitoringConfig, setLastMonitoringConfig] = useState<MonitoringConfig | null>(null)
 
   const [eventName, setEventName] = useState('')
+  const [eventImageUrl, setEventImageUrl] = useState('')
   const [eventVariants, setEventVariants] = useState<Array<{ inventoryId: string; name: string; price: number }>>([])
   const [selectedVariantId, setSelectedVariantId] = useState('')
   const [fetchingEvent, setFetchingEvent] = useState(false)
   const [showTokenGuide, setShowTokenGuide] = useState(false)
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
+  const [showQtyPicker, setShowQtyPicker] = useState(false)
 
   const [language, setLanguage] = useState<LanguageCode>(() => {
     const saved = localStorage.getItem('kidehiiri-language') as LanguageCode | null
@@ -540,6 +543,7 @@ function App() {
       try {
         const data = await fetchEventProducts(eventUrl)
         setEventName(data.product.name)
+        setEventImageUrl(data.product.mediaFilename || '')
         const variants = data.variants.map((v) => ({
           inventoryId: v.inventoryId,
           name: v.name,
@@ -551,6 +555,7 @@ function App() {
         }
       } catch {
         setEventName('')
+        setEventImageUrl('')
         setEventVariants([])
         setSelectedVariantId('')
       } finally {
@@ -1104,24 +1109,31 @@ function App() {
 
               {eventName && !fetchingEvent && (
                 <div className="event-card">
-                  <p className="event-card-label">Event</p>
-                  <p className="event-card-name">{eventName}</p>
-                  {eventVariants.length > 0 && (
-                    <label className="variant-select-label">
-                      <span>{t('selectTicketType')}</span>
-                      <select
-                        value={selectedVariantId}
-                        onChange={(e) => setSelectedVariantId(e.target.value)}
-                        className="variant-select"
-                      >
-                        {eventVariants.map((v) => (
-                          <option key={v.inventoryId} value={v.inventoryId}>
-                            {v.name} — €{(v.price / 100).toFixed(2)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                  {eventImageUrl && (
+                    <div className="event-card-img">
+                      <img src={eventImageUrl} alt={eventName} loading="lazy" />
+                    </div>
                   )}
+                  <div className="event-card-info">
+                    <p className="event-card-label">Event</p>
+                    <p className="event-card-name">{eventName}</p>
+                    {eventVariants.length > 0 && (
+                      <label className="variant-select-label">
+                        <span>{t('selectTicketType')}</span>
+                        <select
+                          value={selectedVariantId}
+                          onChange={(e) => setSelectedVariantId(e.target.value)}
+                          className="variant-select"
+                        >
+                          {eventVariants.map((v) => (
+                            <option key={v.inventoryId} value={v.inventoryId}>
+                              {v.name} — €{(v.price / 100).toFixed(2)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                  </div>
                 </div>
               )}
 
