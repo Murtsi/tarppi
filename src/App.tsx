@@ -2049,6 +2049,18 @@ function App() {
                                   <span className="tiketti-meta-item">{ev.venue}</span>
                                   <span className="tiketti-meta-item">{ev.city}</span>
                                 </div>
+                                {/* Ticket status badge */}
+                                {ev.availableCount != null && ev.totalCount != null && ev.totalCount > 0 ? (
+                                  <span className={`tiketti-status-badge ${ev.availableCount === 0 ? 'sold-out' : ev.availableCount < ev.totalCount * 0.2 ? 'limited' : 'available'}`}>
+                                    {ev.availableCount === 0
+                                      ? t('tikettiSoldOut')
+                                      : ev.availableCount < ev.totalCount * 0.2
+                                        ? `${ev.availableCount} / ${ev.totalCount} ${t('tikettiLimitedLeft')}`
+                                        : `${ev.availableCount} / ${ev.totalCount} ${t('tikettiAvailable')}`}
+                                  </span>
+                                ) : ev.availableCount === 0 ? (
+                                  <span className="tiketti-status-badge sold-out">{t('tikettiSoldOut')}</span>
+                                ) : null}
                                 <div className="tiketti-card-footer">
                                   <span className="tiketti-price">
                                     {ev.price > 0 ? `${ev.price.toFixed(2)} \u20AC` : 'Free'}
