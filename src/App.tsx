@@ -1192,16 +1192,68 @@ function App() {
                 </div>
               )}
 
-              <label>
-                {t('quantity')}
-                <input type="number" min={1} max={50} value={quantity} onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))} />
-              </label>
+              <div>
+                <label style={{ marginBottom: '0.25rem' }}>{t('quantity')}</label>
+                <div className="qty-picker-wrapper">
+                  <button
+                    type="button"
+                    className={`qty-picker-trigger ${showQtyPicker ? 'open' : ''}`}
+                    onClick={() => setShowQtyPicker(!showQtyPicker)}
+                  >
+                    <span>{quantity} {quantity === 1 ? 'ticket' : 'tickets'}</span>
+                    <span className="arrow">▼</span>
+                  </button>
+                  {showQtyPicker && (
+                    <div className="qty-picker-dropdown">
+                      {[1, 2, 3, 4, 5, 6, 8, 10, 15, 20].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          className={quantity === n ? 'selected' : ''}
+                          onClick={() => { setQuantity(n); setShowQtyPicker(false) }}
+                        >
+                          {n} {n === 1 ? 'ticket' : 'tickets'}
+                        </button>
+                      ))}
+                      <div className="qty-custom-row">
+                        <input
+                          type="number"
+                          min={1}
+                          max={50}
+                          placeholder="Custom..."
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              const val = Math.max(1, Math.min(50, parseInt((e.target as HTMLInputElement).value) || 1))
+                              setQuantity(val)
+                              setShowQtyPicker(false)
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-              <label>
-                {t('proxyUrl')} <span className="label-hint">{t('proxyUrlOptional')}</span>
-                <input type="text" placeholder={t('proxyUrlPlaceholder')} value={proxyUrl} onChange={(e) => setProxyUrl(e.target.value)} />
-                <div className="hint-text">{t('proxyUrlHint')}</div>
-              </label>
+              {/* Collapsible advanced options */}
+              <button
+                type="button"
+                className="advanced-toggle"
+                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+              >
+                <span className={`toggle-arrow ${showAdvancedOptions ? 'open' : ''}`}>▶</span>
+                {t('advancedOptions')}
+              </button>
+
+              {showAdvancedOptions && (
+                <div className="advanced-content">
+                  <label>
+                    {t('proxyUrl')} <span className="label-hint">{t('proxyUrlOptional')}</span>
+                    <input type="text" placeholder={t('proxyUrlPlaceholder')} value={proxyUrl} onChange={(e) => setProxyUrl(e.target.value)} />
+                    <div className="hint-text">{t('proxyUrlHint')}</div>
+                  </label>
+                </div>
+              )}
             </>
           )}
 

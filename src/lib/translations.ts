@@ -29,6 +29,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     proxyUrlOptional: '(optional — bypass rate limits)',
     proxyUrlPlaceholder: 'http://proxy.example.com:8080',
     proxyUrlHint: 'Leave empty to connect directly. Proxy helps avoid rate limiting from single IP.',
+    advancedOptions: 'Advanced options',
     validateToken: 'Validate token',
     validating: 'Validating...',
     tokenStatus: 'Status:',
@@ -274,6 +275,9 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tikettiVenue: 'Venue',
     tikettiCity: 'City',
     tikettiViewOnSite: 'View on Tiketti.fi',
+    tikettiSoldOut: 'Sold out',
+    tikettiLimitedLeft: 'left',
+    tikettiAvailable: 'available',
     tikettiLastUpdated: 'Last updated',
 
     // Tiketti sub-tabs
@@ -347,6 +351,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     proxyUrlOptional: '(valinnainen — ohita nopeudenrajoitukset)',
     proxyUrlPlaceholder: 'http://proxy.example.com:8080',
     proxyUrlHint: 'Jätä tyhjäksi suoraan muodostettavaa yhteyttä varten. Proxy auttaa välttämään IP-pohjaisen nopeudenrajoituksen.',
+    advancedOptions: 'Lisäasetukset',
     validateToken: 'Vahvista token',
     validating: 'Vahvistetaan...',
     tokenStatus: 'Tila:',
@@ -591,6 +596,9 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tikettiVenue: 'Paikka',
     tikettiCity: 'Kaupunki',
     tikettiViewOnSite: 'Katso tiketti.fi:ssä',
+    tikettiSoldOut: 'Loppuunmyyty',
+    tikettiLimitedLeft: 'jäljellä',
+    tikettiAvailable: 'saatavilla',
     tikettiLastUpdated: 'Päivitetty viimeksi',
 
     // Tiketti sub-tabs
