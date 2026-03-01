@@ -8,17 +8,17 @@
 }
 
 :root {
-  --primary: #8b5cf6;
-  --primary-dark: #7c3aed;
-  --primary-light: #a78bfa;
-  --success: #10b981;
+  --primary: #22c55e;
+  --primary-dark: #16a34a;
+  --primary-light: #4ade80;
+  --success: #22c55e;
   --danger: #ef4444;
   --warning: #f59e0b;
-  --dark: #0f172a;
-  --light: #f1f5f9;
-  --gray: #64748b;
-  --card-bg: #1e293b;
-  --card-border: #334155;
+  --dark: #0a0a0a;
+  --light: #e2e8f0;
+  --gray: #6b7280;
+  --card-bg: #111311;
+  --card-border: #1e2a1e;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
@@ -175,9 +175,9 @@
 }
 
 .lang-btn.active {
-  background: rgba(139, 92, 246, 0.3);
+  background: rgba(34, 197, 94, 0.3);
   color: #ffffff;
-  border: 1px solid rgba(139, 92, 246, 0.5);
+  border: 1px solid rgba(34, 197, 94, 0.5);
 }
 
 .lang-sep {
@@ -297,7 +297,7 @@
 
 .step-complete {
   border-color: var(--success);
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(34, 197, 94, 0.1);
   color: var(--success);
 }
 
@@ -383,7 +383,7 @@ select {
   padding: 0.7rem 0.75rem;
   font-size: 16px; /* Prevents iOS zoom */
   transition: all 0.2s ease;
-  background: #0f172a;
+  background: #0a0a0a;
   color: var(--light);
   width: 100%;
 }
@@ -396,8 +396,8 @@ input[type='datetime-local']:focus,
 select:focus {
   outline: none;
   border-color: var(--primary);
-  background: #1a1f35;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  background: #0d130d;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
 }
 
 input[type='password'] {
@@ -550,7 +550,7 @@ input[type='checkbox'] {
 }
 
 .summary-grid > div {
-  background: #0f172a;
+  background: #0a0a0a;
   border: 1px solid var(--card-border);
   border-radius: 10px;
   padding: 0.75rem;
@@ -623,14 +623,15 @@ button:disabled {
 
 .btn-primary {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color: #ffffff;
+  color: #000000;
+  font-weight: 600;
   flex: 1;
   min-height: 44px; /* Touch target */
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
 }
 
 .btn-primary:active:not(:disabled) {
@@ -638,14 +639,15 @@ button:disabled {
 }
 
 .btn-secondary {
-  background: var(--light);
-  color: var(--dark);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--light);
+  border: 1px solid var(--card-border);
   flex: 1;
   min-height: 44px;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #e5e7eb;
+  background: rgba(255, 255, 255, 0.14);
   transform: translateY(-2px);
 }
 
@@ -663,13 +665,14 @@ button.danger {
 /* ─── Success banner ─────────────────────────────────────────────────────── */
 
 .success-banner {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #000000;
+  font-weight: 600;
   padding: 1.25rem;
   border-radius: var(--radius-md);
   margin-bottom: 1rem;
   animation: slideDown 0.3s ease;
-  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 10px 25px rgba(34, 197, 94, 0.2);
 }
 
 @media (min-width: 640px) {
@@ -1015,7 +1018,7 @@ button.danger {
 }
 
 .tab-btn:hover {
-  background: rgba(139, 92, 246, 0.1);
+  background: rgba(34, 197, 94, 0.1);
   color: var(--primary-light);
 }
 
@@ -1154,11 +1157,11 @@ button.danger {
 }
 
 .city-picker-option:hover {
-  background: rgba(139, 92, 246, 0.15);
+  background: rgba(34, 197, 94, 0.15);
 }
 
 .city-picker-option.selected {
-  background: rgba(139, 92, 246, 0.25);
+  background: rgba(34, 197, 94, 0.25);
   color: var(--primary-light);
   font-weight: 600;
 }
@@ -1195,7 +1198,7 @@ button.danger {
 /* Scan meta info banner */
 .scan-meta {
   padding: 0.6rem 0.9rem;
-  background: rgba(139, 92, 246, 0.12);
+  background: rgba(34, 197, 94, 0.12);
   border: 1px solid var(--primary);
   border-radius: var(--radius-sm);
   color: var(--primary-light);
@@ -1208,7 +1211,7 @@ button.danger {
   font-size: 0.85rem;
   font-weight: 500;
   padding: 0.5rem 0.75rem;
-  background: rgba(139, 92, 246, 0.1);
+  background: rgba(34, 197, 94, 0.1);
   border-radius: var(--radius-sm);
   border-left: 3px solid var(--primary);
   animation: pulse-opacity 1.2s ease-in-out infinite;
@@ -1405,7 +1408,7 @@ button.danger {
   padding: 0.5rem 1rem;
   border: 1px solid var(--success);
   border-radius: var(--radius-sm);
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(34, 197, 94, 0.15);
   color: var(--success);
   font-weight: 600;
   font-size: 0.85rem;
@@ -1415,7 +1418,7 @@ button.danger {
 }
 
 .btn-snipe:hover {
-  background: rgba(16, 185, 129, 0.3);
+  background: rgba(34, 197, 94, 0.3);
 }
 
 /* Feature breakdown */
@@ -1519,12 +1522,12 @@ button.danger {
 }
 
 .status-upcoming {
-  background: rgba(99, 102, 241, 0.2);
-  color: #818cf8;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--primary-light);
 }
 
 .status-on-sale {
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(34, 197, 94, 0.15);
   color: var(--success);
 }
 
@@ -1564,9 +1567,9 @@ button.danger {
 }
 
 .ai-badge-buy {
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(34, 197, 94, 0.15);
   color: var(--success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
 .ai-badge-maybe {
@@ -1603,7 +1606,7 @@ button.danger {
 }
 
 .ai-group-header.decision-buy {
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(34, 197, 94, 0.1);
   color: var(--success);
   border-left: 3px solid var(--success);
 }
@@ -1823,4 +1826,93 @@ button.danger {
 .scan-meta-free {
   color: var(--gray);
   opacity: 0.7;
+}
+
+/* ─── Token guide link ───────────────────────────────────────────────────── */
+
+.token-guide-link {
+  background: none;
+  border: none;
+  color: var(--primary-light);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  margin-top: 0.25rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+
+.token-guide-link:hover {
+  color: var(--primary);
+}
+
+/* ─── Token guide modal ──────────────────────────────────────────────────── */
+
+.token-guide-modal {
+  max-width: 600px;
+}
+
+.token-guide-intro {
+  color: var(--gray);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.token-guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.token-guide-step {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.token-guide-step-number {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #000;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.1rem;
+}
+
+.token-guide-step h4 {
+  margin: 0 0 0.2rem;
+  font-size: 0.9rem;
+  color: var(--light);
+}
+
+.token-guide-step p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--gray);
+  line-height: 1.5;
+}
+
+.token-guide-note {
+  margin-top: 1.5rem;
+  padding: 0.75rem;
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 3px solid var(--warning);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  color: var(--warning);
+  line-height: 1.5;
+}
+
+.token-guide-close {
+  margin-top: 1.25rem;
+  width: 100%;
 }

@@ -31,6 +31,70 @@ const formatMs = (ms: number): string => {
   return `${Math.floor(total / 60)}m ${total % 60}s`
 }
 
+// ─── Token Guide Modal Component ───────────────────────────────────────────────
+
+const TokenGuideContent = ({ onClose, t }: { onClose: () => void; t: (key: string) => string }) => (
+  <div className="info-modal-overlay" onClick={onClose}>
+    <div className="info-modal token-guide-modal" onClick={(e) => e.stopPropagation()}>
+      <button className="info-close-btn" onClick={onClose}>✕</button>
+
+      <h2>{t('tokenGuideTitle')}</h2>
+      <p className="token-guide-intro">{t('tokenGuideIntro')}</p>
+
+      <div className="token-guide-steps">
+        <div className="token-guide-step">
+          <div className="token-guide-step-number">1</div>
+          <div>
+            <h4>{t('tokenGuideStep1Title')}</h4>
+            <p>{t('tokenGuideStep1Text')}</p>
+          </div>
+        </div>
+        <div className="token-guide-step">
+          <div className="token-guide-step-number">2</div>
+          <div>
+            <h4>{t('tokenGuideStep2Title')}</h4>
+            <p>{t('tokenGuideStep2Text')}</p>
+          </div>
+        </div>
+        <div className="token-guide-step">
+          <div className="token-guide-step-number">3</div>
+          <div>
+            <h4>{t('tokenGuideStep3Title')}</h4>
+            <p>{t('tokenGuideStep3Text')}</p>
+          </div>
+        </div>
+        <div className="token-guide-step">
+          <div className="token-guide-step-number">4</div>
+          <div>
+            <h4>{t('tokenGuideStep4Title')}</h4>
+            <p>{t('tokenGuideStep4Text')}</p>
+          </div>
+        </div>
+        <div className="token-guide-step">
+          <div className="token-guide-step-number">5</div>
+          <div>
+            <h4>{t('tokenGuideStep5Title')}</h4>
+            <p>{t('tokenGuideStep5Text')}</p>
+          </div>
+        </div>
+        <div className="token-guide-step">
+          <div className="token-guide-step-number">6</div>
+          <div>
+            <h4>{t('tokenGuideStep6Title')}</h4>
+            <p>{t('tokenGuideStep6Text')}</p>
+          </div>
+        </div>
+      </div>
+
+      <p className="token-guide-note">{t('tokenGuideNote')}</p>
+
+      <button type="button" className="btn-primary token-guide-close" onClick={onClose}>
+        {t('tokenGuideClose')}
+      </button>
+    </div>
+  </div>
+)
+
 // ─── Info Modal Component ──────────────────────────────────────────────────────
 
 const InfoModalContent = ({ onClose, t }: { onClose: () => void; t: (key: string) => string }) => (
@@ -117,7 +181,7 @@ const AiBadge = ({ ai }: { ai?: AiScore }) => {
   if (!ai) return null
   return (
     <span className={`ai-badge ai-badge-${ai.label.toLowerCase()}`} title={`AI: ${pctStr(ai.buy_probability)} buy · v${ai.model_version}`}>
-      🤖 {ai.label} ({pctStr(ai.buy_probability)})
+      AI {ai.label} ({pctStr(ai.buy_probability)})
     </span>
   )
 }
@@ -198,11 +262,11 @@ const VariantList = ({ variants, t }: { variants: KideVariant[]; t: (k: string) 
 function salesStatusBadge(status?: SalesStatus): { label: string; className: string } | null {
   if (!status) return null
   switch (status) {
-    case 'upcoming': return { label: '🔜 Upcoming', className: 'status-upcoming' }
-    case 'on_sale': return { label: '🟢 On sale', className: 'status-on-sale' }
-    case 'selling_fast': return { label: '🔥 Selling fast', className: 'status-selling-fast' }
-    case 'almost_sold_out': return { label: '⚡ Almost sold out', className: 'status-almost-sold-out' }
-    case 'paused': return { label: '⏸️ Paused', className: 'status-paused' }
+    case 'upcoming': return { label: 'Upcoming', className: 'status-upcoming' }
+    case 'on_sale': return { label: 'On sale', className: 'status-on-sale' }
+    case 'selling_fast': return { label: 'Selling fast', className: 'status-selling-fast' }
+    case 'almost_sold_out': return { label: 'Almost sold out', className: 'status-almost-sold-out' }
+    case 'paused': return { label: 'Paused', className: 'status-paused' }
     default: return null
   }
 }
@@ -248,6 +312,7 @@ function App() {
   const [eventVariants, setEventVariants] = useState<Array<{ inventoryId: string; name: string; price: number }>>([])
   const [selectedVariantId, setSelectedVariantId] = useState('')
   const [fetchingEvent, setFetchingEvent] = useState(false)
+  const [showTokenGuide, setShowTokenGuide] = useState(false)
 
   const [language, setLanguage] = useState<LanguageCode>(() => {
     const saved = localStorage.getItem('kidehiiri-language') as LanguageCode | null
@@ -325,12 +390,12 @@ function App() {
       try {
         const props = await fetchExtraProperties()
         if (props?.hash) {
-          appendLogRef.current(`🔑 Backend properties ready: ${props.headerKey}`)
+          appendLogRef.current(`Backend properties ready: ${props.headerKey}`)
         } else {
-          appendLogRef.current('⚠️ Using cached backend properties')
+          appendLogRef.current('Using cached backend properties')
         }
       } catch {
-        appendLogRef.current('⚠️ Could not reach backend for properties')
+        appendLogRef.current('Could not reach backend for properties')
       }
 
       // Auto-validate saved token
@@ -345,14 +410,14 @@ function App() {
             setTokenUser(`${result.user.firstName || ''} ${result.user.lastName || ''}`.trim())
             setTokenEmail(result.user.email || '')
             if (result.info?.expiresAt) setTokenExpiresAt(new Date(result.info.expiresAt))
-            appendLogRef.current('✅ Token auto-validated')
+            appendLogRef.current('Token auto-validated')
           } else {
             setTokenStatus('invalid')
-            appendLogRef.current('❌ Remembered token is invalid')
+            appendLogRef.current('Remembered token is invalid')
           }
         } catch (error) {
           setTokenStatus('error')
-          appendLogRef.current(`❌ Error validating token: ${error instanceof Error ? error.message : String(error)}`)
+          appendLogRef.current(`Error validating token: ${error instanceof Error ? error.message : String(error)}`)
         }
       }
     }
@@ -417,18 +482,18 @@ function App() {
         const selectedVariant = available.find((v) => v.inventoryId === variantId)
 
         if (selectedVariant) {
-          log(`🎯 Found selected ticket: ${selectedVariant.name}! (availability: ${selectedVariant.availability})`)
+          log(`Found selected ticket: ${selectedVariant.name}! (availability: ${selectedVariant.availability})`)
           setMatchCount((c) => c + 1)
 
           const quantityToBuy = Math.min(targetQty, selectedVariant.availability)
-          log(`🛒 Attempting to add ${quantityToBuy} ticket(s) to cart...`)
+          log(`Attempting to add ${quantityToBuy} ticket(s) to cart...`)
 
           try {
             const result = await addToCart(token, variantId, quantityToBuy)
             log(result.message)
 
             if (result.success) {
-              log(`✅ Success! Added ${quantityToBuy} ticket(s) to cart`)
+              log(`Success! Added ${quantityToBuy} ticket(s) to cart`)
               setShowSuccessMessage(true)
               setSuccessTicketName(selectedVariant.name)
               setStatus('stopped')
@@ -441,17 +506,17 @@ function App() {
             } else if (result.retryWithQuantity && result.retryWithQuantity > 0) {
               configRef.current.quantity = result.retryWithQuantity
               setQuantity(result.retryWithQuantity)
-              log(`⏳ Will retry next poll with quantity ${result.retryWithQuantity}...`)
+              log(`Will retry next poll with quantity ${result.retryWithQuantity}...`)
             } else {
-              log(`⚠️ Failed: ${result.message}`)
+              log(`Failed: ${result.message}`)
               log('Retrying next poll...')
             }
           } catch (addErr) {
-            log(`❌ Error adding to cart: ${addErr instanceof Error ? addErr.message : String(addErr)}`)
+            log(`Error adding to cart: ${addErr instanceof Error ? addErr.message : String(addErr)}`)
             log('Retrying next poll...')
           }
         } else {
-          log(`⏳ Waiting for ${product.name}... (${available.length}/${variants.length} available)`)
+          log(`Waiting for ${product.name}... (${available.length}/${variants.length} available)`)
         }
       } catch (err) {
         log(`Check error: ${err instanceof Error ? err.message : String(err)}`)
@@ -625,6 +690,7 @@ function App() {
   return (
     <>
       {infoPanelOpen && <InfoModalContent onClose={() => setInfoPanelOpen(false)} t={t} />}
+      {showTokenGuide && <TokenGuideContent onClose={() => setShowTokenGuide(false)} t={t} />}
 
       <main className="app-shell">
         <header className="app-header">
@@ -639,7 +705,7 @@ function App() {
               <button className={`lang-btn ${language === 'fi' ? 'active' : ''}`} onClick={() => setLanguage('fi')}>FI</button>
             </div>
             <button className="info-button" onClick={() => setInfoPanelOpen(true)} title={t('technicalDetails')}>
-              ℹ️
+              i
             </button>
           </div>
         </header>
@@ -701,7 +767,7 @@ function App() {
 
               {eventName && !fetchingEvent && (
                 <div className="event-card">
-                  <p className="event-card-label">📅 Event</p>
+                  <p className="event-card-label">Event</p>
                   <p className="event-card-name">{eventName}</p>
                   {eventVariants.length > 0 && (
                     <label className="variant-select-label">
@@ -727,7 +793,7 @@ function App() {
                 <div className="token-valid-card">
                   <div className="token-valid-content">
                     <div className="token-valid-info">
-                      <p className="text-success"><strong>✅ {t('tokenValid')}</strong></p>
+                      <p className="text-success"><strong>{t('tokenValid')}</strong></p>
                       {tokenUser && <p className="token-user">{tokenUser}</p>}
                       {tokenEmail && <p className="token-email">{tokenEmail}</p>}
                       {tokenExpiresAt && (
@@ -754,6 +820,9 @@ function App() {
                     />
                     <div className="token-warning-text">{t('tokenWarning')}</div>
                   </label>
+                  <button type="button" className="token-guide-link" onClick={() => setShowTokenGuide(true)}>
+                    {t('tokenHowToGet')}
+                  </button>
                   <div className="button-row">
                     <button type="button" onClick={handleValidateToken} disabled={tokenStatus === 'validating'} className="btn-primary">
                       {tokenStatus === 'validating' ? t('validating') : t('validateToken')}
@@ -1007,11 +1076,11 @@ function App() {
                             <div className="scorer-card-info">
                               <span className="scorer-event-name">{ev.name}</span>
                               <div className="scorer-event-meta">
-                                {ev.organiser && <span className="scorer-organiser">🏢 {ev.organiser}</span>}
+                                {ev.organiser && <span className="scorer-organiser">{ev.organiser}</span>}
                                 {statusBadge && <span className={`scorer-status-badge ${statusBadge.className}`}>{statusBadge.label}</span>}
-                                {ev.likes_total != null && ev.likes_total > 0 && <span className="scorer-likes">❤️ {ev.likes_total}</span>}
+                                {ev.likes_total != null && ev.likes_total > 0 && <span className="scorer-likes">{ev.likes_total}</span>}
                                 {ev.base_price_eur != null && ev.base_price_eur > 0 && <span className="scorer-price">€{ev.base_price_eur}</span>}
-                                {eventDate && <span className="scorer-date">📅 {eventDate}</span>}
+                                {eventDate && <span className="scorer-date">{eventDate}</span>}
                               </div>
                               <span className="scorer-reason">{ev.reason}</span>
                             </div>
@@ -1032,25 +1101,25 @@ function App() {
                               {fullEvent && (
                                 <div className="event-detail-grid">
                                   {fullEvent.base_price_eur != null && fullEvent.max_price_eur != null && fullEvent.max_price_eur !== fullEvent.base_price_eur && (
-                                    <div className="detail-item"><span className="detail-label">💰 {t('priceRange')}</span><span className="detail-value">€{fullEvent.base_price_eur} – €{fullEvent.max_price_eur}</span></div>
+                                    <div className="detail-item"><span className="detail-label">{t('priceRange')}</span><span className="detail-value">€{fullEvent.base_price_eur} – €{fullEvent.max_price_eur}</span></div>
                                   )}
                                   {fullEvent.availability_pct != null && (
-                                    <div className="detail-item"><span className="detail-label">📊 {t('availabilityLabel')}</span><span className="detail-value">{fullEvent.availability_pct}% {t('remaining')}</span></div>
+                                    <div className="detail-item"><span className="detail-label">{t('availabilityLabel')}</span><span className="detail-value">{fullEvent.availability_pct}% {t('remaining')}</span></div>
                                   )}
                                   {fullEvent.sales_start_time && (
-                                    <div className="detail-item"><span className="detail-label">🕐 {t('salesStart')}</span><span className="detail-value">{formatEventDate(fullEvent.sales_start_time) || fullEvent.sales_start_time}</span></div>
+                                    <div className="detail-item"><span className="detail-label">{t('salesStart')}</span><span className="detail-value">{formatEventDate(fullEvent.sales_start_time) || fullEvent.sales_start_time}</span></div>
                                   )}
                                   {fullEvent.city && (
-                                    <div className="detail-item"><span className="detail-label">📍 {t('cityLabel')}</span><span className="detail-value">{fullEvent.city}</span></div>
+                                    <div className="detail-item"><span className="detail-label">{t('cityLabel')}</span><span className="detail-value">{fullEvent.city}</span></div>
                                   )}
                                   {fullEvent.hours_since_published != null && (
-                                    <div className="detail-item"><span className="detail-label">🕒 {t('publishedAgo')}</span><span className="detail-value">{fullEvent.hours_since_published < 24 ? `${Math.round(fullEvent.hours_since_published)}h` : `${Math.round(fullEvent.hours_since_published / 24)}d`} {t('ago')}</span></div>
+                                    <div className="detail-item"><span className="detail-label">{t('publishedAgo')}</span><span className="detail-value">{fullEvent.hours_since_published < 24 ? `${Math.round(fullEvent.hours_since_published)}h` : `${Math.round(fullEvent.hours_since_published / 24)}d`} {t('ago')}</span></div>
                                   )}
                                 </div>
                               )}
 
                               {/* Ticket variants */}
-                              <h4>🎫 {t('ticketOptions')}</h4>
+                              <h4>{t('ticketOptions')}</h4>
                               {variantData?.loading && <p className="variants-loading">{t('loadingVariants')}</p>}
                               {variantData?.error && <p className="variants-error">{variantData.error}</p>}
                               {variantData && !variantData.loading && !variantData.error && (
@@ -1123,7 +1192,7 @@ function App() {
                       return (
                         <div key={group} className={`ai-group ai-group-${group.toLowerCase()}`}>
                           <h3 className={`ai-group-header ${decisionClass(group)}`}>
-                            {group === 'BUY' ? '🔥' : group === 'MAYBE' ? '🤔' : '⏭️'} {t(`scorerAi${group[0] + group.slice(1).toLowerCase()}`)} ({groupEvents.length})
+                            {t(`scorerAi${group[0] + group.slice(1).toLowerCase()}`)} ({groupEvents.length})
                           </h3>
                           {groupEvents
                             .sort((a, b) => (b.ai_score?.buy_probability ?? 0) - (a.ai_score?.buy_probability ?? 0) || b.resell_score - a.resell_score)
@@ -1141,11 +1210,11 @@ function App() {
                                     <div className="scorer-card-info">
                                       <span className="scorer-event-name">{ev.name}</span>
                                       <div className="scorer-event-meta">
-                                        {ev.organiser && <span className="scorer-organiser">🏢 {ev.organiser}</span>}
+                                        {ev.organiser && <span className="scorer-organiser">{ev.organiser}</span>}
                                         {statusBadge && <span className={`scorer-status-badge ${statusBadge.className}`}>{statusBadge.label}</span>}
-                                        {ev.likes_total != null && ev.likes_total > 0 && <span className="scorer-likes">❤️ {ev.likes_total}</span>}
+                                        {ev.likes_total != null && ev.likes_total > 0 && <span className="scorer-likes">{ev.likes_total}</span>}
                                         {ev.base_price_eur != null && ev.base_price_eur > 0 && <span className="scorer-price">€{ev.base_price_eur}</span>}
-                                        {eventDate && <span className="scorer-date">📅 {eventDate}</span>}
+                                        {eventDate && <span className="scorer-date">{eventDate}</span>}
                                       </div>
                                       <span className="scorer-reason">{ev.reason}</span>
                                     </div>
@@ -1165,24 +1234,24 @@ function App() {
                                       {/* Event details */}
                                       <div className="event-detail-grid">
                                         {ev.base_price_eur != null && ev.max_price_eur != null && ev.max_price_eur !== ev.base_price_eur && (
-                                          <div className="detail-item"><span className="detail-label">💰 {t('priceRange')}</span><span className="detail-value">€{ev.base_price_eur} – €{ev.max_price_eur}</span></div>
+                                          <div className="detail-item"><span className="detail-label">{t('priceRange')}</span><span className="detail-value">€{ev.base_price_eur} – €{ev.max_price_eur}</span></div>
                                         )}
                                         {ev.availability_pct != null && (
-                                          <div className="detail-item"><span className="detail-label">📊 {t('availabilityLabel')}</span><span className="detail-value">{ev.availability_pct}% {t('remaining')}</span></div>
+                                          <div className="detail-item"><span className="detail-label">{t('availabilityLabel')}</span><span className="detail-value">{ev.availability_pct}% {t('remaining')}</span></div>
                                         )}
                                         {ev.sales_start_time && (
-                                          <div className="detail-item"><span className="detail-label">🕐 {t('salesStart')}</span><span className="detail-value">{formatEventDate(ev.sales_start_time) || ev.sales_start_time}</span></div>
+                                          <div className="detail-item"><span className="detail-label">{t('salesStart')}</span><span className="detail-value">{formatEventDate(ev.sales_start_time) || ev.sales_start_time}</span></div>
                                         )}
                                         {ev.city && (
-                                          <div className="detail-item"><span className="detail-label">📍 {t('cityLabel')}</span><span className="detail-value">{ev.city}</span></div>
+                                          <div className="detail-item"><span className="detail-label">{t('cityLabel')}</span><span className="detail-value">{ev.city}</span></div>
                                         )}
                                         {ev.hours_since_published != null && (
-                                          <div className="detail-item"><span className="detail-label">🕒 {t('publishedAgo')}</span><span className="detail-value">{ev.hours_since_published < 24 ? `${Math.round(ev.hours_since_published)}h` : `${Math.round(ev.hours_since_published / 24)}d`} {t('ago')}</span></div>
+                                          <div className="detail-item"><span className="detail-label">{t('publishedAgo')}</span><span className="detail-value">{ev.hours_since_published < 24 ? `${Math.round(ev.hours_since_published)}h` : `${Math.round(ev.hours_since_published / 24)}d`} {t('ago')}</span></div>
                                         )}
                                       </div>
 
                                       {/* Ticket variants */}
-                                      <h4>🎫 {t('ticketOptions')}</h4>
+                                      <h4>{t('ticketOptions')}</h4>
                                       {variantData?.loading && <p className="variants-loading">{t('loadingVariants')}</p>}
                                       {variantData?.error && <p className="variants-error">{variantData.error}</p>}
                                       {variantData && !variantData.loading && !variantData.error && (
@@ -1271,11 +1340,11 @@ function App() {
                               <div className="scorer-card-info">
                                 <span className="scorer-event-name">{ev.name}</span>
                                 <div className="scorer-event-meta">
-                                  {ev.organiser && <span className="scorer-organiser">🏢 {ev.organiser}</span>}
+                                  {ev.organiser && <span className="scorer-organiser">{ev.organiser}</span>}
                                   {statusBadge && <span className={`scorer-status-badge ${statusBadge.className}`}>{statusBadge.label}</span>}
-                                  {ev.likes_total != null && ev.likes_total > 0 && <span className="scorer-likes">❤️ {ev.likes_total}</span>}
+                                  {ev.likes_total != null && ev.likes_total > 0 && <span className="scorer-likes">{ev.likes_total}</span>}
                                   {ev.base_price_eur != null && ev.base_price_eur > 0 && <span className="scorer-price">€{ev.base_price_eur}</span>}
-                                  {eventDate && <span className="scorer-date">📅 {eventDate}</span>}
+                                  {eventDate && <span className="scorer-date">{eventDate}</span>}
                                 </div>
                                 <span className="scorer-reason">{ev.reason}</span>
                               </div>
@@ -1295,24 +1364,24 @@ function App() {
                                 {/* Event details */}
                                 <div className="event-detail-grid">
                                   {ev.base_price_eur != null && ev.max_price_eur != null && ev.max_price_eur !== ev.base_price_eur && (
-                                    <div className="detail-item"><span className="detail-label">💰 {t('priceRange')}</span><span className="detail-value">€{ev.base_price_eur} – €{ev.max_price_eur}</span></div>
+                                    <div className="detail-item"><span className="detail-label">{t('priceRange')}</span><span className="detail-value">€{ev.base_price_eur} – €{ev.max_price_eur}</span></div>
                                   )}
                                   {ev.availability_pct != null && (
-                                    <div className="detail-item"><span className="detail-label">📊 {t('availabilityLabel')}</span><span className="detail-value">{ev.availability_pct}% {t('remaining')}</span></div>
+                                    <div className="detail-item"><span className="detail-label">{t('availabilityLabel')}</span><span className="detail-value">{ev.availability_pct}% {t('remaining')}</span></div>
                                   )}
                                   {ev.sales_start_time && (
-                                    <div className="detail-item"><span className="detail-label">🕐 {t('salesStart')}</span><span className="detail-value">{formatEventDate(ev.sales_start_time) || ev.sales_start_time}</span></div>
+                                    <div className="detail-item"><span className="detail-label">{t('salesStart')}</span><span className="detail-value">{formatEventDate(ev.sales_start_time) || ev.sales_start_time}</span></div>
                                   )}
                                   {ev.city && (
-                                    <div className="detail-item"><span className="detail-label">📍 {t('cityLabel')}</span><span className="detail-value">{ev.city}</span></div>
+                                    <div className="detail-item"><span className="detail-label">{t('cityLabel')}</span><span className="detail-value">{ev.city}</span></div>
                                   )}
                                   {ev.hours_since_published != null && (
-                                    <div className="detail-item"><span className="detail-label">🕒 {t('publishedAgo')}</span><span className="detail-value">{ev.hours_since_published < 24 ? `${Math.round(ev.hours_since_published)}h` : `${Math.round(ev.hours_since_published / 24)}d`} {t('ago')}</span></div>
+                                    <div className="detail-item"><span className="detail-label">{t('publishedAgo')}</span><span className="detail-value">{ev.hours_since_published < 24 ? `${Math.round(ev.hours_since_published)}h` : `${Math.round(ev.hours_since_published / 24)}d`} {t('ago')}</span></div>
                                   )}
                                 </div>
 
                                 {/* Ticket variants */}
-                                <h4>🎫 {t('ticketOptions')}</h4>
+                                <h4>{t('ticketOptions')}</h4>
                                 {variantData?.loading && <p className="variants-loading">{t('loadingVariants')}</p>}
                                 {variantData?.error && <p className="variants-error">{variantData.error}</p>}
                                 {variantData && !variantData.loading && !variantData.error && (
