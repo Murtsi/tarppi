@@ -2217,6 +2217,200 @@ button.danger {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   Tiketti Sniper
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tiketti-sniper {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.tiketti-sniper h2 {
+  color: var(--primary);
+  margin: 0 0 0.3rem;
+}
+
+.tiketti-sniper-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0 0 1.5rem;
+}
+
+.tiketti-sniper .sniper-field {
+  margin-bottom: 1rem;
+}
+
+.tiketti-sniper .sniper-field label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tiketti-sniper .sniper-field .field-hint {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--text-dim);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-top: 0.15rem;
+}
+
+.tiketti-sniper .input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tiketti-sniper .input-row input {
+  flex: 1;
+}
+
+.tiketti-sniper input,
+.tiketti-sniper select {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.88rem;
+  box-sizing: border-box;
+}
+
+.tiketti-sniper input:focus,
+.tiketti-sniper select:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.tiketti-sniper-error {
+  color: var(--accent-danger);
+  font-size: 0.85rem;
+  margin: 0.5rem 0;
+}
+
+.tiketti-sniper-event-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.2rem;
+  margin: 1rem 0;
+}
+
+.tiketti-sniper-event-card h3 {
+  color: var(--primary);
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.tiketti-sniper-event-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.tiketti-sniper-no-variants {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.sniper-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.sniper-field-small {
+  flex: 1;
+}
+
+.sniper-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-large {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+}
+
+.btn-danger {
+  background: var(--accent-danger);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.btn-danger:hover {
+  opacity: 0.85;
+}
+
+.tiketti-sniper-success {
+  background: var(--accent-buy);
+  color: #000;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  font-weight: 700;
+  text-align: center;
+  font-size: 1rem;
+  animation: pulse-success 0.8s ease-in-out;
+}
+
+@keyframes pulse-success {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.tiketti-sniper-logs {
+  margin-top: 1.5rem;
+}
+
+.tiketti-sniper-logs h4 {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 0.5rem;
+}
+
+.tiketti-sniper-logs .log-panel {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  max-height: 250px;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.tiketti-sniper-logs .log-entry {
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.tiketti-sniper-logs .log-entry:first-child {
+  color: var(--primary-light);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    Coming Soon Section
    ═══════════════════════════════════════════════════════════════════════════ */
 

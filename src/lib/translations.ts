@@ -276,6 +276,30 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tikettiViewOnSite: 'View on Tiketti.fi',
     tikettiLastUpdated: 'Last updated',
 
+    // Tiketti sub-tabs
+    tikettiSniperTab: 'Sniper',
+    tikettiEventsTab: 'Events',
+
+    // Tiketti Sniper
+    tikettiSniperTitle: 'Tiketti.fi Sniper',
+    tikettiSniperSubtitle: 'Paste a Tiketti.fi event URL — monitor availability and auto-add to cart',
+    tikettiSniperUrlLabel: 'Event URL',
+    tikettiSniperFetchBtn: 'Fetch',
+    tikettiSniperFetching: 'Loading...',
+    tikettiSniperVariantLabel: 'Ticket type',
+    tikettiSniperSelectVariant: '— Select ticket type —',
+    tikettiSniperSoldOut: 'Sold out',
+    tikettiSniperNoVariants: 'No ticket types found on this page',
+    tikettiSniperCookieLabel: 'Session cookie',
+    tikettiSniperCookieHint: 'Copy from browser DevTools → Application → Cookies',
+    tikettiSniperCookiePlaceholder: 'Paste your tiketti.fi session cookie here',
+    tikettiSniperQtyLabel: 'Quantity',
+    tikettiSniperDelayLabel: 'Interval (ms)',
+    tikettiSniperStartBtn: 'Start monitoring',
+    tikettiSniperStopBtn: 'Stop',
+    tikettiSniperSuccess: 'Tickets added to cart! Go to tiketti.fi to complete checkout.',
+    tikettiSniperLogsTitle: 'Activity log',
+
     // Coming Soon section
     comingSoonTitle: 'Coming Soon',
     comingSoonSubtitle: 'More ticket sources are on the way',
@@ -566,6 +590,30 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tikettiCity: 'Kaupunki',
     tikettiViewOnSite: 'Katso tiketti.fi:ssä',
     tikettiLastUpdated: 'Päivitetty viimeksi',
+
+    // Tiketti sub-tabs
+    tikettiSniperTab: 'Botti',
+    tikettiEventsTab: 'Tapahtumat',
+
+    // Tiketti Sniper
+    tikettiSniperTitle: 'Tiketti.fi-botti',
+    tikettiSniperSubtitle: 'Liitä tiketti.fi-tapahtuman URL — seuraa saatavuutta ja lisää ostoskoriin automaattisesti',
+    tikettiSniperUrlLabel: 'Tapahtuman URL',
+    tikettiSniperFetchBtn: 'Hae',
+    tikettiSniperFetching: 'Ladataan...',
+    tikettiSniperVariantLabel: 'Lipputyyppi',
+    tikettiSniperSelectVariant: '— Valitse lipputyyppi —',
+    tikettiSniperSoldOut: 'Loppuunmyyty',
+    tikettiSniperNoVariants: 'Lipputyyppejä ei löytynyt sivulta',
+    tikettiSniperCookieLabel: 'Istuntoeväste',
+    tikettiSniperCookieHint: 'Kopioi selaimen DevTools → Application → Cookies',
+    tikettiSniperCookiePlaceholder: 'Liitä tiketti.fi-istuntoevästesi tähän',
+    tikettiSniperQtyLabel: 'Määrä',
+    tikettiSniperDelayLabel: 'Väli (ms)',
+    tikettiSniperStartBtn: 'Käynnistä seuranta',
+    tikettiSniperStopBtn: 'Pysäytä',
+    tikettiSniperSuccess: 'Liput lisätty ostoskoriin! Mene tiketti.fi:hin viimeistelläksesi ostoksen.',
+    tikettiSniperLogsTitle: 'Toimintaloki',
 
     // Coming Soon section
     comingSoonTitle: 'Tulossa',

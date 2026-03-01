@@ -197,3 +197,35 @@ export type AuthVerifyResponse = {
   user?: string
   expiresAt?: string
 }
+
+// ─── Tiketti Sniper Types ────────────────────────────────────────────────────
+
+export type TikettiVariant = {
+  id: string
+  name: string
+  price: number
+  available: boolean
+  maxQuantity: number
+}
+
+export type TikettiEventDetail = {
+  id: string
+  title: string
+  url: string
+  date: string
+  venue: string
+  city: string
+  variants: TikettiVariant[]
+  imageUrl?: string
+}
+
+export type TikettiEventResponse = {
+  success: boolean
+  event?: TikettiEventDetail
+  error?: string
+}
+
+export type TikettiReserveResponse = {
+  success: boolean
+  message: string
+}

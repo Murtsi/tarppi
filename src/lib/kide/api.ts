@@ -15,6 +15,8 @@ import type {
   AuthLoginResponse,
   AuthVerifyResponse,
   TikettiEventsResponse,
+  TikettiEventResponse,
+  TikettiReserveResponse,
 } from './types'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -190,4 +192,30 @@ export async function triggerTikettiScrape(adminToken: string): Promise<{ succes
   }
 
   return response.json() as Promise<{ success: boolean; scraped: number; upserted: number }>
+}
+
+// ─── Tiketti Sniper API ─────────────────────────────────────────────────────
+
+/**
+ * Fetch Tiketti.fi event details + ticket variants.
+ */
+export async function fetchTikettiEvent(eventUrl: string): Promise<TikettiEventResponse> {
+  return apiCall<TikettiEventResponse>('/api/tiketti/event', { eventUrl })
+}
+
+/**
+ * Add tickets to Tiketti.fi cart.
+ */
+export async function addToTikettiCart(
+  eventUrl: string,
+  variantId: string,
+  quantity: number,
+  sessionCookie: string,
+): Promise<TikettiReserveResponse> {
+  return apiCall<TikettiReserveResponse>('/api/tiketti/reserve', {
+    eventUrl,
+    variantId,
+    quantity,
+    sessionCookie,
+  })
 }

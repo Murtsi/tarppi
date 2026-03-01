@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity, adminLogin, adminVerify, fetchTikettiEvents, triggerTikettiScrape } from './lib/kide/api'
+import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity, adminLogin, adminVerify, fetchTikettiEvents, triggerTikettiScrape, fetchTikettiEvent, addToTikettiCart } from './lib/kide/api'
 import { getTranslation, type LanguageCode } from './lib/translations'
-import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant, TikettiEvent } from './lib/kide/types'
+import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant, TikettiEvent, TikettiVariant, TikettiEventDetail } from './lib/kide/types'
 import CityPicker from './components/CityPicker'
 import { TicketSniperIcon } from './components/Logo'
 import './App.css'
 
 type MainSection = 'kide' | 'tiketti' | 'coming-soon'
 type KideSubTab = 'sniper' | 'scorer'
+type TikettiSubTab = 'sniper' | 'events'
 
 type Step = 0 | 1 | 2 | 3 | 4
 
@@ -424,6 +425,22 @@ function App() {
   const [tikettiError, setTikettiError] = useState('')
   const [tikettiScraping, setTikettiScraping] = useState(false)
   const [tikettiLastMessage, setTikettiLastMessage] = useState('')
+
+  // ── Tiketti Sniper state ──────────────────────────────────────────────────
+  const [tikettiTab, setTikettiTab] = useState<TikettiSubTab>('sniper')
+  const [tikettiSniperUrl, setTikettiSniperUrl] = useState('')
+  const [tikettiSessionCookie, setTikettiSessionCookie] = useState(() => localStorage.getItem('kidehiiri-tiketti-cookie') || '')
+  const [tikettiSniperEvent, setTikettiSniperEvent] = useState<TikettiEventDetail | null>(null)
+  const [tikettiSniperVariants, setTikettiSniperVariants] = useState<TikettiVariant[]>([])
+  const [tikettiSelectedVariantId, setTikettiSelectedVariantId] = useState('')
+  const [tikettiSniperQty, setTikettiSniperQty] = useState(1)
+  const [tikettiSniperFetching, setTikettiSniperFetching] = useState(false)
+  const [tikettiSniperStatus, setTikettiSniperStatus] = useState<'idle' | 'monitoring' | 'stopped'>('idle')
+  const [tikettiSniperLogs, setTikettiSniperLogs] = useState<string[]>(['Ready'])
+  const [tikettiSniperDelayMs, setTikettiSniperDelayMs] = useState(2000)
+  const [tikettiSniperError, setTikettiSniperError] = useState('')
+  const [tikettiSniperSuccess, setTikettiSniperSuccess] = useState(false)
+  const tikettiSniperIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const t = (key: string, params?: Record<string, string | number>) =>
     getTranslation(language, key, params)
@@ -867,6 +884,136 @@ function App() {
       setTikettiScraping(false)
     }
   }
+
+  // ── Tiketti Sniper handlers ───────────────────────────────────────────────
+
+  const addTikettiLog = useCallback((msg: string) => {
+    const ts = new Date().toLocaleTimeString('fi-FI', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    setTikettiSniperLogs((prev) => [`[${ts}] ${msg}`, ...prev].slice(0, MAX_LOG_ENTRIES))
+  }, [])
+
+  const handleFetchTikettiEvent = useCallback(async () => {
+    const url = tikettiSniperUrl.trim()
+    if (!url) return
+
+    setTikettiSniperFetching(true)
+    setTikettiSniperError('')
+    setTikettiSniperEvent(null)
+    setTikettiSniperVariants([])
+    setTikettiSelectedVariantId('')
+    addTikettiLog(`Fetching event: ${url}`)
+
+    try {
+      const res = await fetchTikettiEvent(url)
+      if (res.success && res.event) {
+        setTikettiSniperEvent(res.event)
+        setTikettiSniperVariants(res.event.variants)
+        if (res.event.variants.length === 1) {
+          setTikettiSelectedVariantId(res.event.variants[0].id)
+        }
+        addTikettiLog(`Found: ${res.event.title} — ${res.event.variants.length} ticket type(s)`)
+      } else {
+        setTikettiSniperError(res.error || 'Failed to fetch event')
+        addTikettiLog(`Error: ${res.error || 'Unknown error'}`)
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Network error'
+      setTikettiSniperError(msg)
+      addTikettiLog(`Error: ${msg}`)
+    } finally {
+      setTikettiSniperFetching(false)
+    }
+  }, [tikettiSniperUrl, addTikettiLog])
+
+  const handleTikettiSniperStart = useCallback(() => {
+    if (!tikettiSniperEvent || !tikettiSelectedVariantId || !tikettiSessionCookie.trim()) return
+
+    // Save cookie to localStorage
+    localStorage.setItem('kidehiiri-tiketti-cookie', tikettiSessionCookie)
+
+    setTikettiSniperStatus('monitoring')
+    setTikettiSniperSuccess(false)
+    addTikettiLog(`Monitoring started — variant: ${tikettiSelectedVariantId}, qty: ${tikettiSniperQty}`)
+    addTikettiLog(`Polling every ${tikettiSniperDelayMs}ms...`)
+
+    const doCheck = async () => {
+      try {
+        addTikettiLog('Checking availability...')
+        const res = await fetchTikettiEvent(tikettiSniperUrl)
+
+        if (!res.success || !res.event) {
+          addTikettiLog(`Fetch failed: ${res.error || 'Unknown error'}`)
+          return
+        }
+
+        const variant = res.event.variants.find((v) => v.id === tikettiSelectedVariantId)
+        if (!variant) {
+          addTikettiLog('Selected ticket type not found — checking all variants...')
+          const anyAvailable = res.event.variants.find((v) => v.available)
+          if (anyAvailable) {
+            addTikettiLog(`Found available: ${anyAvailable.name} — adding to cart!`)
+            const cartRes = await addToTikettiCart(
+              tikettiSniperUrl,
+              anyAvailable.id,
+              tikettiSniperQty,
+              tikettiSessionCookie,
+            )
+            addTikettiLog(`Cart: ${cartRes.message}`)
+            if (cartRes.success) {
+              setTikettiSniperSuccess(true)
+              setTikettiSniperStatus('stopped')
+              if (tikettiSniperIntervalRef.current) clearInterval(tikettiSniperIntervalRef.current)
+            }
+          } else {
+            addTikettiLog('No tickets available yet')
+          }
+          return
+        }
+
+        if (variant.available) {
+          addTikettiLog(`Tickets available! Adding ${variant.name} to cart...`)
+          const cartRes = await addToTikettiCart(
+            tikettiSniperUrl,
+            variant.id,
+            tikettiSniperQty,
+            tikettiSessionCookie,
+          )
+          addTikettiLog(`Cart: ${cartRes.message}`)
+          if (cartRes.success) {
+            setTikettiSniperSuccess(true)
+            setTikettiSniperStatus('stopped')
+            if (tikettiSniperIntervalRef.current) clearInterval(tikettiSniperIntervalRef.current)
+          }
+        } else {
+          addTikettiLog(`Not available yet: ${variant.name}`)
+        }
+      } catch (err) {
+        addTikettiLog(`Error: ${err instanceof Error ? err.message : 'Unknown'}`)
+      }
+    }
+
+    // Immediate first check
+    doCheck()
+
+    // Set up polling
+    tikettiSniperIntervalRef.current = setInterval(doCheck, tikettiSniperDelayMs)
+  }, [tikettiSniperEvent, tikettiSelectedVariantId, tikettiSessionCookie, tikettiSniperUrl, tikettiSniperQty, tikettiSniperDelayMs, addTikettiLog])
+
+  const handleTikettiSniperStop = useCallback(() => {
+    if (tikettiSniperIntervalRef.current) {
+      clearInterval(tikettiSniperIntervalRef.current)
+      tikettiSniperIntervalRef.current = null
+    }
+    setTikettiSniperStatus('stopped')
+    addTikettiLog('Monitoring stopped')
+  }, [addTikettiLog])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (tikettiSniperIntervalRef.current) clearInterval(tikettiSniperIntervalRef.current)
+    }
+  }, [])
 
   const steps = [t('step1'), t('step2'), t('step3'), t('step4'), t('step5')]
 
@@ -1674,124 +1821,283 @@ function App() {
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
-            TIKETTI SECTION (admin-protected)
+            TIKETTI SECTION — Sniper + Events sub-tabs
             ═══════════════════════════════════════════════════════════════════ */}
         {activeSection === 'tiketti' && (
           <section className="tiketti-panel">
-            {!adminToken ? (
-              /* ── Login form ── */
-              <div className="admin-login-card">
-                <h2>{t('adminLoginTitle')}</h2>
-                <p className="admin-login-subtitle">{t('adminLoginSubtitle')}</p>
+            {/* ── Tiketti sub-tabs ── */}
+            <div className="tab-bar">
+              <button
+                className={`tab-btn ${tikettiTab === 'sniper' ? 'tab-active' : ''}`}
+                onClick={() => setTikettiTab('sniper')}
+              >
+                {t('tikettiSniperTab')}
+              </button>
+              <button
+                className={`tab-btn ${tikettiTab === 'events' ? 'tab-active' : ''}`}
+                onClick={() => setTikettiTab('events')}
+              >
+                {t('tikettiEventsTab')}
+              </button>
+            </div>
 
-                <form
-                  className="admin-login-form"
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    handleAdminLogin()
-                  }}
-                >
-                  <label>
-                    {t('adminUsername')}
+            {/* ═══ Tiketti SNIPER sub-tab ═══ */}
+            {tikettiTab === 'sniper' && (
+              <div className="tiketti-sniper">
+                <h2>{t('tikettiSniperTitle')}</h2>
+                <p className="tiketti-sniper-subtitle">{t('tikettiSniperSubtitle')}</p>
+
+                {/* Step 1: Event URL */}
+                <div className="sniper-field">
+                  <label>{t('tikettiSniperUrlLabel')}</label>
+                  <div className="input-row">
                     <input
-                      type="text"
-                      value={adminUsernameInput}
-                      onChange={(e) => setAdminUsernameInput(e.target.value)}
-                      autoComplete="username"
-                      disabled={adminLoginLoading}
+                      type="url"
+                      value={tikettiSniperUrl}
+                      onChange={(e) => setTikettiSniperUrl(e.target.value)}
+                      placeholder="https://www.tiketti.fi/..."
+                      disabled={tikettiSniperStatus === 'monitoring'}
                     />
-                  </label>
-
-                  <label>
-                    {t('adminPassword')}
-                    <input
-                      type="password"
-                      value={adminPasswordInput}
-                      onChange={(e) => setAdminPasswordInput(e.target.value)}
-                      autoComplete="current-password"
-                      disabled={adminLoginLoading}
-                    />
-                  </label>
-
-                  {adminLoginError && <p className="admin-login-error">{adminLoginError}</p>}
-
-                  <button type="submit" className="btn-primary" disabled={adminLoginLoading || !adminUsernameInput || !adminPasswordInput}>
-                    {adminLoginLoading ? t('adminLoggingIn') : t('adminLoginBtn')}
-                  </button>
-                </form>
-              </div>
-            ) : (
-              /* ── Tiketti event list ── */
-              <>
-                <div className="tiketti-header">
-                  <div>
-                    <h2>{t('tikettiTitle')}</h2>
-                    <p className="tiketti-subtitle">{t('tikettiSubtitle')}</p>
-                  </div>
-                  <div className="tiketti-actions">
-                    <span className="tiketti-user">{t('adminLoggedInAs', { user: adminUser })}</span>
                     <button
-                      type="button"
-                      className="btn-secondary"
-                      onClick={handleTikettiScrape}
-                      disabled={tikettiScraping}
+                      className="btn-primary"
+                      onClick={handleFetchTikettiEvent}
+                      disabled={!tikettiSniperUrl.trim() || tikettiSniperFetching || tikettiSniperStatus === 'monitoring'}
                     >
-                      {tikettiScraping ? t('tikettiScraping') : t('tikettiScrapeBtn')}
-                    </button>
-                    <button type="button" className="btn-danger-sm" onClick={handleAdminLogout}>
-                      {t('adminLogout')}
+                      {tikettiSniperFetching ? t('tikettiSniperFetching') : t('tikettiSniperFetchBtn')}
                     </button>
                   </div>
                 </div>
 
-                {tikettiLastMessage && <p className="tiketti-message">{tikettiLastMessage}</p>}
-                {tikettiError && <p className="tiketti-error">{tikettiError}</p>}
+                {tikettiSniperError && <p className="tiketti-sniper-error">{tikettiSniperError}</p>}
 
-                {tikettiLoading ? (
-                  <p className="tiketti-loading">{t('tikettiLoading')}</p>
-                ) : tikettiEvents.length === 0 ? (
-                  <p className="tiketti-empty">{t('tikettiNoEvents')}</p>
-                ) : (
-                  <>
-                    <p className="tiketti-count">{t('tikettiEventCount', { count: tikettiEvents.length })}</p>
-                    <div className="tiketti-grid">
-                      {tikettiEvents.map((ev) => (
-                        <div key={ev.id} className="tiketti-card">
-                          {ev.imageUrl && (
-                            <div className="tiketti-card-img">
-                              <img src={ev.imageUrl} alt={ev.title} loading="lazy" />
-                            </div>
-                          )}
-                          <div className="tiketti-card-body">
-                            <h3 className="tiketti-card-title">{ev.title}</h3>
-                            {ev.artist && <p className="tiketti-card-artist">{ev.artist}</p>}
-                            <div className="tiketti-card-meta">
-                              {ev.date && (
-                                <span className="tiketti-meta-item">
-                                  {new Date(ev.date).toLocaleDateString('fi-FI', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                </span>
-                              )}
-                              <span className="tiketti-meta-item">{ev.venue}</span>
-                              <span className="tiketti-meta-item">{ev.city}</span>
-                            </div>
-                            <div className="tiketti-card-footer">
-                              <span className="tiketti-price">
-                                {ev.price > 0 ? `${ev.price.toFixed(2)} \u20AC` : 'Free'}
-                                {ev.maxPrice && ev.maxPrice !== ev.price && ` — ${ev.maxPrice.toFixed(2)} \u20AC`}
-                              </span>
-                              <a
-                                href={ev.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="tiketti-link"
-                              >
-                                {t('tikettiViewOnSite')}
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                {/* Event info card */}
+                {tikettiSniperEvent && (
+                  <div className="tiketti-sniper-event-card">
+                    <h3>{tikettiSniperEvent.title}</h3>
+                    <div className="tiketti-sniper-event-meta">
+                      {tikettiSniperEvent.date && <span>{tikettiSniperEvent.date}</span>}
+                      <span>{tikettiSniperEvent.venue}</span>
+                      <span>{tikettiSniperEvent.city}</span>
                     </div>
+
+                    {/* Step 2: Select variant */}
+                    {tikettiSniperVariants.length > 0 ? (
+                      <div className="sniper-field">
+                        <label>{t('tikettiSniperVariantLabel')}</label>
+                        <select
+                          value={tikettiSelectedVariantId}
+                          onChange={(e) => setTikettiSelectedVariantId(e.target.value)}
+                          disabled={tikettiSniperStatus === 'monitoring'}
+                        >
+                          <option value="">{t('tikettiSniperSelectVariant')}</option>
+                          {tikettiSniperVariants.map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.name} — {v.price > 0 ? `${v.price.toFixed(2)} \u20AC` : 'Free'}
+                              {!v.available ? ` (${t('tikettiSniperSoldOut')})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <p className="tiketti-sniper-no-variants">{t('tikettiSniperNoVariants')}</p>
+                    )}
+
+                    {/* Step 3: Session cookie */}
+                    <div className="sniper-field">
+                      <label>
+                        {t('tikettiSniperCookieLabel')}
+                        <span className="field-hint">{t('tikettiSniperCookieHint')}</span>
+                      </label>
+                      <input
+                        type="password"
+                        value={tikettiSessionCookie}
+                        onChange={(e) => setTikettiSessionCookie(e.target.value)}
+                        placeholder={t('tikettiSniperCookiePlaceholder')}
+                        disabled={tikettiSniperStatus === 'monitoring'}
+                      />
+                    </div>
+
+                    {/* Quantity + Delay */}
+                    <div className="sniper-row">
+                      <div className="sniper-field sniper-field-small">
+                        <label>{t('tikettiSniperQtyLabel')}</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={10}
+                          value={tikettiSniperQty}
+                          onChange={(e) => setTikettiSniperQty(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                          disabled={tikettiSniperStatus === 'monitoring'}
+                        />
+                      </div>
+                      <div className="sniper-field sniper-field-small">
+                        <label>{t('tikettiSniperDelayLabel')}</label>
+                        <input
+                          type="number"
+                          min={500}
+                          max={30000}
+                          step={100}
+                          value={tikettiSniperDelayMs}
+                          onChange={(e) => setTikettiSniperDelayMs(Math.max(500, parseInt(e.target.value) || 2000))}
+                          disabled={tikettiSniperStatus === 'monitoring'}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Start / Stop */}
+                    <div className="sniper-actions">
+                      {tikettiSniperStatus !== 'monitoring' ? (
+                        <button
+                          className="btn-primary btn-large"
+                          onClick={handleTikettiSniperStart}
+                          disabled={!tikettiSelectedVariantId || !tikettiSessionCookie.trim()}
+                        >
+                          {t('tikettiSniperStartBtn')}
+                        </button>
+                      ) : (
+                        <button className="btn-danger btn-large" onClick={handleTikettiSniperStop}>
+                          {t('tikettiSniperStopBtn')}
+                        </button>
+                      )}
+                    </div>
+
+                    {tikettiSniperSuccess && (
+                      <div className="tiketti-sniper-success">{t('tikettiSniperSuccess')}</div>
+                    )}
+                  </div>
+                )}
+
+                {/* Logs */}
+                <div className="tiketti-sniper-logs">
+                  <h4>{t('tikettiSniperLogsTitle')}</h4>
+                  <div className="log-panel">
+                    {tikettiSniperLogs.map((log, i) => (
+                      <div key={i} className="log-entry">{log}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ═══ Tiketti EVENTS sub-tab (admin-protected) ═══ */}
+            {tikettiTab === 'events' && (
+              <>
+                {!adminToken ? (
+                  /* ── Login form ── */
+                  <div className="admin-login-card">
+                    <h2>{t('adminLoginTitle')}</h2>
+                    <p className="admin-login-subtitle">{t('adminLoginSubtitle')}</p>
+
+                    <form
+                      className="admin-login-form"
+                      onSubmit={(e) => {
+                        e.preventDefault()
+                        handleAdminLogin()
+                      }}
+                    >
+                      <label>
+                        {t('adminUsername')}
+                        <input
+                          type="text"
+                          value={adminUsernameInput}
+                          onChange={(e) => setAdminUsernameInput(e.target.value)}
+                          autoComplete="username"
+                          disabled={adminLoginLoading}
+                        />
+                      </label>
+
+                      <label>
+                        {t('adminPassword')}
+                        <input
+                          type="password"
+                          value={adminPasswordInput}
+                          onChange={(e) => setAdminPasswordInput(e.target.value)}
+                          autoComplete="current-password"
+                          disabled={adminLoginLoading}
+                        />
+                      </label>
+
+                      {adminLoginError && <p className="admin-login-error">{adminLoginError}</p>}
+
+                      <button type="submit" className="btn-primary" disabled={adminLoginLoading || !adminUsernameInput || !adminPasswordInput}>
+                        {adminLoginLoading ? t('adminLoggingIn') : t('adminLoginBtn')}
+                      </button>
+                    </form>
+                  </div>
+                ) : (
+                  /* ── Tiketti event list ── */
+                  <>
+                    <div className="tiketti-header">
+                      <div>
+                        <h2>{t('tikettiTitle')}</h2>
+                        <p className="tiketti-subtitle">{t('tikettiSubtitle')}</p>
+                      </div>
+                      <div className="tiketti-actions">
+                        <span className="tiketti-user">{t('adminLoggedInAs', { user: adminUser })}</span>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={handleTikettiScrape}
+                          disabled={tikettiScraping}
+                        >
+                          {tikettiScraping ? t('tikettiScraping') : t('tikettiScrapeBtn')}
+                        </button>
+                        <button type="button" className="btn-danger-sm" onClick={handleAdminLogout}>
+                          {t('adminLogout')}
+                        </button>
+                      </div>
+                    </div>
+
+                    {tikettiLastMessage && <p className="tiketti-message">{tikettiLastMessage}</p>}
+                    {tikettiError && <p className="tiketti-error">{tikettiError}</p>}
+
+                    {tikettiLoading ? (
+                      <p className="tiketti-loading">{t('tikettiLoading')}</p>
+                    ) : tikettiEvents.length === 0 ? (
+                      <p className="tiketti-empty">{t('tikettiNoEvents')}</p>
+                    ) : (
+                      <>
+                        <p className="tiketti-count">{t('tikettiEventCount', { count: tikettiEvents.length })}</p>
+                        <div className="tiketti-grid">
+                          {tikettiEvents.map((ev) => (
+                            <div key={ev.id} className="tiketti-card">
+                              {ev.imageUrl && (
+                                <div className="tiketti-card-img">
+                                  <img src={ev.imageUrl} alt={ev.title} loading="lazy" />
+                                </div>
+                              )}
+                              <div className="tiketti-card-body">
+                                <h3 className="tiketti-card-title">{ev.title}</h3>
+                                {ev.artist && <p className="tiketti-card-artist">{ev.artist}</p>}
+                                <div className="tiketti-card-meta">
+                                  {ev.date && (
+                                    <span className="tiketti-meta-item">
+                                      {new Date(ev.date).toLocaleDateString('fi-FI', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    </span>
+                                  )}
+                                  <span className="tiketti-meta-item">{ev.venue}</span>
+                                  <span className="tiketti-meta-item">{ev.city}</span>
+                                </div>
+                                <div className="tiketti-card-footer">
+                                  <span className="tiketti-price">
+                                    {ev.price > 0 ? `${ev.price.toFixed(2)} \u20AC` : 'Free'}
+                                    {ev.maxPrice && ev.maxPrice !== ev.price && ` — ${ev.maxPrice.toFixed(2)} \u20AC`}
+                                  </span>
+                                  <a
+                                    href={ev.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="tiketti-link"
+                                  >
+                                    {t('tikettiViewOnSite')}
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </>
