@@ -159,3 +159,41 @@ export type ScanResponse = ScorerResponse & {
   filtered_out_free: number
   city: string
 }
+
+// ─── Tiketti Types ───────────────────────────────────────────────────────────
+
+export type TikettiEvent = {
+  id: string
+  title: string
+  artist?: string
+  venue: string
+  city: string
+  date: string
+  price: number
+  maxPrice?: number
+  availableCount?: number
+  totalCount?: number
+  url: string
+  imageUrl?: string
+  source: 'tiketti'
+  fetchedAt: string
+}
+
+export type TikettiEventsResponse = {
+  success: boolean
+  events: TikettiEvent[]
+  count: number
+}
+
+// ─── Auth Types ──────────────────────────────────────────────────────────────
+
+export type AuthLoginResponse = {
+  token: string
+  expiresIn: string
+}
+
+export type AuthVerifyResponse = {
+  valid: boolean
+  user?: string
+  expiresAt?: string
+}

@@ -12,6 +12,9 @@ import type {
   EventFeatures,
   ScorerResponse,
   ScanResponse,
+  AuthLoginResponse,
+  AuthVerifyResponse,
+  TikettiEventsResponse,
 } from './types'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -122,4 +125,69 @@ export function maskToken(token: string): string {
   const trimmed = token.trim()
   if (trimmed.length <= 8) return '••••'
   return `${trimmed.slice(0, 4)}...${trimmed.slice(-4)}`
+}
+
+// ─── Auth API ───────────────────────────────────────────────────────────────
+
+/**
+ * Admin login — returns JWT token.
+ */
+export async function adminLogin(username: string, password: string): Promise<AuthLoginResponse> {
+  return apiCall<AuthLoginResponse>('/api/auth/login', { username, password })
+}
+
+/**
+ * Verify admin JWT token.
+ */
+export async function adminVerify(token: string): Promise<AuthVerifyResponse> {
+  const url = `${API_URL}/api/auth/verify`
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return response.json() as Promise<AuthVerifyResponse>
+}
+
+// ─── Tiketti API ────────────────────────────────────────────────────────────
+
+/**
+ * Fetch Tiketti events (requires admin JWT).
+ */
+export async function fetchTikettiEvents(adminToken: string, city?: string): Promise<TikettiEventsResponse> {
+  const url = `${API_URL}/api/tiketti/events${city ? `?city=${encodeURIComponent(city)}` : ''}`
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${adminToken}`,
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error((errorData as Record<string, string>).error || `HTTP ${response.status}`)
+  }
+
+  return response.json() as Promise<TikettiEventsResponse>
+}
+
+/**
+ * Trigger manual Tiketti scrape (admin only).
+ */
+export async function triggerTikettiScrape(adminToken: string): Promise<{ success: boolean; scraped: number; upserted: number }> {
+  const url = `${API_URL}/api/tiketti/scrape`
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${adminToken}`,
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error((errorData as Record<string, string>).error || `HTTP ${response.status}`)
+  }
+
+  return response.json() as Promise<{ success: boolean; scraped: number; upserted: number }>
 }

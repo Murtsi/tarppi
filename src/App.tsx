@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity } from './lib/kide/api'
+import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity, adminLogin, adminVerify, fetchTikettiEvents, triggerTikettiScrape } from './lib/kide/api'
 import { getTranslation, type LanguageCode } from './lib/translations'
-import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant } from './lib/kide/types'
+import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant, TikettiEvent } from './lib/kide/types'
 import CityPicker from './components/CityPicker'
 import { KidehiiriIcon } from './components/Logo'
 import './App.css'
 
-type AppTab = 'sniper' | 'scorer'
+type MainSection = 'kide' | 'tiketti' | 'coming-soon'
+type KideSubTab = 'sniper' | 'scorer'
 
 type Step = 0 | 1 | 2 | 3 | 4
 
@@ -146,6 +147,82 @@ const InfoModalContent = ({ onClose, t }: { onClose: () => void; t: (key: string
 
 
 
+// ─── Score Histogram Component ───────────────────────────────────────────────
+
+type HistogramData = {
+  buckets: { range: string; count: number; color: string }[]
+  buyCount: number
+  maybeCount: number
+  skipCount: number
+}
+
+function buildHistogramData(events: Array<{ resell_score: number; decision: string; ai_score?: AiScore }>): HistogramData {
+  // Create 10 buckets: 0-9, 10-19, ..., 90-100
+  const ranges = ['0-9', '10-19', '20-29', '30-39', '40-49', '50-59', '60-69', '70-79', '80-89', '90-100']
+  const counts = new Array(10).fill(0) as number[]
+  let buyCount = 0, maybeCount = 0, skipCount = 0
+
+  for (const ev of events) {
+    const bucket = Math.min(Math.floor(ev.resell_score / 10), 9)
+    counts[bucket]++
+    const label = ev.ai_score?.label ?? ev.decision
+    if (label === 'BUY') buyCount++
+    else if (label === 'MAYBE') maybeCount++
+    else skipCount++
+  }
+
+  return {
+    buckets: ranges.map((range, i) => ({
+      range,
+      count: counts[i],
+      color: i >= 8 ? 'var(--success)' : i >= 5 ? 'var(--warning)' : 'var(--danger)',
+    })),
+    buyCount,
+    maybeCount,
+    skipCount,
+  }
+}
+
+const ScoreHistogram = ({ events, t }: { events: Array<{ resell_score: number; decision: string; ai_score?: AiScore }>; t: (k: string, p?: Record<string, string | number>) => string }) => {
+  if (events.length === 0) return null
+  const data = buildHistogramData(events)
+  const maxCount = Math.max(...data.buckets.map(b => b.count), 1)
+
+  return (
+    <div className="histogram-container">
+      <h3>{t('histogramTitle')}</h3>
+      <div className="histogram-bar-chart">
+        {data.buckets.map((b) => (
+          <div
+            key={b.range}
+            className="histogram-bar"
+            style={{
+              height: `${(b.count / maxCount) * 100}%`,
+              backgroundColor: b.color,
+              minHeight: b.count > 0 ? '4px' : '0',
+            }}
+            data-tooltip={`${b.range}: ${b.count}`}
+          />
+        ))}
+      </div>
+      <div className="histogram-legend">
+        <span className="histogram-legend-item">
+          <span className="histogram-legend-dot" style={{ background: 'var(--success)' }} />
+          {t('histogramBuy')} ({data.buyCount})
+        </span>
+        <span className="histogram-legend-item">
+          <span className="histogram-legend-dot" style={{ background: 'var(--warning)' }} />
+          {t('histogramMaybe')} ({data.maybeCount})
+        </span>
+        <span className="histogram-legend-item">
+          <span className="histogram-legend-dot" style={{ background: 'var(--danger)' }} />
+          {t('histogramSkip')} ({data.skipCount})
+        </span>
+      </div>
+    </div>
+  )
+}
+
 // ─── Score badge helper ──────────────────────────────────────────────────────
 
 function decisionClass(d: 'BUY' | 'MAYBE' | 'SKIP'): string {
@@ -284,7 +361,8 @@ function formatEventDate(dateStr?: string): string | null {
 
 function App() {
   // ── State ───────────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<AppTab>('sniper')
+  const [activeSection, setActiveSection] = useState<MainSection>('kide')
+  const [kideTab, setKideTab] = useState<KideSubTab>('sniper')
   const [step, setStep] = useState<Step>(0)
   const [infoPanelOpen, setInfoPanelOpen] = useState(false)
   const [eventUrl, setEventUrl] = useState('')
@@ -331,6 +409,21 @@ function App() {
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
   const [scanMeta, setScanMeta] = useState<{ scanned_count: number; filtered_count: number; filtered_out_sold_out: number; filtered_out_free: number; city: string } | null>(null)
   const [eventVariantCache, setEventVariantCache] = useState<Record<string, { variants: KideVariant[]; loading: boolean; error?: string }>>({})
+
+  // ── Admin auth state ──────────────────────────────────────────────────────
+  const [adminToken, setAdminToken] = useState(() => localStorage.getItem('kidehiiri-admin-token') || '')
+  const [adminUser, setAdminUser] = useState('')
+  const [adminLoginLoading, setAdminLoginLoading] = useState(false)
+  const [adminLoginError, setAdminLoginError] = useState('')
+  const [adminUsernameInput, setAdminUsernameInput] = useState('')
+  const [adminPasswordInput, setAdminPasswordInput] = useState('')
+
+  // ── Tiketti state ──────────────────────────────────────────────────────────
+  const [tikettiEvents, setTikettiEvents] = useState<TikettiEvent[]>([])
+  const [tikettiLoading, setTikettiLoading] = useState(false)
+  const [tikettiError, setTikettiError] = useState('')
+  const [tikettiScraping, setTikettiScraping] = useState(false)
+  const [tikettiLastMessage, setTikettiLastMessage] = useState('')
 
   const t = (key: string, params?: Record<string, string | number>) =>
     getTranslation(language, key, params)
@@ -659,7 +752,8 @@ function App() {
   const handleSnipeEvent = (eventId: string) => {
     const url = `https://kide.app/events/${eventId}`
     setEventUrl(url)
-    setActiveTab('sniper')
+    setActiveSection('kide')
+    setKideTab('sniper')
     setStep(0)
   }
 
@@ -684,6 +778,95 @@ function App() {
       return opening ? eventId : null
     })
   }, [eventVariantCache])
+
+  // ── Admin auth handlers ───────────────────────────────────────────────────
+
+  // Verify existing admin token on mount
+  useEffect(() => {
+    if (!adminToken) return
+    adminVerify(adminToken)
+      .then((res) => {
+        if (res.valid && res.user) {
+          setAdminUser(res.user)
+        } else {
+          // Token expired — clear it
+          setAdminToken('')
+          setAdminUser('')
+          localStorage.removeItem('kidehiiri-admin-token')
+        }
+      })
+      .catch(() => {
+        setAdminToken('')
+        setAdminUser('')
+        localStorage.removeItem('kidehiiri-admin-token')
+      })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAdminLogin = async () => {
+    setAdminLoginError('')
+    setAdminLoginLoading(true)
+    try {
+      const res = await adminLogin(adminUsernameInput.trim(), adminPasswordInput)
+      setAdminToken(res.token)
+      localStorage.setItem('kidehiiri-admin-token', res.token)
+      setAdminUser(adminUsernameInput.trim())
+      setAdminUsernameInput('')
+      setAdminPasswordInput('')
+    } catch (err) {
+      setAdminLoginError(err instanceof Error ? err.message : t('adminLoginError'))
+    } finally {
+      setAdminLoginLoading(false)
+    }
+  }
+
+  const handleAdminLogout = () => {
+    setAdminToken('')
+    setAdminUser('')
+    localStorage.removeItem('kidehiiri-admin-token')
+    setTikettiEvents([])
+    setTikettiError('')
+    setTikettiLastMessage('')
+  }
+
+  // ── Tiketti handlers ──────────────────────────────────────────────────────
+
+  // Auto-fetch tiketti events when authenticated and on tiketti tab
+  useEffect(() => {
+    if (activeSection !== 'tiketti' || !adminToken) return
+    setTikettiLoading(true)
+    setTikettiError('')
+    fetchTikettiEvents(adminToken)
+      .then((res) => {
+        setTikettiEvents(res.events)
+        setTikettiLastMessage('')
+      })
+      .catch((err) => {
+        if (err instanceof Error && err.message.includes('401')) {
+          handleAdminLogout()
+          setTikettiError(t('adminLoginError'))
+        } else {
+          setTikettiError(err instanceof Error ? err.message : 'Failed to fetch events')
+        }
+      })
+      .finally(() => setTikettiLoading(false))
+  }, [activeSection, adminToken]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleTikettiScrape = async () => {
+    if (!adminToken) return
+    setTikettiScraping(true)
+    setTikettiLastMessage('')
+    try {
+      const res = await triggerTikettiScrape(adminToken)
+      setTikettiLastMessage(t('tikettiScrapeDone', { count: res.scraped }))
+      // Refresh the list
+      const updated = await fetchTikettiEvents(adminToken)
+      setTikettiEvents(updated.events)
+    } catch (err) {
+      setTikettiError(err instanceof Error ? err.message : 'Scrape failed')
+    } finally {
+      setTikettiScraping(false)
+    }
+  }
 
   const steps = [t('step1'), t('step2'), t('step3'), t('step4'), t('step5')]
 
@@ -714,26 +897,50 @@ function App() {
           </div>
         </header>
 
-        {/* ── Tab switcher ── */}
-        <div className="tab-bar">
+        {/* ── Main navigation ── */}
+        <div className="nav-bar">
           <button
-            className={`tab-btn ${activeTab === 'sniper' ? 'tab-active' : ''}`}
-            onClick={() => setActiveTab('sniper')}
+            className={`nav-btn ${activeSection === 'kide' ? 'nav-active' : ''}`}
+            onClick={() => setActiveSection('kide')}
           >
-            {t('sniperTab')}
+            {t('navKide')}
           </button>
           <button
-            className={`tab-btn ${activeTab === 'scorer' ? 'tab-active' : ''}`}
-            onClick={() => setActiveTab('scorer')}
+            className={`nav-btn ${activeSection === 'tiketti' ? 'nav-active' : ''}`}
+            onClick={() => setActiveSection('tiketti')}
           >
-            {t('scorerTab')}
+            {t('navTiketti')}
+          </button>
+          <button
+            className={`nav-btn ${activeSection === 'coming-soon' ? 'nav-active' : ''}`}
+            onClick={() => setActiveSection('coming-soon')}
+          >
+            {t('navComingSoon')}
           </button>
         </div>
+
+        {/* ── Kide sub-tabs ── */}
+        {activeSection === 'kide' && (
+          <div className="tab-bar">
+            <button
+              className={`tab-btn ${kideTab === 'sniper' ? 'tab-active' : ''}`}
+              onClick={() => setKideTab('sniper')}
+            >
+              {t('sniperTab')}
+            </button>
+            <button
+              className={`tab-btn ${kideTab === 'scorer' ? 'tab-active' : ''}`}
+              onClick={() => setKideTab('scorer')}
+            >
+              {t('scorerTab')}
+            </button>
+          </div>
+        )}
 
         {/* ═══════════════════════════════════════════════════════════════════
             SNIPER TAB
             ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === 'sniper' && (
+        {activeSection === 'kide' && kideTab === 'sniper' && (
           <>
             <ol className="stepper" aria-label="Setup steps">
               {steps.map((label, index) => (
@@ -967,7 +1174,7 @@ function App() {
         {/* ═══════════════════════════════════════════════════════════════════
             AI SCORER TAB
             ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === 'scorer' && (
+        {activeSection === 'kide' && kideTab === 'scorer' && (
           <section className="scorer-panel">
             <h2>{t('scorerTitle')}</h2>
             <p className="scorer-subtitle">{t('scorerSubtitle')}</p>
@@ -1034,6 +1241,11 @@ function App() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Score distribution histogram */}
+            {scoredEvents.length > 0 && (
+              <ScoreHistogram events={scoredEvents} t={t} />
             )}
 
             {/* Results toggle */}
@@ -1458,6 +1670,157 @@ function App() {
             {!scorerLoading && scoredEvents.length === 0 && !scorerError && !scanMeta && (
               <p className="scorer-empty">{t('scorerNoResults')}</p>
             )}
+          </section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            TIKETTI SECTION (admin-protected)
+            ═══════════════════════════════════════════════════════════════════ */}
+        {activeSection === 'tiketti' && (
+          <section className="tiketti-panel">
+            {!adminToken ? (
+              /* ── Login form ── */
+              <div className="admin-login-card">
+                <h2>{t('adminLoginTitle')}</h2>
+                <p className="admin-login-subtitle">{t('adminLoginSubtitle')}</p>
+
+                <form
+                  className="admin-login-form"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    handleAdminLogin()
+                  }}
+                >
+                  <label>
+                    {t('adminUsername')}
+                    <input
+                      type="text"
+                      value={adminUsernameInput}
+                      onChange={(e) => setAdminUsernameInput(e.target.value)}
+                      autoComplete="username"
+                      disabled={adminLoginLoading}
+                    />
+                  </label>
+
+                  <label>
+                    {t('adminPassword')}
+                    <input
+                      type="password"
+                      value={adminPasswordInput}
+                      onChange={(e) => setAdminPasswordInput(e.target.value)}
+                      autoComplete="current-password"
+                      disabled={adminLoginLoading}
+                    />
+                  </label>
+
+                  {adminLoginError && <p className="admin-login-error">{adminLoginError}</p>}
+
+                  <button type="submit" className="btn-primary" disabled={adminLoginLoading || !adminUsernameInput || !adminPasswordInput}>
+                    {adminLoginLoading ? t('adminLoggingIn') : t('adminLoginBtn')}
+                  </button>
+                </form>
+              </div>
+            ) : (
+              /* ── Tiketti event list ── */
+              <>
+                <div className="tiketti-header">
+                  <div>
+                    <h2>{t('tikettiTitle')}</h2>
+                    <p className="tiketti-subtitle">{t('tikettiSubtitle')}</p>
+                  </div>
+                  <div className="tiketti-actions">
+                    <span className="tiketti-user">{t('adminLoggedInAs', { user: adminUser })}</span>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={handleTikettiScrape}
+                      disabled={tikettiScraping}
+                    >
+                      {tikettiScraping ? t('tikettiScraping') : t('tikettiScrapeBtn')}
+                    </button>
+                    <button type="button" className="btn-danger-sm" onClick={handleAdminLogout}>
+                      {t('adminLogout')}
+                    </button>
+                  </div>
+                </div>
+
+                {tikettiLastMessage && <p className="tiketti-message">{tikettiLastMessage}</p>}
+                {tikettiError && <p className="tiketti-error">{tikettiError}</p>}
+
+                {tikettiLoading ? (
+                  <p className="tiketti-loading">{t('tikettiLoading')}</p>
+                ) : tikettiEvents.length === 0 ? (
+                  <p className="tiketti-empty">{t('tikettiNoEvents')}</p>
+                ) : (
+                  <>
+                    <p className="tiketti-count">{t('tikettiEventCount', { count: tikettiEvents.length })}</p>
+                    <div className="tiketti-grid">
+                      {tikettiEvents.map((ev) => (
+                        <div key={ev.id} className="tiketti-card">
+                          {ev.imageUrl && (
+                            <div className="tiketti-card-img">
+                              <img src={ev.imageUrl} alt={ev.title} loading="lazy" />
+                            </div>
+                          )}
+                          <div className="tiketti-card-body">
+                            <h3 className="tiketti-card-title">{ev.title}</h3>
+                            {ev.artist && <p className="tiketti-card-artist">{ev.artist}</p>}
+                            <div className="tiketti-card-meta">
+                              {ev.date && (
+                                <span className="tiketti-meta-item">
+                                  {new Date(ev.date).toLocaleDateString('fi-FI', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </span>
+                              )}
+                              <span className="tiketti-meta-item">{ev.venue}</span>
+                              <span className="tiketti-meta-item">{ev.city}</span>
+                            </div>
+                            <div className="tiketti-card-footer">
+                              <span className="tiketti-price">
+                                {ev.price > 0 ? `${ev.price.toFixed(2)} \u20AC` : 'Free'}
+                                {ev.maxPrice && ev.maxPrice !== ev.price && ` — ${ev.maxPrice.toFixed(2)} \u20AC`}
+                              </span>
+                              <a
+                                href={ev.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="tiketti-link"
+                              >
+                                {t('tikettiViewOnSite')}
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            COMING SOON SECTION
+            ═══════════════════════════════════════════════════════════════════ */}
+        {activeSection === 'coming-soon' && (
+          <section className="coming-soon-panel">
+            <h2>{t('comingSoonTitle')}</h2>
+            <p className="coming-soon-subtitle">{t('comingSoonSubtitle')}</p>
+
+            <div className="coming-soon-grid">
+              <div className="coming-soon-card">
+                <div className="coming-soon-card-icon">L</div>
+                <h3>{t('comingSoonLippu')}</h3>
+                <p>{t('comingSoonLippuDesc')}</p>
+              </div>
+              <div className="coming-soon-card">
+                <div className="coming-soon-card-icon">LP</div>
+                <h3>{t('comingSoonLippupiste')}</h3>
+                <p>{t('comingSoonLippupisteDesc')}</p>
+              </div>
+            </div>
+
+            <p className="coming-soon-footer">{t('comingSoonStayTuned')}</p>
           </section>
         )}
       </main>

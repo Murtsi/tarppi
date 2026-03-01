@@ -243,6 +243,54 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     explainOrgMed: 'Known organiser',
     explainOrgLow: 'Unknown or no organiser info',
     scoreWeightsInfo: 'Weights: Popularity 35% · Demand 25% · Pricing 15% · Timing 15% · Organiser 10%',
+
+    // Navigation
+    navKide: 'Kide',
+    navTiketti: 'Tiketti',
+    navComingSoon: 'Coming Soon',
+
+    // Admin auth
+    adminLoginTitle: 'Admin Login',
+    adminLoginSubtitle: 'Sign in to access Tiketti.fi event data',
+    adminUsername: 'Username',
+    adminPassword: 'Password',
+    adminLoginBtn: 'Sign in',
+    adminLoggingIn: 'Signing in...',
+    adminLoginError: 'Invalid credentials',
+    adminLogout: 'Logout',
+    adminLoggedInAs: 'Logged in as {user}',
+
+    // Tiketti section
+    tikettiTitle: 'Tiketti.fi Events',
+    tikettiSubtitle: 'Auto-scraped events from tiketti.fi — updated every 10 minutes',
+    tikettiLoading: 'Loading events...',
+    tikettiNoEvents: 'No events found. Wait for the next scrape cycle or trigger manually.',
+    tikettiScrapeBtn: 'Scrape now',
+    tikettiScraping: 'Scraping...',
+    tikettiScrapeDone: 'Scraped {count} events',
+    tikettiEventCount: '{count} events',
+    tikettiPrice: 'Price',
+    tikettiDate: 'Date',
+    tikettiVenue: 'Venue',
+    tikettiCity: 'City',
+    tikettiViewOnSite: 'View on Tiketti.fi',
+    tikettiLastUpdated: 'Last updated',
+
+    // Coming Soon section
+    comingSoonTitle: 'Coming Soon',
+    comingSoonSubtitle: 'More ticket sources are on the way',
+    comingSoonLippu: 'Lippu.fi',
+    comingSoonLippuDesc: 'Event scraper and monitoring for lippu.fi — Finland\'s largest ticket retailer.',
+    comingSoonLippupiste: 'Lippupiste.fi',
+    comingSoonLippupisteDesc: 'Track concerts, sports and theater events on lippupiste.fi.',
+    comingSoonStayTuned: 'Stay tuned for updates!',
+
+    // Histogram / score distribution
+    histogramTitle: 'Score Distribution',
+    histogramEvents: 'events',
+    histogramBuy: 'BUY',
+    histogramMaybe: 'MAYBE',
+    histogramSkip: 'SKIP',
   },
 
   fi: {
@@ -486,6 +534,54 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     explainOrgMed: 'Tunnettu järjestäjä',
     explainOrgLow: 'Tuntematon järjestäjä tai ei tietoja',
     scoreWeightsInfo: 'Painot: Suosio 35% · Kysyntä 25% · Hinnoittelu 15% · Ajoitus 15% · Järjestäjä 10%',
+
+    // Navigation
+    navKide: 'Kide',
+    navTiketti: 'Tiketti',
+    navComingSoon: 'Tulossa',
+
+    // Admin auth
+    adminLoginTitle: 'Ylläpitäjän kirjautuminen',
+    adminLoginSubtitle: 'Kirjaudu sisään nähdäksesi Tiketti.fi-tapahtumatiedot',
+    adminUsername: 'Käyttäjänimi',
+    adminPassword: 'Salasana',
+    adminLoginBtn: 'Kirjaudu',
+    adminLoggingIn: 'Kirjaudutaan...',
+    adminLoginError: 'Virheelliset tunnukset',
+    adminLogout: 'Kirjaudu ulos',
+    adminLoggedInAs: 'Kirjautunut: {user}',
+
+    // Tiketti section
+    tikettiTitle: 'Tiketti.fi-tapahtumat',
+    tikettiSubtitle: 'Automaattisesti haetut tapahtumat tiketti.fi:stä — päivitetään 10 min välein',
+    tikettiLoading: 'Ladataan tapahtumia...',
+    tikettiNoEvents: 'Tapahtumia ei löytynyt. Odota seuraavaa hakukierrosta tai käynnistä manuaalisesti.',
+    tikettiScrapeBtn: 'Hae nyt',
+    tikettiScraping: 'Haetaan...',
+    tikettiScrapeDone: 'Haettiin {count} tapahtumaa',
+    tikettiEventCount: '{count} tapahtumaa',
+    tikettiPrice: 'Hinta',
+    tikettiDate: 'Päivämäärä',
+    tikettiVenue: 'Paikka',
+    tikettiCity: 'Kaupunki',
+    tikettiViewOnSite: 'Katso tiketti.fi:ssä',
+    tikettiLastUpdated: 'Päivitetty viimeksi',
+
+    // Coming Soon section
+    comingSoonTitle: 'Tulossa',
+    comingSoonSubtitle: 'Lisää lipunmyyntilähteitä on tulossa',
+    comingSoonLippu: 'Lippu.fi',
+    comingSoonLippuDesc: 'Tapahtumahaku ja seuranta lippu.fi:stä — Suomen suurin lipunmyyjä.',
+    comingSoonLippupiste: 'Lippupiste.fi',
+    comingSoonLippupisteDesc: 'Seuraa konsertteja, urheilua ja teatteritapahtumia lippupiste.fi:ssä.',
+    comingSoonStayTuned: 'Pysy kuulolla!',
+
+    // Histogram / score distribution
+    histogramTitle: 'Pistejakauma',
+    histogramEvents: 'tapahtumaa',
+    histogramBuy: 'OSTA',
+    histogramMaybe: 'EHKÄ',
+    histogramSkip: 'OHITA',
   },
 }
 
