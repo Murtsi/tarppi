@@ -2318,6 +2318,33 @@ button.danger {
   border-bottom: 1px solid var(--border);
 }
 
+.tiketti-sniper-availability {
+  margin-bottom: 1rem;
+}
+
+.availability-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.availability-badge.available {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4caf50;
+}
+
+.availability-badge.sold-out {
+  background: rgba(244, 67, 54, 0.15);
+  color: #f44336;
+}
+
+.availability-badge.waiting {
+  background: rgba(255, 193, 7, 0.15);
+  color: #ffc107;
+}
+
 .tiketti-sniper-no-variants {
   color: var(--text-dim);
   font-size: 0.85rem;

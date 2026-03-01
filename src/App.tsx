@@ -926,14 +926,14 @@ function App() {
   }, [tikettiSniperUrl, addTikettiLog])
 
   const handleTikettiSniperStart = useCallback(() => {
-    if (!tikettiSniperEvent || !tikettiSelectedVariantId || !tikettiSessionCookie.trim()) return
+    if (!tikettiSniperEvent || !tikettiSessionCookie.trim()) return
 
     // Save cookie to localStorage
     localStorage.setItem('kidehiiri-tiketti-cookie', tikettiSessionCookie)
 
     setTikettiSniperStatus('monitoring')
     setTikettiSniperSuccess(false)
-    addTikettiLog(`Monitoring started — variant: ${tikettiSelectedVariantId}, qty: ${tikettiSniperQty}`)
+    addTikettiLog(`Monitoring started — qty: ${tikettiSniperQty}`)
     addTikettiLog(`Polling every ${tikettiSniperDelayMs}ms...`)
 
     const doCheck = async () => {
@@ -946,46 +946,30 @@ function App() {
           return
         }
 
-        const variant = res.event.variants.find((v) => v.id === tikettiSelectedVariantId)
-        if (!variant) {
-          addTikettiLog('Selected ticket type not found — checking all variants...')
-          const anyAvailable = res.event.variants.find((v) => v.available)
-          if (anyAvailable) {
-            addTikettiLog(`Found available: ${anyAvailable.name} — adding to cart!`)
-            const cartRes = await addToTikettiCart(
-              tikettiSniperUrl,
-              anyAvailable.id,
-              tikettiSniperQty,
-              tikettiSessionCookie,
-            )
-            addTikettiLog(`Cart: ${cartRes.message}`)
-            if (cartRes.success) {
-              setTikettiSniperSuccess(true)
-              setTikettiSniperStatus('stopped')
-              if (tikettiSniperIntervalRef.current) clearInterval(tikettiSniperIntervalRef.current)
-            }
-          } else {
-            addTikettiLog('No tickets available yet')
-          }
+        // Update event info in UI
+        setTikettiSniperEvent(res.event)
+        setTikettiSniperVariants(res.event.variants)
+
+        const ticketsFree = res.event.ticketsFree ?? 0
+        const soldOut = res.event.soldOut ?? false
+
+        if (soldOut || ticketsFree === 0) {
+          addTikettiLog(`Not available yet — ${ticketsFree} tickets free, soldOut=${soldOut}`)
           return
         }
 
-        if (variant.available) {
-          addTikettiLog(`Tickets available! Adding ${variant.name} to cart...`)
-          const cartRes = await addToTikettiCart(
-            tikettiSniperUrl,
-            variant.id,
-            tikettiSniperQty,
-            tikettiSessionCookie,
-          )
-          addTikettiLog(`Cart: ${cartRes.message}`)
-          if (cartRes.success) {
-            setTikettiSniperSuccess(true)
-            setTikettiSniperStatus('stopped')
-            if (tikettiSniperIntervalRef.current) clearInterval(tikettiSniperIntervalRef.current)
-          }
-        } else {
-          addTikettiLog(`Not available yet: ${variant.name}`)
+        // Tickets are available — try to add to cart!
+        addTikettiLog(`Tickets available! (${ticketsFree} free) — adding to cart...`)
+        const cartRes = await addToTikettiCart(
+          tikettiSniperUrl,
+          tikettiSniperQty,
+          tikettiSessionCookie,
+        )
+        addTikettiLog(`Cart: ${cartRes.message}`)
+        if (cartRes.success) {
+          setTikettiSniperSuccess(true)
+          setTikettiSniperStatus('stopped')
+          if (tikettiSniperIntervalRef.current) clearInterval(tikettiSniperIntervalRef.current)
         }
       } catch (err) {
         addTikettiLog(`Error: ${err instanceof Error ? err.message : 'Unknown'}`)
@@ -997,7 +981,7 @@ function App() {
 
     // Set up polling
     tikettiSniperIntervalRef.current = setInterval(doCheck, tikettiSniperDelayMs)
-  }, [tikettiSniperEvent, tikettiSelectedVariantId, tikettiSessionCookie, tikettiSniperUrl, tikettiSniperQty, tikettiSniperDelayMs, addTikettiLog])
+  }, [tikettiSniperEvent, tikettiSessionCookie, tikettiSniperUrl, tikettiSniperQty, tikettiSniperDelayMs, addTikettiLog])
 
   const handleTikettiSniperStop = useCallback(() => {
     if (tikettiSniperIntervalRef.current) {
@@ -1875,34 +1859,26 @@ function App() {
                   <div className="tiketti-sniper-event-card">
                     <h3>{tikettiSniperEvent.title}</h3>
                     <div className="tiketti-sniper-event-meta">
-                      {tikettiSniperEvent.date && <span>{tikettiSniperEvent.date}</span>}
-                      <span>{tikettiSniperEvent.venue}</span>
-                      <span>{tikettiSniperEvent.city}</span>
+                      {tikettiSniperEvent.date && <span>{tikettiSniperEvent.date}{tikettiSniperEvent.endDate && tikettiSniperEvent.endDate !== tikettiSniperEvent.date ? ` — ${tikettiSniperEvent.endDate}` : ''}</span>}
+                      {tikettiSniperEvent.timeInfo && <span>{tikettiSniperEvent.timeInfo}</span>}
+                      <span>{tikettiSniperEvent.venue}, {tikettiSniperEvent.city}</span>
+                      {tikettiSniperEvent.ageInfo && <span>{tikettiSniperEvent.ageInfo}</span>}
                     </div>
 
-                    {/* Step 2: Select variant */}
-                    {tikettiSniperVariants.length > 0 ? (
-                      <div className="sniper-field">
-                        <label>{t('tikettiSniperVariantLabel')}</label>
-                        <select
-                          value={tikettiSelectedVariantId}
-                          onChange={(e) => setTikettiSelectedVariantId(e.target.value)}
-                          disabled={tikettiSniperStatus === 'monitoring'}
-                        >
-                          <option value="">{t('tikettiSniperSelectVariant')}</option>
-                          {tikettiSniperVariants.map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.name} — {v.price > 0 ? `${v.price.toFixed(2)} \u20AC` : 'Free'}
-                              {!v.available ? ` (${t('tikettiSniperSoldOut')})` : ''}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : (
-                      <p className="tiketti-sniper-no-variants">{t('tikettiSniperNoVariants')}</p>
-                    )}
+                    {/* Ticket availability */}
+                    <div className="tiketti-sniper-availability">
+                      <span className={`availability-badge ${tikettiSniperEvent.soldOut ? 'sold-out' : tikettiSniperEvent.ticketsFree && tikettiSniperEvent.ticketsFree > 0 ? 'available' : 'waiting'}`}>
+                        {tikettiSniperEvent.soldOut
+                          ? t('tikettiSniperSoldOut')
+                          : tikettiSniperEvent.cancelled
+                            ? t('tikettiSniperCancelled')
+                            : tikettiSniperEvent.ticketsFree && tikettiSniperEvent.ticketsFree > 0
+                              ? `${tikettiSniperEvent.ticketsFree} / ${tikettiSniperEvent.ticketsTotal} ${t('tikettiSniperTicketsFree')}`
+                              : t('tikettiSniperWaiting')}
+                      </span>
+                    </div>
 
-                    {/* Step 3: Session cookie */}
+                    {/* Step 2: Session cookie */}
                     <div className="sniper-field">
                       <label>
                         {t('tikettiSniperCookieLabel')}
@@ -1950,7 +1926,7 @@ function App() {
                         <button
                           className="btn-primary btn-large"
                           onClick={handleTikettiSniperStart}
-                          disabled={!tikettiSelectedVariantId || !tikettiSessionCookie.trim()}
+                          disabled={!tikettiSessionCookie.trim()}
                         >
                           {t('tikettiSniperStartBtn')}
                         </button>

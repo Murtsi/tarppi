@@ -217,6 +217,13 @@ export type TikettiEventDetail = {
   city: string
   variants: TikettiVariant[]
   imageUrl?: string
+  ticketsFree?: number
+  ticketsTotal?: number
+  soldOut?: boolean
+  cancelled?: boolean
+  ageInfo?: string
+  timeInfo?: string
+  endDate?: string
 }
 
 export type TikettiEventResponse = {

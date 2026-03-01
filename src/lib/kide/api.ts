@@ -208,13 +208,11 @@ export async function fetchTikettiEvent(eventUrl: string): Promise<TikettiEventR
  */
 export async function addToTikettiCart(
   eventUrl: string,
-  variantId: string,
   quantity: number,
   sessionCookie: string,
 ): Promise<TikettiReserveResponse> {
   return apiCall<TikettiReserveResponse>('/api/tiketti/reserve', {
     eventUrl,
-    variantId,
     quantity,
     sessionCookie,
   })
