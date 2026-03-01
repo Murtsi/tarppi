@@ -460,13 +460,14 @@ function App() {
   }
 
   // ── Scorer handlers ───────────────────────────────────────────────────────
-  const handleScanCity = async () => {
+  const handleScanCity = async (city: string) => {
+    setScanCityInput(city)
     setScorerError('')
     setScorerLoading(true)
     setScanMeta(null)
 
     try {
-      const result = await scanCity(scanCityInput.trim())
+      const result = await scanCity(city.trim())
       setScoredEvents(result.events)
       setScorerTop10(result.top_10)
       setScorerStats(result.stats)
@@ -482,15 +483,6 @@ function App() {
     } finally {
       setScorerLoading(false)
     }
-  }
-
-  const handleClearScorer = () => {
-    setScoredEvents([])
-    setScorerTop10([])
-    setScorerStats(null)
-    setScorerError('')
-    setExpandedEventId(null)
-    setScanMeta(null)
   }
 
   const handleSnipeEvent = (eventId: string) => {
@@ -780,32 +772,19 @@ function App() {
             <h2>{t('scorerTitle')}</h2>
             <p className="scorer-subtitle">{t('scorerSubtitle')}</p>
 
-            {/* City picker — Finland only */}
+            {/* City picker — Finland only, auto-scans on selection */}
             <div className="scorer-input-area">
               <label>{t('scorerCityLabel')}</label>
               <CityPicker
                 value={scanCityInput}
-                onChange={setScanCityInput}
+                onChange={handleScanCity}
                 allLabel={t('scorerAllCities')}
                 placeholder={t('scorerCustomCityPlaceholder')}
                 disabled={scorerLoading}
               />
 
+              {scorerLoading && <p className="scorer-scanning">{t('scorerScanning')}</p>}
               {scorerError && <p className="scorer-error">{scorerError}</p>}
-
-              <div className="button-row">
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={handleScanCity}
-                  disabled={scorerLoading}
-                >
-                  {scorerLoading ? t('scorerScanning') : t('scorerScan')}
-                </button>
-                <button type="button" className="btn-secondary" onClick={handleClearScorer} disabled={scorerLoading}>
-                  {t('scorerClear')}
-                </button>
-              </div>
             </div>
 
             {/* Scan meta info */}

@@ -1187,6 +1187,22 @@ button.danger {
   font-weight: 500;
 }
 
+.scorer-scanning {
+  color: var(--primary-light);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--primary);
+  animation: pulse-opacity 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-opacity {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 .scorer-error {
   color: var(--danger);
   font-size: 0.85rem;
