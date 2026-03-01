@@ -390,7 +390,7 @@ function App() {
 
   const [eventName, setEventName] = useState('')
   const [eventImageUrl, setEventImageUrl] = useState('')
-  const [eventVariants, setEventVariants] = useState<Array<{ inventoryId: string; name: string; price: number }>>([])
+  const [eventVariants, setEventVariants] = useState<Array<{ inventoryId: string; name: string; price: number; availability: number }>>([])
   const [selectedVariantId, setSelectedVariantId] = useState('')
   const [fetchingEvent, setFetchingEvent] = useState(false)
   const [showTokenGuide, setShowTokenGuide] = useState(false)
@@ -543,11 +543,13 @@ function App() {
       try {
         const data = await fetchEventProducts(eventUrl)
         setEventName(data.product.name)
-        setEventImageUrl(data.product.mediaFilename || '')
+        const mf = data.product.mediaFilename
+        setEventImageUrl(mf ? `https://portalvhdsp62n0yt356llm.blob.core.windows.net/bailataan-mediaitems/${mf}` : '')
         const variants = data.variants.map((v) => ({
           inventoryId: v.inventoryId,
           name: v.name,
           price: v.pricePerItem ?? v.price ?? 0,
+          availability: v.availability,
         }))
         setEventVariants(variants)
         if (variants.length > 0 && !selectedVariantId) {
@@ -1126,8 +1128,8 @@ function App() {
                           className="variant-select"
                         >
                           {eventVariants.map((v) => (
-                            <option key={v.inventoryId} value={v.inventoryId}>
-                              {v.name} — €{(v.price / 100).toFixed(2)}
+                            <option key={v.inventoryId} value={v.inventoryId} disabled={v.availability === 0}>
+                              {v.name} — €{(v.price / 100).toFixed(2)}{v.availability === 0 ? ' (Sold out)' : ` (${v.availability} left)`}
                             </option>
                           ))}
                         </select>
