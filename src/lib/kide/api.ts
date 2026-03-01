@@ -9,6 +9,8 @@ import type {
   ReserveResponse,
   ValidateTokenResponse,
   DeobfuscateResponse,
+  EventFeatures,
+  ScorerResponse,
 } from './types'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -68,6 +70,13 @@ export async function addToCart(
  */
 export async function fetchExtraProperties(): Promise<DeobfuscateResponse> {
   return apiCall<DeobfuscateResponse>('/api/deobfuscate', {})
+}
+
+/**
+ * Score a batch of events for resell potential via the backend AI scorer.
+ */
+export async function scoreEvents(events: EventFeatures[]): Promise<ScorerResponse> {
+  return apiCall<ScorerResponse>('/api/score', { events })
 }
 
 /**

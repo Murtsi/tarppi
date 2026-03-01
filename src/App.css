@@ -988,3 +988,377 @@ button.danger {
 @media (prefers-color-scheme: light) {
   /* App is always dark, no changes needed */
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tab Bar
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tab-bar {
+  display: flex;
+  gap: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--gray);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tab-btn:hover {
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--primary-light);
+}
+
+.tab-btn.tab-active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AI Scorer Panel
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.scorer-panel {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.scorer-panel h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.scorer-subtitle {
+  color: var(--gray);
+  font-size: 0.9rem;
+  margin: -0.5rem 0 0;
+}
+
+/* Input area */
+.scorer-input-area {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.scorer-textarea {
+  width: 100%;
+  min-height: 150px;
+  padding: 0.75rem;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  background: var(--dark);
+  color: var(--light);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.scorer-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.scorer-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--danger);
+}
+
+/* Stats */
+.scorer-stats {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.scorer-stats h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.75rem;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border);
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--light);
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+.stat-buy .stat-value { color: var(--success); }
+.stat-maybe .stat-value { color: var(--warning); }
+.stat-skip .stat-value { color: var(--danger); }
+
+/* View toggle */
+.scorer-view-toggle {
+  display: flex;
+  gap: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+}
+
+.scorer-view-toggle .tab-btn {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* Results list */
+.scorer-results {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.scorer-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1rem;
+  border-left: 4px solid var(--gray);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.scorer-card.decision-buy {
+  border-left-color: var(--success);
+}
+
+.scorer-card.decision-maybe {
+  border-left-color: var(--warning);
+}
+
+.scorer-card.decision-skip {
+  border-left-color: var(--danger);
+}
+
+.scorer-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.scorer-card-clickable {
+  cursor: pointer;
+}
+
+.scorer-card-clickable:hover {
+  opacity: 0.9;
+}
+
+.scorer-rank {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary-light);
+  min-width: 2rem;
+  flex-shrink: 0;
+}
+
+.scorer-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.scorer-event-name {
+  display: block;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scorer-reason {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--gray);
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+.scorer-card-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.scorer-score-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.scorer-decision-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  color: #fff;
+}
+
+.scorer-decision-badge.decision-buy {
+  background: var(--success);
+}
+
+.scorer-decision-badge.decision-maybe {
+  background: var(--warning);
+  color: #000;
+}
+
+.scorer-decision-badge.decision-skip {
+  background: var(--danger);
+}
+
+/* Snipe button */
+.btn-snipe {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--success);
+  border-radius: var(--radius-sm);
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+.btn-snipe:hover {
+  background: rgba(16, 185, 129, 0.3);
+}
+
+/* Feature breakdown */
+.scorer-breakdown {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--card-border);
+}
+
+.scorer-breakdown h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--gray);
+}
+
+.breakdown-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.breakdown-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.breakdown-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--gray);
+}
+
+.breakdown-value {
+  font-weight: 600;
+  color: var(--light);
+  font-variant-numeric: tabular-nums;
+}
+
+.breakdown-track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.breakdown-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* Empty state */
+.scorer-empty {
+  text-align: center;
+  color: var(--gray);
+  font-size: 0.9rem;
+  padding: 2rem 1rem;
+  background: var(--card-bg);
+  border: 1px dashed var(--card-border);
+  border-radius: var(--radius-md);
+}
+
+/* ─── Scorer responsive ──────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .scorer-card-header {
+    flex-wrap: wrap;
+  }
+  .scorer-card-score {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .scorer-score-value {
+    font-size: 1.1rem;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .stat-card:nth-child(n+4) {
+    grid-column: span 1;
+  }
+}
+
+@media (min-width: 768px) {
+  .scorer-card-header {
+    align-items: center;
+  }
+  .btn-snipe {
+    width: auto;
+  }
+}

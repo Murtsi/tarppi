@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { extractEventId, fetchEventProducts, maskToken, validateToken, addToCart, fetchExtraProperties } from './lib/kide/api'
+import { extractEventId, fetchEventProducts, maskToken, validateToken, addToCart, fetchExtraProperties, scoreEvents } from './lib/kide/api'
 import { getTranslation, type LanguageCode } from './lib/translations'
+import type { ScoredEvent, TopEvent, EventFeatures } from './lib/kide/types'
 import './App.css'
+
+type AppTab = 'sniper' | 'scorer'
 
 type Step = 0 | 1 | 2 | 3 | 4
 
@@ -75,8 +78,102 @@ const InfoModalContent = ({ onClose, t }: { onClose: () => void; t: (key: string
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
+const SAMPLE_EVENTS: EventFeatures[] = [
+  {
+    event_id: 'a58700c1-9185-4639-a68a-226eae91f662',
+    name: 'AaltoApprot III',
+    organiser: 'Turun ammattikorkeakoulun opiskelijakunta - TUO',
+    start_time: '2026-04-16T18:00:00+03:00',
+    base_price_eur: 16,
+    max_price_eur: 25,
+    likes_total: 93,
+    hours_since_published: 48,
+    tickets_total: 400,
+    tickets_sold_estimate: 400,
+    is_sold_out: true,
+    sellout_minutes: 3,
+    city: 'Turku',
+    category: 'student_party',
+    organiser_historical_events: 20,
+    organiser_historical_sellout_rate: 0.7,
+    organiser_social_ig_post_likes: 520,
+    organiser_social_ig_post_comments: 32,
+  },
+  {
+    event_id: 'b12300c1-1111-4639-a68a-226eae91f611',
+    name: 'HYY Wappu Afterparty',
+    organiser: 'HYY',
+    start_time: '2026-04-30T22:00:00+03:00',
+    base_price_eur: 12,
+    max_price_eur: 12,
+    likes_total: 210,
+    hours_since_published: 24,
+    tickets_total: 600,
+    tickets_sold_estimate: 600,
+    is_sold_out: true,
+    sellout_minutes: 1,
+    city: 'Helsinki',
+    category: 'student_party',
+    organiser_historical_events: 45,
+    organiser_historical_sellout_rate: 0.85,
+    organiser_social_ig_post_likes: 1200,
+    organiser_social_ig_post_comments: 88,
+  },
+  {
+    event_id: 'c99900c1-2222-4639-a68a-226eae91f622',
+    name: 'Casual Friday Drinks',
+    organiser: 'Random Org',
+    start_time: '2026-05-02T17:00:00+03:00',
+    base_price_eur: 5,
+    likes_total: 8,
+    hours_since_published: 120,
+    tickets_total: 100,
+    tickets_sold_estimate: 30,
+    is_sold_out: false,
+    city: 'Oulu',
+    category: 'casual',
+    organiser_historical_events: 2,
+    organiser_historical_sellout_rate: 0.1,
+  },
+]
+
+// ─── Breakdown bar component ──────────────────────────────────────────────
+
+const BreakdownBar = ({ label, value }: { label: string; value: number }) => (
+  <div className="breakdown-item">
+    <div className="breakdown-label">
+      <span>{label}</span>
+      <span className="breakdown-value">{value}</span>
+    </div>
+    <div className="breakdown-track">
+      <div
+        className="breakdown-fill"
+        style={{
+          width: `${value}%`,
+          backgroundColor: value >= 75 ? 'var(--success)' : value >= 50 ? 'var(--warning)' : 'var(--danger)',
+        }}
+      />
+    </div>
+  </div>
+)
+
+// ─── Score badge helper ──────────────────────────────────────────────────────
+
+function decisionClass(d: 'BUY' | 'MAYBE' | 'SKIP'): string {
+  if (d === 'BUY') return 'decision-buy'
+  if (d === 'MAYBE') return 'decision-maybe'
+  return 'decision-skip'
+}
+
+function scoreColor(score: number): string {
+  if (score >= 75) return 'var(--success)'
+  if (score >= 50) return 'var(--warning)'
+  return 'var(--danger)'
+}
+
 function App() {
   // ── State ───────────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<AppTab>('sniper')
   const [step, setStep] = useState<Step>(0)
   const [infoPanelOpen, setInfoPanelOpen] = useState(false)
   const [eventUrl, setEventUrl] = useState('')
@@ -110,6 +207,16 @@ function App() {
     const saved = localStorage.getItem('kidehiiri-language') as LanguageCode | null
     return saved || 'en'
   })
+
+  // ── Scorer state ──────────────────────────────────────────────────────────
+  const [scorerInput, setScorerInput] = useState('')
+  const [scorerLoading, setScorerLoading] = useState(false)
+  const [scorerError, setScorerError] = useState('')
+  const [scoredEvents, setScoredEvents] = useState<ScoredEvent[]>([])
+  const [scorerTop10, setScorerTop10] = useState<TopEvent[]>([])
+  const [scorerStats, setScorerStats] = useState<{ total: number; buy_count: number; maybe_count: number; skip_count: number; avg_score: number } | null>(null)
+  const [scorerView, setScorerView] = useState<'top10' | 'all'>('top10')
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
 
   const t = (key: string, params?: Record<string, string | number>) =>
     getTranslation(language, key, params)
@@ -407,6 +514,65 @@ function App() {
     setTokenExpiresAt(null)
   }
 
+  // ── Scorer handlers ───────────────────────────────────────────────────────
+  const handleScoreEvents = async () => {
+    setScorerError('')
+
+    let parsed: EventFeatures[]
+    try {
+      parsed = JSON.parse(scorerInput)
+    } catch {
+      setScorerError(t('scorerParseError'))
+      return
+    }
+
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      setScorerError(t('scorerEmptyArray'))
+      return
+    }
+
+    const invalid = parsed.filter((e) => !e.event_id || !e.name)
+    if (invalid.length > 0) {
+      setScorerError(t('scorerMissingFields'))
+      return
+    }
+
+    setScorerLoading(true)
+    try {
+      const result = await scoreEvents(parsed)
+      setScoredEvents(result.events)
+      setScorerTop10(result.top_10)
+      setScorerStats(result.stats)
+      setScorerView('top10')
+      setExpandedEventId(null)
+    } catch (err) {
+      setScorerError(err instanceof Error ? err.message : 'Scoring failed')
+    } finally {
+      setScorerLoading(false)
+    }
+  }
+
+  const handleLoadSample = () => {
+    setScorerInput(JSON.stringify(SAMPLE_EVENTS, null, 2))
+    setScorerError('')
+  }
+
+  const handleClearScorer = () => {
+    setScorerInput('')
+    setScoredEvents([])
+    setScorerTop10([])
+    setScorerStats(null)
+    setScorerError('')
+    setExpandedEventId(null)
+  }
+
+  const handleSnipeEvent = (eventId: string) => {
+    const url = `https://kide.app/events/${eventId}`
+    setEventUrl(url)
+    setActiveTab('sniper')
+    setStep(0)
+  }
+
   const steps = [t('step1'), t('step2'), t('step3'), t('step4'), t('step5')]
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -432,21 +598,42 @@ function App() {
           </div>
         </header>
 
-        <ol className="stepper" aria-label="Setup steps">
-          {steps.map((label, index) => (
-            <li
-              key={label}
-              className={[
-                'step',
-                step === index ? 'step-active' : '',
-                step > index ? 'step-complete' : '',
-              ].join(' ')}
-            >
-              <span>{index + 1}</span>
-              {label}
-            </li>
-          ))}
-        </ol>
+        {/* ── Tab switcher ── */}
+        <div className="tab-bar">
+          <button
+            className={`tab-btn ${activeTab === 'sniper' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('sniper')}
+          >
+            {t('sniperTab')}
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'scorer' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('scorer')}
+          >
+            {t('scorerTab')}
+          </button>
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            SNIPER TAB
+            ═══════════════════════════════════════════════════════════════════ */}
+        {activeTab === 'sniper' && (
+          <>
+            <ol className="stepper" aria-label="Setup steps">
+              {steps.map((label, index) => (
+                <li
+                  key={label}
+                  className={[
+                    'step',
+                    step === index ? 'step-active' : '',
+                    step > index ? 'step-complete' : '',
+                  ].join(' ')}
+                >
+                  <span>{index + 1}</span>
+                  {label}
+                </li>
+              ))}
+            </ol>
 
         <section className="panel">
           {/* ── Step 0: Event Configuration ── */}
@@ -655,6 +842,194 @@ function App() {
             {step === 3 ? t('reviewMonitor') : t('next')}
           </button>
         </footer>
+          </>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            AI SCORER TAB
+            ═══════════════════════════════════════════════════════════════════ */}
+        {activeTab === 'scorer' && (
+          <section className="scorer-panel">
+            <h2>{t('scorerTitle')}</h2>
+            <p className="scorer-subtitle">{t('scorerSubtitle')}</p>
+
+            {/* Input area */}
+            <div className="scorer-input-area">
+              <label>
+                {t('scorerInputLabel')}
+                <textarea
+                  className="scorer-textarea"
+                  rows={10}
+                  placeholder={t('scorerInputPlaceholder')}
+                  value={scorerInput}
+                  onChange={(e) => { setScorerInput(e.target.value); setScorerError('') }}
+                />
+              </label>
+
+              {scorerError && <p className="scorer-error">{scorerError}</p>}
+
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={handleScoreEvents}
+                  disabled={scorerLoading || !scorerInput.trim()}
+                >
+                  {scorerLoading ? t('scorerAnalyzing') : t('scorerAnalyze')}
+                </button>
+                <button type="button" className="btn-secondary" onClick={handleLoadSample}>
+                  {t('scorerLoadSample')}
+                </button>
+                <button type="button" className="btn-secondary" onClick={handleClearScorer}>
+                  {t('scorerClear')}
+                </button>
+              </div>
+            </div>
+
+            {/* Stats banner */}
+            {scorerStats && (
+              <div className="scorer-stats">
+                <h3>{t('scorerStats')}</h3>
+                <div className="stats-grid">
+                  <div className="stat-card">
+                    <span className="stat-value">{scorerStats.total}</span>
+                    <span className="stat-label">{t('scorerTotalEvents')}</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-value">{scorerStats.avg_score}</span>
+                    <span className="stat-label">{t('scorerAvgScore')}</span>
+                  </div>
+                  <div className="stat-card stat-buy">
+                    <span className="stat-value">{scorerStats.buy_count}</span>
+                    <span className="stat-label">{t('scorerBuyCount')}</span>
+                  </div>
+                  <div className="stat-card stat-maybe">
+                    <span className="stat-value">{scorerStats.maybe_count}</span>
+                    <span className="stat-label">{t('scorerMaybeCount')}</span>
+                  </div>
+                  <div className="stat-card stat-skip">
+                    <span className="stat-value">{scorerStats.skip_count}</span>
+                    <span className="stat-label">{t('scorerSkipCount')}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Results toggle */}
+            {scoredEvents.length > 0 && (
+              <>
+                <div className="scorer-view-toggle">
+                  <button
+                    className={`tab-btn ${scorerView === 'top10' ? 'tab-active' : ''}`}
+                    onClick={() => setScorerView('top10')}
+                  >
+                    {t('scorerTop10')}
+                  </button>
+                  <button
+                    className={`tab-btn ${scorerView === 'all' ? 'tab-active' : ''}`}
+                    onClick={() => setScorerView('all')}
+                  >
+                    {t('scorerAllEvents')}
+                  </button>
+                </div>
+
+                {/* Top 10 view */}
+                {scorerView === 'top10' && (
+                  <div className="scorer-results">
+                    {scorerTop10.map((ev) => (
+                      <div key={ev.event_id} className={`scorer-card ${decisionClass(ev.decision)}`}>
+                        <div className="scorer-card-header">
+                          <span className="scorer-rank">#{ev.rank}</span>
+                          <div className="scorer-card-info">
+                            <span className="scorer-event-name">{ev.name}</span>
+                            <span className="scorer-reason">{ev.reason}</span>
+                          </div>
+                          <div className="scorer-card-score">
+                            <span className="scorer-score-value" style={{ color: scoreColor(ev.resell_score) }}>
+                              {ev.resell_score}
+                            </span>
+                            <span className={`scorer-decision-badge ${decisionClass(ev.decision)}`}>
+                              {ev.decision}
+                            </span>
+                          </div>
+                        </div>
+                        {ev.decision === 'BUY' && (
+                          <button
+                            type="button"
+                            className="btn-snipe"
+                            onClick={() => handleSnipeEvent(ev.event_id)}
+                          >
+                            {t('scorerTriggerBot')}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* All events view */}
+                {scorerView === 'all' && (
+                  <div className="scorer-results">
+                    {scoredEvents
+                      .sort((a, b) => b.resell_score - a.resell_score)
+                      .map((ev) => {
+                        const isExpanded = expandedEventId === ev.event_id
+                        return (
+                          <div key={ev.event_id} className={`scorer-card ${decisionClass(ev.decision)}`}>
+                            <div
+                              className="scorer-card-header scorer-card-clickable"
+                              onClick={() => setExpandedEventId(isExpanded ? null : ev.event_id)}
+                            >
+                              <div className="scorer-card-info">
+                                <span className="scorer-event-name">{ev.name}</span>
+                                <span className="scorer-reason">{ev.reason}</span>
+                              </div>
+                              <div className="scorer-card-score">
+                                <span className="scorer-score-value" style={{ color: scoreColor(ev.resell_score) }}>
+                                  {ev.resell_score}
+                                </span>
+                                <span className={`scorer-decision-badge ${decisionClass(ev.decision)}`}>
+                                  {ev.decision}
+                                </span>
+                              </div>
+                            </div>
+
+                            {isExpanded && (
+                              <div className="scorer-breakdown">
+                                <h4>{t('scorerFeatures')}</h4>
+                                <div className="breakdown-grid">
+                                  <BreakdownBar label={t('scorerLikesVelocity')} value={ev.feature_breakdown.likes_velocity} />
+                                  <BreakdownBar label={t('scorerSelloutDynamics')} value={ev.feature_breakdown.sellout_dynamics} />
+                                  <BreakdownBar label={t('scorerPriceAttractiveness')} value={ev.feature_breakdown.price_attractiveness} />
+                                  <BreakdownBar label={t('scorerOrganiserTrack')} value={ev.feature_breakdown.organiser_track_record} />
+                                  <BreakdownBar label={t('scorerSocialProof')} value={ev.feature_breakdown.social_proof} />
+                                  <BreakdownBar label={t('scorerDataCompleteness')} value={ev.feature_breakdown.data_completeness} />
+                                </div>
+                                {ev.should_trigger_ticket_bot && (
+                                  <button
+                                    type="button"
+                                    className="btn-snipe"
+                                    onClick={() => handleSnipeEvent(ev.event_id)}
+                                  >
+                                    {t('scorerTriggerBot')}
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Empty state */}
+            {!scorerLoading && scoredEvents.length === 0 && !scorerError && (
+              <p className="scorer-empty">{t('scorerNoResults')}</p>
+            )}
+          </section>
+        )}
       </main>
     </>
   )
