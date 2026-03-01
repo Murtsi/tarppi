@@ -81,26 +81,6 @@ const InfoModalContent = ({ onClose, t }: { onClose: () => void; t: (key: string
 
 
 
-// ─── Breakdown bar component ──────────────────────────────────────────────
-
-const BreakdownBar = ({ label, value }: { label: string; value: number }) => (
-  <div className="breakdown-item">
-    <div className="breakdown-label">
-      <span>{label}</span>
-      <span className="breakdown-value">{value}</span>
-    </div>
-    <div className="breakdown-track">
-      <div
-        className="breakdown-fill"
-        style={{
-          width: `${value}%`,
-          backgroundColor: value >= 75 ? 'var(--success)' : value >= 50 ? 'var(--warning)' : 'var(--danger)',
-        }}
-      />
-    </div>
-  </div>
-)
-
 // ─── Score badge helper ──────────────────────────────────────────────────────
 
 function decisionClass(d: 'BUY' | 'MAYBE' | 'SKIP'): string {
