@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity, adminLogin, adminVerify, fetchTikettiEvents, triggerTikettiScrape, fetchTikettiEvent, addToTikettiCart } from './lib/kide/api'
 import { getTranslation, type LanguageCode } from './lib/translations'
-import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant, TikettiEvent, TikettiVariant, TikettiEventDetail } from './lib/kide/types'
+import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant, TikettiEvent, TikettiEventDetail } from './lib/kide/types'
 import CityPicker from './components/CityPicker'
 import { TicketSniperIcon } from './components/Logo'
 import './App.css'
@@ -431,8 +431,6 @@ function App() {
   const [tikettiSniperUrl, setTikettiSniperUrl] = useState('')
   const [tikettiSessionCookie, setTikettiSessionCookie] = useState(() => localStorage.getItem('kidehiiri-tiketti-cookie') || '')
   const [tikettiSniperEvent, setTikettiSniperEvent] = useState<TikettiEventDetail | null>(null)
-  const [tikettiSniperVariants, setTikettiSniperVariants] = useState<TikettiVariant[]>([])
-  const [tikettiSelectedVariantId, setTikettiSelectedVariantId] = useState('')
   const [tikettiSniperQty, setTikettiSniperQty] = useState(1)
   const [tikettiSniperFetching, setTikettiSniperFetching] = useState(false)
   const [tikettiSniperStatus, setTikettiSniperStatus] = useState<'idle' | 'monitoring' | 'stopped'>('idle')
@@ -899,19 +897,15 @@ function App() {
     setTikettiSniperFetching(true)
     setTikettiSniperError('')
     setTikettiSniperEvent(null)
-    setTikettiSniperVariants([])
-    setTikettiSelectedVariantId('')
     addTikettiLog(`Fetching event: ${url}`)
 
     try {
       const res = await fetchTikettiEvent(url)
       if (res.success && res.event) {
         setTikettiSniperEvent(res.event)
-        setTikettiSniperVariants(res.event.variants)
-        if (res.event.variants.length === 1) {
-          setTikettiSelectedVariantId(res.event.variants[0].id)
-        }
-        addTikettiLog(`Found: ${res.event.title} — ${res.event.variants.length} ticket type(s)`)
+        const free = res.event.ticketsFree ?? 0
+        const total = res.event.ticketsTotal ?? 0
+        addTikettiLog(`Found: ${res.event.title} — ${free}/${total} tickets free`)
       } else {
         setTikettiSniperError(res.error || 'Failed to fetch event')
         addTikettiLog(`Error: ${res.error || 'Unknown error'}`)
@@ -948,7 +942,6 @@ function App() {
 
         // Update event info in UI
         setTikettiSniperEvent(res.event)
-        setTikettiSniperVariants(res.event.variants)
 
         const ticketsFree = res.event.ticketsFree ?? 0
         const soldOut = res.event.soldOut ?? false
