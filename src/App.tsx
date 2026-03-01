@@ -3,6 +3,7 @@ import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, valida
 import { getTranslation, type LanguageCode } from './lib/translations'
 import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant } from './lib/kide/types'
 import CityPicker from './components/CityPicker'
+import { KidehiiriIcon } from './components/Logo'
 import './App.css'
 
 type AppTab = 'sniper' | 'scorer'
@@ -695,8 +696,11 @@ function App() {
       <main className="app-shell">
         <header className="app-header">
           <div className="header-left">
-            <h1>{t('appTitle')}</h1>
-            <p>{t('appSubtitle')}</p>
+            <KidehiiriIcon size={36} />
+            <div>
+              <h1>{t('appTitle')}</h1>
+              <p>{t('appSubtitle')}</p>
+            </div>
           </div>
           <div className="header-right">
             <div className="language-toggle">
