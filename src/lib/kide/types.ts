@@ -52,23 +52,42 @@ export type DeobfuscateResponse = {
   cached: boolean
 }
 
+// ─── Sales Status ────────────────────────────────────────────────────────────
+
+export type SalesStatus = 'upcoming' | 'on_sale' | 'selling_fast' | 'almost_sold_out' | 'paused' | 'sold_out' | 'ended'
+
+// ─── AI Reranker (ML model) Types ────────────────────────────────────────────
+
+export type AiScore = {
+  label: 'BUY' | 'MAYBE' | 'SKIP'
+  buy_probability: number
+  maybe_probability: number
+  skip_probability: number
+  model_version: string
+}
+
 // ─── AI Scorer Types ─────────────────────────────────────────────────────────
 
 export type EventFeatures = {
   event_id: string
   name: string
   organiser?: string
+  organiser_id?: string
   start_time?: string
+  sales_start_time?: string
   base_price_eur?: number | null
   max_price_eur?: number | null
   likes_total?: number | null
   hours_since_published?: number | null
+  availability_pct?: number | null
   tickets_total?: number | null
   tickets_sold_estimate?: number | null
   is_sold_out?: boolean
   sellout_minutes?: number | null
+  sales_status?: SalesStatus
   city?: string | null
   category?: string | null
+  media_url?: string | null
   organiser_historical_events?: number | null
   organiser_historical_sellout_rate?: number | null
   organiser_social_ig_post_likes?: number | null
@@ -78,27 +97,42 @@ export type EventFeatures = {
 export type ScoredEvent = {
   event_id: string
   name: string
+  organiser?: string
+  organiser_id?: string
+  sales_status?: SalesStatus
+  start_time?: string
+  base_price_eur?: number | null
+  max_price_eur?: number | null
+  likes_total?: number | null
+  availability_pct?: number | null
+  hours_since_published?: number | null
   resell_score: number
   decision: 'BUY' | 'MAYBE' | 'SKIP'
   should_trigger_ticket_bot: boolean
   reason: string
   feature_breakdown: {
-    likes_velocity: number
-    sellout_dynamics: number
-    price_attractiveness: number
-    organiser_track_record: number
-    social_proof: number
-    data_completeness: number
+    popularity: number
+    demand: number
+    pricing: number
+    timing: number
+    organiser: number
   }
+  ai_score?: AiScore
 }
 
 export type TopEvent = {
   rank: number
   event_id: string
   name: string
+  organiser?: string
+  sales_status?: SalesStatus
+  start_time?: string
+  base_price_eur?: number | null
+  likes_total?: number | null
   resell_score: number
   decision: 'BUY' | 'MAYBE' | 'SKIP'
   reason: string
+  ai_score?: AiScore
 }
 
 export type ScorerResponse = {
@@ -118,5 +152,6 @@ export type ScorerResponse = {
 export type ScanResponse = ScorerResponse & {
   scanned_count: number
   filtered_count: number
+  filtered_out_sold_out: number
   city: string
 }

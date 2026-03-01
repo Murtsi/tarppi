@@ -1479,6 +1479,194 @@ button.danger {
   border-radius: var(--radius-md);
 }
 
+/* Event meta row (organiser, status, likes, price, date) */
+.scorer-event-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--gray);
+  align-items: center;
+}
+
+.scorer-organiser {
+  font-weight: 500;
+  color: var(--light);
+  opacity: 0.85;
+}
+
+.scorer-likes {
+  color: #f87171;
+}
+
+.scorer-price {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.scorer-date {
+  color: var(--gray);
+}
+
+/* Sales status badges */
+.scorer-status-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.status-upcoming {
+  background: rgba(99, 102, 241, 0.2);
+  color: #818cf8;
+}
+
+.status-on-sale {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+}
+
+.status-selling-fast {
+  background: rgba(251, 146, 60, 0.2);
+  color: #fb923c;
+}
+
+.status-almost-sold-out {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.status-paused {
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+}
+
+/* Scan meta sold-out info */
+.scan-meta-sold-out {
+  color: var(--gray);
+  font-size: 0.8rem;
+}
+
+/* ─── AI Reranker styles ──────────────────────────────────────────────────── */
+
+/* AI badge — inline label next to heuristic score */
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ai-badge-buy {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.ai-badge-maybe {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.ai-badge-skip {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* AI grouped view — group headers */
+.ai-grouped-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ai-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ai-group-header {
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  margin: 0;
+}
+
+.ai-group-header.decision-buy {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+  border-left: 3px solid var(--success);
+}
+
+.ai-group-header.decision-maybe {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+  border-left: 3px solid var(--warning);
+}
+
+.ai-group-header.decision-skip {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  border-left: 3px solid var(--danger);
+}
+
+/* AI probability bars in expanded breakdown */
+.ai-probabilities {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.ai-probabilities h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--gray);
+}
+
+.ai-prob-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ai-prob-item {
+  display: grid;
+  grid-template-columns: 50px 1fr 42px;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ai-prob-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--light);
+}
+
+.ai-prob-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: right;
+  color: var(--light);
+}
+
+.ai-model-version {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.65rem;
+  color: var(--gray);
+  opacity: 0.7;
+}
+
 /* ─── Scorer responsive ──────────────────────────────────────────────────── */
 
 @media (max-width: 480px) {

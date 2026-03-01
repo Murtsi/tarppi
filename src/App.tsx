@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { extractEventId, fetchEventProducts, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity } from './lib/kide/api'
 import { getTranslation, type LanguageCode } from './lib/translations'
-import type { ScoredEvent, TopEvent } from './lib/kide/types'
+import type { ScoredEvent, TopEvent, SalesStatus, AiScore } from './lib/kide/types'
 import CityPicker from './components/CityPicker'
 import './App.css'
 
@@ -115,6 +115,55 @@ function scoreColor(score: number): string {
   return 'var(--danger)'
 }
 
+/** The effective label: AI if available, otherwise heuristic. */
+function effectiveLabel(ev: { decision: string; ai_score?: AiScore }): 'BUY' | 'MAYBE' | 'SKIP' {
+  return (ev.ai_score?.label ?? ev.decision) as 'BUY' | 'MAYBE' | 'SKIP'
+}
+
+/** Format a probability as percentage string. */
+function pctStr(p: number): string {
+  return `${Math.round(p * 100)}%`
+}
+
+/** AI confidence bar color. */
+function aiConfidenceColor(prob: number): string {
+  if (prob >= 0.7) return 'var(--success)'
+  if (prob >= 0.4) return 'var(--warning)'
+  return 'var(--danger)'
+}
+
+/** Small AI badge component. */
+const AiBadge = ({ ai }: { ai?: AiScore }) => {
+  if (!ai) return null
+  return (
+    <span className={`ai-badge ai-badge-${ai.label.toLowerCase()}`} title={`AI: ${pctStr(ai.buy_probability)} buy · v${ai.model_version}`}>
+      🤖 {ai.label} ({pctStr(ai.buy_probability)})
+    </span>
+  )
+}
+
+function salesStatusBadge(status?: SalesStatus): { label: string; className: string } | null {
+  if (!status) return null
+  switch (status) {
+    case 'upcoming': return { label: '🔜 Upcoming', className: 'status-upcoming' }
+    case 'on_sale': return { label: '🟢 On sale', className: 'status-on-sale' }
+    case 'selling_fast': return { label: '🔥 Selling fast', className: 'status-selling-fast' }
+    case 'almost_sold_out': return { label: '⚡ Almost sold out', className: 'status-almost-sold-out' }
+    case 'paused': return { label: '⏸️ Paused', className: 'status-paused' }
+    default: return null
+  }
+}
+
+function formatEventDate(dateStr?: string): string | null {
+  if (!dateStr) return null
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('fi-FI', { day: 'numeric', month: 'short', year: 'numeric' })
+  } catch {
+    return null
+  }
+}
+
 function App() {
   // ── State ───────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<AppTab>('sniper')
@@ -159,9 +208,9 @@ function App() {
   const [scoredEvents, setScoredEvents] = useState<ScoredEvent[]>([])
   const [scorerTop10, setScorerTop10] = useState<TopEvent[]>([])
   const [scorerStats, setScorerStats] = useState<{ total: number; buy_count: number; maybe_count: number; skip_count: number; avg_score: number } | null>(null)
-  const [scorerView, setScorerView] = useState<'top10' | 'all'>('top10')
+  const [scorerView, setScorerView] = useState<'top10' | 'all' | 'ai'>('top10')
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
-  const [scanMeta, setScanMeta] = useState<{ scanned_count: number; filtered_count: number; city: string } | null>(null)
+  const [scanMeta, setScanMeta] = useState<{ scanned_count: number; filtered_count: number; filtered_out_sold_out: number; city: string } | null>(null)
 
   const t = (key: string, params?: Record<string, string | number>) =>
     getTranslation(language, key, params)
@@ -474,6 +523,7 @@ function App() {
       setScanMeta({
         scanned_count: result.scanned_count,
         filtered_count: result.filtered_count,
+        filtered_out_sold_out: result.filtered_out_sold_out ?? 0,
         city: result.city,
       })
       setScorerView('top10')
@@ -794,6 +844,11 @@ function App() {
                   total: scanMeta.scanned_count,
                   city: scanMeta.city,
                 })}
+                {scanMeta.filtered_out_sold_out > 0 && (
+                  <span className="scan-meta-sold-out">
+                    {' · '}{scanMeta.filtered_out_sold_out} sold-out filtered out
+                  </span>
+                )}
               </div>
             )}
 
@@ -837,6 +892,12 @@ function App() {
                     {t('scorerTop10')}
                   </button>
                   <button
+                    className={`tab-btn ${scorerView === 'ai' ? 'tab-active' : ''}`}
+                    onClick={() => setScorerView('ai')}
+                  >
+                    {t('scorerAiView')}
+                  </button>
+                  <button
                     className={`tab-btn ${scorerView === 'all' ? 'tab-active' : ''}`}
                     onClick={() => setScorerView('all')}
                   >
@@ -847,34 +908,150 @@ function App() {
                 {/* Top 10 view */}
                 {scorerView === 'top10' && (
                   <div className="scorer-results">
-                    {scorerTop10.map((ev) => (
-                      <div key={ev.event_id} className={`scorer-card ${decisionClass(ev.decision)}`}>
-                        <div className="scorer-card-header">
-                          <span className="scorer-rank">#{ev.rank}</span>
-                          <div className="scorer-card-info">
-                            <span className="scorer-event-name">{ev.name}</span>
-                            <span className="scorer-reason">{ev.reason}</span>
+                    {scorerTop10.map((ev) => {
+                      const statusBadge = salesStatusBadge(ev.sales_status)
+                      const eventDate = formatEventDate(ev.start_time)
+                      return (
+                        <div key={ev.event_id} className={`scorer-card ${decisionClass(effectiveLabel(ev))}`}>
+                          <div className="scorer-card-header">
+                            <span className="scorer-rank">#{ev.rank}</span>
+                            <div className="scorer-card-info">
+                              <span className="scorer-event-name">{ev.name}</span>
+                              <div className="scorer-event-meta">
+                                {ev.organiser && <span className="scorer-organiser">🏢 {ev.organiser}</span>}
+                                {statusBadge && <span className={`scorer-status-badge ${statusBadge.className}`}>{statusBadge.label}</span>}
+                                {ev.likes_total != null && ev.likes_total > 0 && <span className="scorer-likes">❤️ {ev.likes_total}</span>}
+                                {ev.base_price_eur != null && ev.base_price_eur > 0 && <span className="scorer-price">€{ev.base_price_eur}</span>}
+                                {eventDate && <span className="scorer-date">📅 {eventDate}</span>}
+                              </div>
+                              <span className="scorer-reason">{ev.reason}</span>
+                            </div>
+                            <div className="scorer-card-score">
+                              <span className="scorer-score-value" style={{ color: scoreColor(ev.resell_score) }}>
+                                {ev.resell_score}
+                              </span>
+                              <AiBadge ai={ev.ai_score} />
+                              <span className={`scorer-decision-badge ${decisionClass(effectiveLabel(ev))}`}>
+                                {effectiveLabel(ev)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="scorer-card-score">
-                            <span className="scorer-score-value" style={{ color: scoreColor(ev.resell_score) }}>
-                              {ev.resell_score}
-                            </span>
-                            <span className={`scorer-decision-badge ${decisionClass(ev.decision)}`}>
-                              {ev.decision}
-                            </span>
-                          </div>
+                          {(effectiveLabel(ev) === 'BUY' || effectiveLabel(ev) === 'MAYBE') && (
+                            <button
+                              type="button"
+                              className="btn-snipe"
+                              onClick={() => handleSnipeEvent(ev.event_id)}
+                            >
+                              {t('scorerTriggerBot')}
+                            </button>
+                          )}
                         </div>
-                        {ev.decision === 'BUY' && (
-                          <button
-                            type="button"
-                            className="btn-snipe"
-                            onClick={() => handleSnipeEvent(ev.event_id)}
-                          >
-                            {t('scorerTriggerBot')}
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* AI-grouped view */}
+                {scorerView === 'ai' && (
+                  <div className="scorer-results ai-grouped-view">
+                    {(['BUY', 'MAYBE', 'SKIP'] as const).map((group) => {
+                      const groupEvents = scoredEvents.filter((ev) => effectiveLabel(ev) === group)
+                      if (groupEvents.length === 0) return null
+                      return (
+                        <div key={group} className={`ai-group ai-group-${group.toLowerCase()}`}>
+                          <h3 className={`ai-group-header ${decisionClass(group)}`}>
+                            {group === 'BUY' ? '🔥' : group === 'MAYBE' ? '🤔' : '⏭️'} {t(`scorerAi${group[0] + group.slice(1).toLowerCase()}`)} ({groupEvents.length})
+                          </h3>
+                          {groupEvents
+                            .sort((a, b) => (b.ai_score?.buy_probability ?? 0) - (a.ai_score?.buy_probability ?? 0) || b.resell_score - a.resell_score)
+                            .map((ev) => {
+                              const isExpanded = expandedEventId === ev.event_id
+                              const statusBadge = salesStatusBadge(ev.sales_status)
+                              const eventDate = formatEventDate(ev.start_time)
+                              return (
+                                <div key={ev.event_id} className={`scorer-card ${decisionClass(effectiveLabel(ev))}`}>
+                                  <div
+                                    className="scorer-card-header scorer-card-clickable"
+                                    onClick={() => setExpandedEventId(isExpanded ? null : ev.event_id)}
+                                  >
+                                    <div className="scorer-card-info">
+                                      <span className="scorer-event-name">{ev.name}</span>
+                                      <div className="scorer-event-meta">
+                                        {ev.organiser && <span className="scorer-organiser">🏢 {ev.organiser}</span>}
+                                        {statusBadge && <span className={`scorer-status-badge ${statusBadge.className}`}>{statusBadge.label}</span>}
+                                        {ev.likes_total != null && ev.likes_total > 0 && <span className="scorer-likes">❤️ {ev.likes_total}</span>}
+                                        {ev.base_price_eur != null && ev.base_price_eur > 0 && <span className="scorer-price">€{ev.base_price_eur}</span>}
+                                        {eventDate && <span className="scorer-date">📅 {eventDate}</span>}
+                                      </div>
+                                      <span className="scorer-reason">{ev.reason}</span>
+                                    </div>
+                                    <div className="scorer-card-score">
+                                      <span className="scorer-score-value" style={{ color: scoreColor(ev.resell_score) }}>
+                                        {ev.resell_score}
+                                      </span>
+                                      <AiBadge ai={ev.ai_score} />
+                                      <span className={`scorer-decision-badge ${decisionClass(effectiveLabel(ev))}`}>
+                                        {effectiveLabel(ev)}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {isExpanded && (
+                                    <div className="scorer-breakdown">
+                                      {ev.ai_score && (
+                                        <div className="ai-probabilities">
+                                          <h4>{t('scorerAiConfidence')}</h4>
+                                          <div className="ai-prob-bars">
+                                            <div className="ai-prob-item">
+                                              <span className="ai-prob-label">BUY</span>
+                                              <div className="breakdown-track">
+                                                <div className="breakdown-fill" style={{ width: `${ev.ai_score.buy_probability * 100}%`, backgroundColor: aiConfidenceColor(ev.ai_score.buy_probability) }} />
+                                              </div>
+                                              <span className="ai-prob-value">{pctStr(ev.ai_score.buy_probability)}</span>
+                                            </div>
+                                            <div className="ai-prob-item">
+                                              <span className="ai-prob-label">MAYBE</span>
+                                              <div className="breakdown-track">
+                                                <div className="breakdown-fill" style={{ width: `${ev.ai_score.maybe_probability * 100}%`, backgroundColor: 'var(--warning)' }} />
+                                              </div>
+                                              <span className="ai-prob-value">{pctStr(ev.ai_score.maybe_probability)}</span>
+                                            </div>
+                                            <div className="ai-prob-item">
+                                              <span className="ai-prob-label">SKIP</span>
+                                              <div className="breakdown-track">
+                                                <div className="breakdown-fill" style={{ width: `${ev.ai_score.skip_probability * 100}%`, backgroundColor: 'var(--danger)' }} />
+                                              </div>
+                                              <span className="ai-prob-value">{pctStr(ev.ai_score.skip_probability)}</span>
+                                            </div>
+                                          </div>
+                                          <span className="ai-model-version">model v{ev.ai_score.model_version}</span>
+                                        </div>
+                                      )}
+                                      <h4>{t('scorerFeatures')}</h4>
+                                      <div className="breakdown-grid">
+                                        <BreakdownBar label={t('scorerPopularity')} value={ev.feature_breakdown.popularity} />
+                                        <BreakdownBar label={t('scorerDemand')} value={ev.feature_breakdown.demand} />
+                                        <BreakdownBar label={t('scorerPricing')} value={ev.feature_breakdown.pricing} />
+                                        <BreakdownBar label={t('scorerTiming')} value={ev.feature_breakdown.timing} />
+                                        <BreakdownBar label={t('scorerOrganiser')} value={ev.feature_breakdown.organiser} />
+                                      </div>
+                                      {(effectiveLabel(ev) === 'BUY' || effectiveLabel(ev) === 'MAYBE') && (
+                                        <button
+                                          type="button"
+                                          className="btn-snipe"
+                                          onClick={() => handleSnipeEvent(ev.event_id)}
+                                        >
+                                          {t('scorerTriggerBot')}
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
 
@@ -885,38 +1062,76 @@ function App() {
                       .sort((a, b) => b.resell_score - a.resell_score)
                       .map((ev) => {
                         const isExpanded = expandedEventId === ev.event_id
+                        const statusBadge = salesStatusBadge(ev.sales_status)
+                        const eventDate = formatEventDate(ev.start_time)
                         return (
-                          <div key={ev.event_id} className={`scorer-card ${decisionClass(ev.decision)}`}>
+                          <div key={ev.event_id} className={`scorer-card ${decisionClass(effectiveLabel(ev))}`}>
                             <div
                               className="scorer-card-header scorer-card-clickable"
                               onClick={() => setExpandedEventId(isExpanded ? null : ev.event_id)}
                             >
                               <div className="scorer-card-info">
                                 <span className="scorer-event-name">{ev.name}</span>
+                                <div className="scorer-event-meta">
+                                  {ev.organiser && <span className="scorer-organiser">🏢 {ev.organiser}</span>}
+                                  {statusBadge && <span className={`scorer-status-badge ${statusBadge.className}`}>{statusBadge.label}</span>}
+                                  {ev.likes_total != null && ev.likes_total > 0 && <span className="scorer-likes">❤️ {ev.likes_total}</span>}
+                                  {ev.base_price_eur != null && ev.base_price_eur > 0 && <span className="scorer-price">€{ev.base_price_eur}</span>}
+                                  {eventDate && <span className="scorer-date">📅 {eventDate}</span>}
+                                </div>
                                 <span className="scorer-reason">{ev.reason}</span>
                               </div>
                               <div className="scorer-card-score">
                                 <span className="scorer-score-value" style={{ color: scoreColor(ev.resell_score) }}>
                                   {ev.resell_score}
                                 </span>
-                                <span className={`scorer-decision-badge ${decisionClass(ev.decision)}`}>
-                                  {ev.decision}
+                                <AiBadge ai={ev.ai_score} />
+                                <span className={`scorer-decision-badge ${decisionClass(effectiveLabel(ev))}`}>
+                                  {effectiveLabel(ev)}
                                 </span>
                               </div>
                             </div>
 
                             {isExpanded && (
                               <div className="scorer-breakdown">
+                                {ev.ai_score && (
+                                  <div className="ai-probabilities">
+                                    <h4>{t('scorerAiConfidence')}</h4>
+                                    <div className="ai-prob-bars">
+                                      <div className="ai-prob-item">
+                                        <span className="ai-prob-label">BUY</span>
+                                        <div className="breakdown-track">
+                                          <div className="breakdown-fill" style={{ width: `${ev.ai_score.buy_probability * 100}%`, backgroundColor: aiConfidenceColor(ev.ai_score.buy_probability) }} />
+                                        </div>
+                                        <span className="ai-prob-value">{pctStr(ev.ai_score.buy_probability)}</span>
+                                      </div>
+                                      <div className="ai-prob-item">
+                                        <span className="ai-prob-label">MAYBE</span>
+                                        <div className="breakdown-track">
+                                          <div className="breakdown-fill" style={{ width: `${ev.ai_score.maybe_probability * 100}%`, backgroundColor: 'var(--warning)' }} />
+                                        </div>
+                                        <span className="ai-prob-value">{pctStr(ev.ai_score.maybe_probability)}</span>
+                                      </div>
+                                      <div className="ai-prob-item">
+                                        <span className="ai-prob-label">SKIP</span>
+                                        <div className="breakdown-track">
+                                          <div className="breakdown-fill" style={{ width: `${ev.ai_score.skip_probability * 100}%`, backgroundColor: 'var(--danger)' }} />
+                                        </div>
+                                        <span className="ai-prob-value">{pctStr(ev.ai_score.skip_probability)}</span>
+                                      </div>
+                                    </div>
+                                    <span className="ai-model-version">model v{ev.ai_score.model_version}</span>
+                                  </div>
+                                )}
                                 <h4>{t('scorerFeatures')}</h4>
                                 <div className="breakdown-grid">
-                                  <BreakdownBar label={t('scorerLikesVelocity')} value={ev.feature_breakdown.likes_velocity} />
-                                  <BreakdownBar label={t('scorerSelloutDynamics')} value={ev.feature_breakdown.sellout_dynamics} />
-                                  <BreakdownBar label={t('scorerPriceAttractiveness')} value={ev.feature_breakdown.price_attractiveness} />
-                                  <BreakdownBar label={t('scorerOrganiserTrack')} value={ev.feature_breakdown.organiser_track_record} />
-                                  <BreakdownBar label={t('scorerSocialProof')} value={ev.feature_breakdown.social_proof} />
-                                  <BreakdownBar label={t('scorerDataCompleteness')} value={ev.feature_breakdown.data_completeness} />
+                                  <BreakdownBar label={t('scorerPopularity')} value={ev.feature_breakdown.popularity} />
+                                  <BreakdownBar label={t('scorerDemand')} value={ev.feature_breakdown.demand} />
+                                  <BreakdownBar label={t('scorerPricing')} value={ev.feature_breakdown.pricing} />
+                                  <BreakdownBar label={t('scorerTiming')} value={ev.feature_breakdown.timing} />
+                                  <BreakdownBar label={t('scorerOrganiser')} value={ev.feature_breakdown.organiser} />
                                 </div>
-                                {ev.should_trigger_ticket_bot && (
+                                {(effectiveLabel(ev) === 'BUY' || effectiveLabel(ev) === 'MAYBE') && (
                                   <button
                                     type="button"
                                     className="btn-snipe"
