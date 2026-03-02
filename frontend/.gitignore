@@ -1,0 +1,32 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Environment files
+*.local
+.env
+.env.*
+!.env.example
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+Thumbs.db
+Desktop.ini

@@ -2,6 +2,13 @@
 logs
 *.log
 npm-debug.log*
+<<<<<<< HEAD
+=======
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+>>>>>>> f870beea45bb615720c5e7b1358b479d7b735663
 
 # Dependencies
 node_modules
@@ -16,7 +23,11 @@ dist-ssr
 .env.*
 !.env.example
 
+<<<<<<< HEAD
 # Editor
+=======
+# Editor directories and files
+>>>>>>> f870beea45bb615720c5e7b1358b479d7b735663
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -27,6 +38,23 @@ dist-ssr
 *.sln
 *.sw?
 
+<<<<<<< HEAD
+=======
+# Python (ai-reranker)
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+*.whl
+ai-reranker/models/
+!ai-reranker/models/.gitkeep
+
+>>>>>>> f870beea45bb615720c5e7b1358b479d7b735663
 # OS files
 Thumbs.db
 Desktop.ini

@@ -2193,21 +2193,15 @@ function App() {
                     )}
 
                     {/* Browser: Pre-warm button (before monitoring starts) */}
-                    {(() => {
-                      const showPrewarm =
-                        tikettiMode === 'browser' &&
-                        tikettiSniperStatus !== 'monitoring' &&
-                        (!tikettiBrowserStatus || tikettiBrowserStatus === 'failed' || tikettiBrowserStatus === 'closed');
-                      return showPrewarm ? (
-                        <button
-                          className="btn-secondary tiketti-prewarm-btn"
-                          onClick={launchBrowserSession}
-                          disabled={tikettiSniperStatus === 'monitoring'}
-                        >
-                          🚀 {t('tikettiBrowserPrewarm')}
-                        </button>
-                      ) : null;
-                    })()}
+                    {tikettiMode === 'browser' && tikettiSniperStatus !== 'monitoring' && (!tikettiBrowserStatus || tikettiBrowserStatus === 'failed' || tikettiBrowserStatus === 'closed') && (
+                      <button
+                        className="btn-secondary tiketti-prewarm-btn"
+                        onClick={launchBrowserSession}
+                        disabled={tikettiSniperStatus === 'monitoring'}
+                      >
+                        🚀 {t('tikettiBrowserPrewarm')}
+                      </button>
+                    )}
 
                     {/* Cookie mode: Session cookie input */}
                     {tikettiMode === 'cookie' && (
