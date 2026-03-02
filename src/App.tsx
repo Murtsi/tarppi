@@ -2196,13 +2196,13 @@ function App() {
                     {(() => {
                       const showPrewarm =
                         tikettiMode === 'browser' &&
-                        tikettiSniperStatus !== 'monitoring' &&
+                        (tikettiSniperStatus as string) !== 'monitoring' &&
                         (!tikettiBrowserStatus || tikettiBrowserStatus === 'failed' || tikettiBrowserStatus === 'closed');
                       return showPrewarm ? (
                         <button
                           className="btn-secondary tiketti-prewarm-btn"
                           onClick={launchBrowserSession}
-                          disabled={tikettiSniperStatus === 'monitoring'}
+                          disabled={(tikettiSniperStatus as string) === 'monitoring'}
                         >
                           🚀 {t('tikettiBrowserPrewarm')}
                         </button>
