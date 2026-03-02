@@ -1130,7 +1130,7 @@ function App() {
             SNIPER TAB
             ═══════════════════════════════════════════════════════════════════ */}
         {activeSection === 'kide' && kideTab === 'sniper' && (
-          <>
+          <div className="section-fade-in">
             <ol className="stepper" aria-label="Setup steps">
               {steps.map((label, index) => (
                 <li
@@ -1167,6 +1167,7 @@ function App() {
             </ol>
 
         <section className="panel">
+          <div key={step} className="step-content-fade">
           {/* ── Step 0: Event Configuration ── */}
           {step === 0 && (
             <>
@@ -1182,10 +1183,10 @@ function App() {
                 />
               </label>
 
-              {fetchingEvent && <p className="loading-text">{t('loadingEvent')}</p>}
+              {fetchingEvent && !eventName && <p className="loading-text">{t('loadingEvent')}</p>}
 
-              {eventName && !fetchingEvent && (
-                <div className="event-card">
+              {eventName && (
+                <div className={`event-card ${fetchingEvent ? 'event-card-loading' : ''}`}>
                   {eventImageUrl && (
                     <div className="event-card-img">
                       <img src={eventImageUrl} alt={eventName} loading="lazy" />
@@ -1425,6 +1426,7 @@ function App() {
               </div>
             </>
           )}
+          </div>
         </section>
 
         <footer className="button-row footer-nav">
@@ -1435,7 +1437,7 @@ function App() {
             {step === 3 ? t('reviewMonitor') : t('next')}
           </button>
         </footer>
-          </>
+          </div>
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════
@@ -1963,7 +1965,7 @@ function App() {
 
             {/* ═══ Tiketti SNIPER sub-tab ═══ */}
             {tikettiTab === 'sniper' && (
-              <div className="tiketti-sniper">
+              <div className="tiketti-sniper tab-content-fade">
                 <h2>{t('tikettiSniperTitle')}</h2>
                 <p className="tiketti-sniper-subtitle">{t('tikettiSniperSubtitle')}</p>
 
@@ -2107,7 +2109,7 @@ function App() {
 
             {/* ═══ Tiketti EVENTS sub-tab (admin-protected) ═══ */}
             {tikettiTab === 'events' && (
-              <>
+              <div className="tab-content-fade">
                 {!adminToken ? (
                   /* ── Login form ── */
                   <div className="admin-login-card">
@@ -2238,7 +2240,7 @@ function App() {
                     )}
                   </>
                 )}
-              </>
+              </div>
             )}
           </section>
         )}

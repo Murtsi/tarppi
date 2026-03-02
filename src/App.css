@@ -304,6 +304,7 @@
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
   cursor: pointer;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.08);
 }
 
 .step-active span {
@@ -320,6 +321,7 @@
 .step-complete:hover {
   background: rgba(34, 197, 94, 0.2);
   border-color: var(--primary-light);
+  transform: translateY(-1px);
 }
 
 .step-complete span {
@@ -453,6 +455,18 @@ input[type='checkbox'] {
   display: flex;
   gap: 0;
   overflow: hidden;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  animation: fadeSlideIn 0.4s ease-out both;
+}
+
+.event-card-loading {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .event-card-img {
@@ -1253,6 +1267,7 @@ button.danger {
   overflow: hidden;
   border: 1px solid var(--card-border);
   background: var(--card-bg);
+  animation: fadeSlideIn 0.25s ease-out both;
 }
 
 .tab-btn {
@@ -1264,7 +1279,7 @@ button.danger {
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .tab-btn:hover {
@@ -1275,6 +1290,7 @@ button.danger {
 .tab-btn.tab-active {
   background: var(--primary);
   color: #fff;
+  box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.1);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1555,7 +1571,12 @@ button.danger {
   border-radius: var(--radius-md);
   padding: 0.875rem 1rem;
   border-left: 4px solid var(--gray);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s ease;
+}
+
+.scorer-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .scorer-card.decision-buy {
@@ -1676,6 +1697,12 @@ button.danger {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
   border-top: 1px solid var(--card-border);
+  animation: breakdownExpand 0.3s ease-out both;
+}
+
+@keyframes breakdownExpand {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .scorer-breakdown h4 {
@@ -2190,18 +2217,21 @@ button.danger {
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: background-color 0.35s ease, color 0.3s ease, box-shadow 0.35s ease;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  position: relative;
 }
 
 .nav-btn:hover {
   background: rgba(34, 197, 94, 0.15);
+  color: #fff;
 }
 
 .nav-btn.nav-active {
   background: var(--primary);
   color: #fff;
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1), 0 2px 8px rgba(34, 197, 94, 0.25);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2884,4 +2914,172 @@ button.danger {
   width: 10px;
   height: 10px;
   border-radius: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Smooth Transitions & Content Animations
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Generic content entrance animation */
+@keyframes contentFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Section-level fade-in (Kide sniper / Scorer / Tiketti / Coming Soon) */
+.section-fade-in {
+  animation: contentFadeIn 0.3s ease-out both;
+  display: grid;
+  gap: 1rem;
+}
+
+/* Step content fade on step change (keyed by step number) */
+.step-content-fade {
+  animation: contentFadeIn 0.28s ease-out both;
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+}
+
+@media (min-width: 640px) {
+  .step-content-fade {
+    gap: 1rem;
+  }
+}
+
+/* Sub-tab content fade (tiketti sniper/events) */
+.tab-content-fade {
+  animation: contentFadeIn 0.28s ease-out both;
+}
+
+/* Scorer / Tiketti / Coming-soon panels entrance */
+.scorer-panel,
+.tiketti-panel,
+.coming-soon-panel {
+  animation: contentFadeIn 0.3s ease-out both;
+}
+
+/* Staggered entrance for scorer cards */
+.scorer-results > .scorer-card {
+  animation: contentFadeIn 0.35s ease-out both;
+}
+.scorer-results > .scorer-card:nth-child(1) { animation-delay: 0s; }
+.scorer-results > .scorer-card:nth-child(2) { animation-delay: 0.04s; }
+.scorer-results > .scorer-card:nth-child(3) { animation-delay: 0.08s; }
+.scorer-results > .scorer-card:nth-child(4) { animation-delay: 0.12s; }
+.scorer-results > .scorer-card:nth-child(5) { animation-delay: 0.16s; }
+.scorer-results > .scorer-card:nth-child(6) { animation-delay: 0.20s; }
+.scorer-results > .scorer-card:nth-child(7) { animation-delay: 0.24s; }
+.scorer-results > .scorer-card:nth-child(8) { animation-delay: 0.28s; }
+.scorer-results > .scorer-card:nth-child(9) { animation-delay: 0.32s; }
+.scorer-results > .scorer-card:nth-child(10) { animation-delay: 0.36s; }
+
+/* Tiketti card grid entrance */
+.tiketti-grid > .tiketti-card {
+  animation: contentFadeIn 0.35s ease-out both;
+}
+.tiketti-grid > .tiketti-card:nth-child(1) { animation-delay: 0s; }
+.tiketti-grid > .tiketti-card:nth-child(2) { animation-delay: 0.05s; }
+.tiketti-grid > .tiketti-card:nth-child(3) { animation-delay: 0.1s; }
+.tiketti-grid > .tiketti-card:nth-child(4) { animation-delay: 0.15s; }
+.tiketti-grid > .tiketti-card:nth-child(5) { animation-delay: 0.2s; }
+.tiketti-grid > .tiketti-card:nth-child(6) { animation-delay: 0.25s; }
+
+/* Token valid card entrance */
+.token-valid-card {
+  animation: fadeSlideIn 0.35s ease-out both;
+}
+
+/* Summary grid items entrance */
+.summary-grid > div {
+  animation: contentFadeIn 0.3s ease-out both;
+}
+.summary-grid > div:nth-child(1) { animation-delay: 0s; }
+.summary-grid > div:nth-child(2) { animation-delay: 0.05s; }
+.summary-grid > div:nth-child(3) { animation-delay: 0.10s; }
+.summary-grid > div:nth-child(4) { animation-delay: 0.15s; }
+.summary-grid > div:nth-child(5) { animation-delay: 0.20s; }
+.summary-grid > div:nth-child(6) { animation-delay: 0.25s; }
+.summary-grid > div:nth-child(7) { animation-delay: 0.30s; }
+.summary-grid > div:nth-child(8) { animation-delay: 0.35s; }
+
+/* Stat cards entrance */
+.stats-grid > .stat-card {
+  animation: contentFadeIn 0.3s ease-out both;
+}
+.stats-grid > .stat-card:nth-child(1) { animation-delay: 0s; }
+.stats-grid > .stat-card:nth-child(2) { animation-delay: 0.06s; }
+.stats-grid > .stat-card:nth-child(3) { animation-delay: 0.12s; }
+.stats-grid > .stat-card:nth-child(4) { animation-delay: 0.18s; }
+.stats-grid > .stat-card:nth-child(5) { animation-delay: 0.24s; }
+
+/* Tiketti sniper event card entrance */
+.tiketti-sniper-event-card {
+  animation: fadeSlideIn 0.4s ease-out both;
+}
+
+/* Success banner improved animation */
+.success-banner {
+  animation: successSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes successSlideIn {
+  from { transform: translateY(-20px) scale(0.96); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Smooth focus ring for all interactive elements */
+input:focus-visible,
+select:focus-visible,
+button:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Improved scrollbar styling */
+.logs::-webkit-scrollbar,
+.log-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.logs::-webkit-scrollbar-track,
+.log-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.logs::-webkit-scrollbar-thumb,
+.log-panel::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.3);
+  border-radius: 3px;
+}
+
+.logs::-webkit-scrollbar-thumb:hover,
+.log-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.5);
+}
+
+/* Smooth loading shimmer for loading states */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.loading-text {
+  background: linear-gradient(90deg, var(--primary-light) 25%, var(--primary) 50%, var(--primary-light) 75%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2s linear infinite;
+}
+
+/* Tiketti sniper logs — smooth log entry appearance */
+.tiketti-sniper-logs .log-entry {
+  animation: contentFadeIn 0.2s ease-out both;
+}
+
+/* Kide logs — smooth entry */
+.logs > p {
+  animation: contentFadeIn 0.15s ease-out both;
 }
