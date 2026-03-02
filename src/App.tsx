@@ -522,31 +522,47 @@ function App() {
     localStorage.setItem('kidehiiri-token', authToken)
   }, [authToken])
 
-  // Listen for secret unlock phrase typed anywhere on the page
+  // Listen for secret unlock phrase typed anywhere on the page.
+  // Only a SHA-256 digest is stored — the actual phrase never appears in source.
   useEffect(() => {
-    const SECRET_PHRASE = 'Perunamuusi495?!'
+    const PHRASE_HASH = 'ec0cf1bc01ba3d9176454dce803cc8e50dcfa557581981060abf66786c79a416'
+    const MAX_BUFFER = 64 // generous upper bound so we don't miss longer inputs
+
+    async function checkHash(input: string): Promise<boolean> {
+      const encoded = new TextEncoder().encode(input)
+      const hashBuffer = await crypto.subtle.digest('SHA-256', encoded)
+      const hex = Array.from(new Uint8Array(hashBuffer))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('')
+      return hex === PHRASE_HASH
+    }
 
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Skip when user is typing in an input or textarea
+      // Don't capture when user is typing in form fields
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
 
       keystrokeBufferRef.current += e.key
-
-      // Only keep the last N characters (length of the secret)
-      if (keystrokeBufferRef.current.length > SECRET_PHRASE.length) {
-        keystrokeBufferRef.current = keystrokeBufferRef.current.slice(-SECRET_PHRASE.length)
+      if (keystrokeBufferRef.current.length > MAX_BUFFER) {
+        keystrokeBufferRef.current = keystrokeBufferRef.current.slice(-MAX_BUFFER)
       }
 
-      if (keystrokeBufferRef.current === SECRET_PHRASE) {
-        keystrokeBufferRef.current = ''
-        setUnlockedSections((prev) => {
-          const next = new Set(prev)
-          next.add('tiketti')
-          localStorage.setItem('kidehiiri-unlocked', JSON.stringify([...next]))
-          return next
+      // Try every possible suffix of the buffer as a candidate
+      const buf = keystrokeBufferRef.current
+      for (let len = 4; len <= buf.length; len++) {
+        const candidate = buf.slice(-len)
+        checkHash(candidate).then((match) => {
+          if (match) {
+            keystrokeBufferRef.current = ''
+            setUnlockedSections((prev) => {
+              const next = new Set(prev)
+              next.add('tiketti')
+              localStorage.setItem('kidehiiri-unlocked', JSON.stringify([...next]))
+              return next
+            })
+            setActiveSection('tiketti')
+          }
         })
-        setActiveSection('tiketti')
       }
     }
 
