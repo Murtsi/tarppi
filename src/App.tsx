@@ -10,7 +10,7 @@ type MainSection = 'kide' | 'tiketti' | 'coming-soon'
 type KideSubTab = 'sniper' | 'scorer'
 type TikettiSubTab = 'sniper' | 'events'
 
-type Step = 0 | 1 | 2 | 3 | 4
+type Step = 0 | 1 | 2 | 3
 
 type MonitorStatus = 'idle' | 'monitoring' | 'stopped'
 
@@ -19,7 +19,7 @@ type MonitoringConfig = {
   authToken: string
   selectedVariantId: string
   delayMs: number
-  keywordsText: string
+  fallbackMode: boolean
   quantity: number
   startQuantity: number
   proxyUrl: string
@@ -135,8 +135,8 @@ const InfoModalContent = ({ onClose, t }: { onClose: () => void; t: (key: string
         <p>{t('pollingIntervalText')}</p>
       </div>
       <div className="info-section">
-        <h3>{t('keywordFilter')}</h3>
-        <p>{t('keywordFilterText')}</p>
+        <h3>{t('fallbackModeTitle')}</h3>
+        <p>{t('fallbackModeText')}</p>
       </div>
       <div className="info-section">
         <h3>{t('statusIndicators')}</h3>
@@ -397,8 +397,7 @@ function App() {
   const [proxyUrl, setProxyUrl] = useState('')
   const [delayMs, setDelayMs] = useState(1200)
   const [activeMonitoringDelayMs, setActiveMonitoringDelayMs] = useState(0)
-  const [keywordsText, setKeywordsText] = useState('')
-  const [includeAllKeywords, setIncludeAllKeywords] = useState(false)
+  const [fallbackMode, setFallbackMode] = useState(false)
 
   const [status, setStatus] = useState<MonitorStatus>('idle')
   const [tokenStatus, setTokenStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid' | 'error'>('idle')
@@ -473,11 +472,6 @@ function App() {
     getTranslation(language, key, params)
 
   // ── Derived values ────────────────────────────────────────────────────────
-  const keywords = useMemo(
-    () => keywordsText.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),
-    [keywordsText],
-  )
-
   const estimatedTotal = useMemo(() => {
     const selected = eventVariants.find((v) => v.inventoryId === selectedVariantId)
     return selected ? (selected.price * quantity) / 100 : 0
@@ -496,17 +490,21 @@ function App() {
     return true
   }, [delayMs, eventUrl, step, eventVariants, selectedVariantId, quantity])
 
+  // Track fallbackMode in configRef so the monitoring loop always sees the latest value
+  const fallbackModeRef = useRef(fallbackMode)
+  useEffect(() => { fallbackModeRef.current = fallbackMode }, [fallbackMode])
+
   // ── Logging ─────────────────────────────────────────────────────────────────
   const appendLog = (entry: string) => {
     setLogs((prev) => [`${new Date().toLocaleTimeString()} · ${entry}`, ...prev].slice(0, MAX_LOG_ENTRIES))
   }
 
   // ── Refs for monitoring loop ────────────────────────────────────────────────
-  const configRef = useRef({ keywords, includeAllKeywords, eventUrl, delayMs, selectedVariantId, authToken, quantity, proxyUrl })
+  const configRef = useRef({ eventUrl, delayMs, selectedVariantId, authToken, quantity, proxyUrl })
   const appendLogRef = useRef(appendLog)
 
   useEffect(() => {
-    configRef.current = { keywords, includeAllKeywords, eventUrl, delayMs, selectedVariantId, authToken, quantity, proxyUrl }
+    configRef.current = { eventUrl, delayMs, selectedVariantId, authToken, quantity, proxyUrl }
   })
   useEffect(() => {
     appendLogRef.current = appendLog
@@ -690,26 +688,40 @@ function App() {
 
         const selectedVariant = available.find((v) => v.inventoryId === variantId)
 
-        if (selectedVariant) {
-          log(`Found selected ticket: ${selectedVariant.name}! (availability: ${selectedVariant.availability})`)
+        // Build list of variants to try: selected first, then fallbacks if enabled
+        const tryVariants: typeof available = []
+        if (selectedVariant) tryVariants.push(selectedVariant)
+        if (!selectedVariant && fallbackModeRef.current) {
+          // Selected not available — try all other available variants
+          tryVariants.push(...available)
+        }
+
+        if (tryVariants.length > 0) {
+          const target = tryVariants[0]
+          const isFallback = target.inventoryId !== variantId
+          if (isFallback) {
+            log(`Selected ticket unavailable — trying fallback: ${target.name} (${target.availability} left)`)
+          } else {
+            log(`Found selected ticket: ${target.name}! (availability: ${target.availability})`)
+          }
           setMatchCount((c) => c + 1)
 
-          const quantityToBuy = Math.min(targetQty, selectedVariant.availability)
+          const quantityToBuy = Math.min(targetQty, target.availability)
           log(`Attempting to add ${quantityToBuy} ticket(s) to cart...`)
 
           try {
-            const result = await addToCart(token, variantId, quantityToBuy)
+            const result = await addToCart(token, target.inventoryId, quantityToBuy)
             log(result.message)
 
             if (result.success) {
-              log(`Success! Added ${quantityToBuy} ticket(s) to cart`)
+              log(`Success! Added ${quantityToBuy}x ${target.name} to cart`)
               setShowSuccessMessage(true)
-              setSuccessTicketName(selectedVariant.name)
+              setSuccessTicketName(target.name)
               setStatus('stopped')
               setLastMonitoringConfig({
                 eventUrl: url, authToken: token, selectedVariantId: variantId,
-                delayMs: activeMonitoringDelayMs, keywordsText, quantity: targetQty,
-                startQuantity: quantity, proxyUrl: configRef.current.proxyUrl,
+                delayMs: activeMonitoringDelayMs, fallbackMode: fallbackModeRef.current,
+                quantity: targetQty, startQuantity: quantity, proxyUrl: configRef.current.proxyUrl,
               })
               return
             } else if (result.retryWithQuantity && result.retryWithQuantity > 0) {
@@ -725,7 +737,8 @@ function App() {
             log('Retrying next poll...')
           }
         } else {
-          log(`Waiting for ${product.name}... (${available.length}/${variants.length} available)`)
+          const fallbackNote = fallbackModeRef.current ? ' (fallback enabled, no variants available)' : ''
+          log(`Waiting for ${product.name}... (${available.length}/${variants.length} available)${fallbackNote}`)
         }
       } catch (err) {
         log(`Check error: ${err instanceof Error ? err.message : String(err)}`)
@@ -741,7 +754,7 @@ function App() {
   // ── Navigation ────────────────────────────────────────────────────────────
   const moveBack = () => {
     if (step === 0) return
-    if (step === 4 && status === 'monitoring') {
+    if (step === 3 && status === 'monitoring') {
       setStatus('stopped')
       setActiveMonitoringDelayMs(0)
       appendLog(t('monitoringStoppedLeft'))
@@ -751,7 +764,7 @@ function App() {
   }
 
   const moveNext = () => {
-    if (!canGoNext || step === 4) return
+    if (!canGoNext || step === 3) return
     setStep((prev) => (prev + 1) as Step)
   }
 
@@ -771,10 +784,11 @@ function App() {
     setAuthToken(lastMonitoringConfig.authToken)
     setSelectedVariantId(lastMonitoringConfig.selectedVariantId)
     setDelayMs(lastMonitoringConfig.delayMs)
+    setFallbackMode(lastMonitoringConfig.fallbackMode)
     setQuantity(originalQty)
     setProxyUrl(lastMonitoringConfig.proxyUrl)
     setShowSuccessMessage(false)
-    setStep(4)
+    setStep(3)
     setTimeout(() => {
       configRef.current.quantity = originalQty
       setMatchCount(0)
@@ -1114,7 +1128,7 @@ function App() {
     }
   }, [])
 
-  const steps = [t('step1'), t('step2'), t('step3'), t('step4'), t('step5')]
+  const steps = [t('step1'), t('step2'), t('step3'), t('step4')]
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -1201,7 +1215,7 @@ function App() {
                   ].join(' ')}
                   onClick={() => {
                     if (index < step) {
-                      if (step === 4 && status === 'monitoring') {
+                      if (step === 3 && status === 'monitoring') {
                         setStatus('stopped')
                         setActiveMonitoringDelayMs(0)
                         appendLog(t('monitoringStoppedLeft'))
@@ -1402,26 +1416,17 @@ function App() {
                 {t('pollInterval')}
                 <input type="number" min={200} step={100} value={delayMs} onChange={(e) => setDelayMs(Number(e.target.value))} />
               </label>
+
+              <label className="checkbox-row fallback-toggle">
+                <input type="checkbox" checked={fallbackMode} onChange={(e) => setFallbackMode(e.target.checked)} />
+                {t('fallbackMode')}
+              </label>
+              <p className="hint-text">{t('fallbackModeHint')}</p>
             </>
           )}
 
-          {/* ── Step 2: Keywords ── */}
+          {/* ── Step 2: Summary ── */}
           {step === 2 && (
-            <>
-              <h2>{t('filterByKeywords')}</h2>
-              <label>
-                {t('keywordsInput')}
-                <input type="text" placeholder={t('keywordsPlaceholder')} value={keywordsText} onChange={(e) => setKeywordsText(e.target.value)} />
-              </label>
-              <label className="checkbox-row">
-                <input type="checkbox" checked={includeAllKeywords} onChange={(e) => setIncludeAllKeywords(e.target.checked)} />
-                {t('requireAllKeywords')}
-              </label>
-            </>
-          )}
-
-          {/* ── Step 3: Summary ── */}
-          {step === 3 && (
             <>
               <h2>{t('summary')}</h2>
               <div className="summary-grid">
@@ -1430,15 +1435,14 @@ function App() {
                 <div><strong>{t('quantityLabel')}</strong><p>{quantity} {quantity === 1 ? t('ticketSingular') : t('ticketPlural')}</p></div>
                 <div><strong>{t('estimatedTotalLabel')}</strong><p>€{estimatedTotal.toFixed(2)}</p></div>
                 <div><strong>{t('delayLabel')}</strong><p>{delayMs} ms</p></div>
-                <div><strong>{t('keywordsLabel')}</strong><p>{keywords.length ? keywords.join(', ') : t('noKeywordFilter')}</p></div>
-                <div><strong>{t('matchModeLabel')}</strong><p>{includeAllKeywords ? t('matchModeAll') : t('matchModeAny')}</p></div>
+                <div><strong>{t('fallbackLabel')}</strong><p>{fallbackMode ? t('fallbackEnabled') : t('fallbackDisabled')}</p></div>
                 <div><strong>{t('proxyLabel')}</strong><p>{proxyUrl || t('directConnection')}</p></div>
               </div>
             </>
           )}
 
-          {/* ── Step 4: Monitor ── */}
-          {step === 4 && (
+          {/* ── Step 3: Monitor ── */}
+          {step === 3 && (
             <>
               <h2>{t('monitor')}</h2>
 
@@ -1492,8 +1496,8 @@ function App() {
           <button type="button" onClick={moveBack} disabled={step === 0} className="btn-secondary">
             {t('back')}
           </button>
-          <button type="button" onClick={moveNext} disabled={!canGoNext || step === 4} className="btn-primary">
-            {step === 3 ? t('reviewMonitor') : t('next')}
+          <button type="button" onClick={moveNext} disabled={!canGoNext || step === 3} className="btn-primary">
+            {step === 2 ? t('reviewMonitor') : t('next')}
           </button>
         </footer>
           </div>

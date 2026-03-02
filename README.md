@@ -25,18 +25,18 @@ Sovellus sisältää myös **tekoälypohjaisen tapahtumapisteyttäjän**, joka a
 
 ### Lippuostaja
 
-Selkeä 5-vaiheinen ohjattu toiminto vie sinut alusta loppuun:
+Selkeä 4-vaiheinen ohjattu toiminto vie sinut alusta loppuun:
 
 | Vaihe | Kuvaus |
 |-------|--------|
-| **1. Tapahtuma** | Liitä tapahtuman URL ja sovellus hakee tiedot automaattisesti |
-| **2. Viive** | Säädä pollausväli (200 ms – 5 s) tarpeidesi mukaan |
-| **3. Avainsanat** | Suodata lipputyypit avainsanoilla (esim. "early bird", "VIP") |
-| **4. Yhteenveto** | Tarkista asetukset ennen seurannan käynnistämistä |
-| **5. Seuranta** | Reaaliaikainen loki näyttää kaiken mitä tapahtuu |
+| **1. Tapahtuma** | Liitä tapahtuman URL ja valitse lipputyyppi suoraan |
+| **2. Asetukset** | Säädä pollausväli ja varaläpitila |
+| **3. Yhteenveto** | Tarkista asetukset ennen seurannan käynnistämistä |
+| **4. Seuranta** | Reaaliaikainen loki näyttää kaiken mitä tapahtuu |
 
 - Automaattinen tokenin validointi ja vanhenemistarkistus
 - Reaaliaikainen pollaus — reagoi heti kun liput tulevat myyntiin
+- **Varaläpitila** — jos valittua lippua ei saa, botti kokeilee automaattisesti muita saatavilla olevia lippuja
 - Toimii sekä tietokoneella että puhelimella
 
 ### AI-tapahtumapisteyttäjä

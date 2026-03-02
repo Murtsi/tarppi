@@ -8,10 +8,9 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     
     // Steps
     step1: 'Event',
-    step2: 'Delay',
-    step3: 'Keywords',
-    step4: 'Summary',
-    step5: 'Monitor',
+    step2: 'Settings',
+    step3: 'Summary',
+    step4: 'Monitor',
 
     // Step 0 - Event Configuration
     chooseEventSource: 'Choose event source',
@@ -59,17 +58,13 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tokenGuideNote: 'Note: Your token expires periodically. If it stops working, repeat these steps to get a fresh one.',
     tokenGuideClose: 'Got it',
 
-    // Step 1 - Delay Configuration
-    setRefreshDelay: 'Set refresh delay',
+    // Step 1 - Settings
+    setRefreshDelay: 'Configure settings',
     pollInterval: 'Poll interval (milliseconds)',
+    fallbackMode: 'Try other tickets if selected is unavailable',
+    fallbackModeHint: 'If enabled, the bot will attempt to buy any available ticket type when your selected variant is sold out.',
 
-    // Step 2 - Keywords
-    filterByKeywords: 'Filter by keywords',
-    keywordsInput: 'Keywords (comma separated)',
-    keywordsPlaceholder: 'vappu, tampere',
-    requireAllKeywords: 'Require all keywords to match',
-
-    // Step 3 - Summary
+    // Step 2 - Summary
     summary: 'Summary',
     eventUrlLabel: 'Event URL',
     authTokenLabel: 'Auth token',
@@ -77,15 +72,13 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     quantityLabel: 'Quantity',
     estimatedTotalLabel: 'Estimated total',
     delayLabel: 'Delay',
-    keywordsLabel: 'Keywords',
-    noKeywordFilter: 'No keyword filter',
-    matchModeLabel: 'Match mode',
-    matchModeAll: 'All keywords',
-    matchModeAny: 'Any keyword',
+    fallbackLabel: 'Fallback',
+    fallbackEnabled: 'Enabled — will try other tickets',
+    fallbackDisabled: 'Disabled — selected ticket only',
     proxyLabel: 'Proxy',
     directConnection: 'Direct connection',
 
-    // Step 4 - Monitor
+    // Step 3 - Monitor
     monitor: 'Monitor',
     statusLabel: 'Status',
     matchesFoundLabel: 'Matches found',
@@ -139,8 +132,8 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     authenticationText: 'Your Bearer token is used to authenticate with Kide.app. Never share it with anyone. The app sends requests through a secure backend server.',
     pollingInterval: 'Polling Interval',
     pollingIntervalText: 'The app checks for availability every N milliseconds (default: 1200ms). Minimum recommended: 200ms.',
-    keywordFilter: 'Keyword Filter',
-    keywordFilterText: 'Filter by ticket type names. Use AND logic to require all keywords, or OR logic to match any keyword.',
+    fallbackModeTitle: 'Fallback Mode',
+    fallbackModeText: 'When enabled, if your selected ticket type is unavailable the bot will automatically try to buy any other available ticket for the same event.',
     statusIndicators: 'Status Indicators',
     statusNotChecked: 'Not checked: Token hasn\'t been validated yet',
     statusValid: 'Valid: Token is active and authenticated',
@@ -351,10 +344,9 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     
     // Steps
     step1: 'Tapahtuma',
-    step2: 'Viive',
-    step3: 'Avainsanat',
-    step4: 'Yhteenveto',
-    step5: 'Monitoroi',
+    step2: 'Asetukset',
+    step3: 'Yhteenveto',
+    step4: 'Monitoroi',
 
     // Step 0 - Event Configuration
     chooseEventSource: 'Valitse tapahtuman lähde',
@@ -402,17 +394,13 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tokenGuideNote: 'Huomio: Tokenisi vanhenee ajoittain. Jos se lakkaa toimimasta, toista nämä vaiheet saadaksesi uuden.',
     tokenGuideClose: 'Selvä',
 
-    // Step 1 - Delay Configuration
-    setRefreshDelay: 'Aseta päivitysviive',
+    // Step 1 - Settings
+    setRefreshDelay: 'Määritä asetukset',
     pollInterval: 'Kyselyn väli (millisekuntia)',
+    fallbackMode: 'Kokeile muita lippuja jos valittu ei ole saatavilla',
+    fallbackModeHint: 'Kun päällä, botti yrittää ostaa minkä tahansa saatavilla olevan lipputyypin jos valitsemasi on loppuunmyyty.',
 
-    // Step 2 - Keywords
-    filterByKeywords: 'Suodata avainsanoilla',
-    keywordsInput: 'Avainsanat (pilkulla erotettu)',
-    keywordsPlaceholder: 'vappu, tampere',
-    requireAllKeywords: 'Vaadi kaikkien avainsanojen vastaavuus',
-
-    // Step 3 - Summary
+    // Step 2 - Summary
     summary: 'Yhteenveto',
     eventUrlLabel: 'Tapahtuman URL',
     authTokenLabel: 'Valtuutustoken',
@@ -420,15 +408,13 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     quantityLabel: 'Määrä',
     estimatedTotalLabel: 'Arvioidut kokonaiskustannukset',
     delayLabel: 'Viive',
-    keywordsLabel: 'Avainsanat',
-    noKeywordFilter: 'Ei avainsanasuodinta',
-    matchModeLabel: 'Vastaavuustila',
-    matchModeAll: 'Kaikki avainsanat',
-    matchModeAny: 'Mikä tahansa avainsana',
+    fallbackLabel: 'Varaläpi',
+    fallbackEnabled: 'Päällä — kokeilee muita lippuja',
+    fallbackDisabled: 'Pois — vain valittu lippu',
     proxyLabel: 'Proxy',
     directConnection: 'Suora yhteys',
 
-    // Step 4 - Monitor
+    // Step 3 - Monitor
     monitor: 'Monitoroi',
     statusLabel: 'Tila',
     matchesFoundLabel: 'Löydetyt vastaavuudet',
@@ -482,8 +468,8 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     authenticationText: 'Bearer-tokenia käytetään kide.app:n kanssa todentamiseen. Älä koskaan jaa sitä kenelle tahansa. Sovellus lähettää pyynnöt turvallisen palvelimen kautta.',
     pollingInterval: 'Kyselyväli',
     pollingIntervalText: 'Sovellus tarkistaa saatavuuden N millisekunnin välein (oletus: 1200ms). Suositeltu minimi: 200ms.',
-    keywordFilter: 'Avainsanasuodatin',
-    keywordFilterText: 'Suodata lipun tyyppinimillä. Käytä AND-logiikkaa kaikkien avainsanojen vaatimiseen tai OR-logiikkaa minkä tahansa avainsanan vastaavuuteen.',
+    fallbackModeTitle: 'Varaläpitila',
+    fallbackModeText: 'Kun päällä, jos valitsemasi lipputyyppi ei ole saatavilla, botti yrittää automaattisesti ostaa minkä tahansa muun saatavilla olevan lipun samaan tapahtumaan.',
     statusIndicators: 'Tilaindikaattorit',
     statusNotChecked: 'Ei tarkistettu: Tokenia ei ole vielä vahvistettu',
     statusValid: 'Kelvollinen: Token on aktiivinen ja autentikoitu',
