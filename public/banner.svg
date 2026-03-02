@@ -1,0 +1,86 @@
+<svg width="800" height="200" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="800" y2="200">
+      <stop offset="0%" stop-color="#0f0f1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bulletHole" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="60%" stop-color="#111111"/>
+      <stop offset="100%" stop-color="#222222" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="200" rx="12" fill="url(#bg)"/>
+  <rect width="800" height="200" rx="12" fill="url(#glow)"/>
+
+  <!-- Subtle grid lines -->
+  <g stroke="#6366f1" stroke-opacity="0.06" stroke-width="0.5">
+    <line x1="0" y1="50" x2="800" y2="50"/>
+    <line x1="0" y1="100" x2="800" y2="100"/>
+    <line x1="0" y1="150" x2="800" y2="150"/>
+    <line x1="200" y1="0" x2="200" y2="200"/>
+    <line x1="400" y1="0" x2="400" y2="200"/>
+    <line x1="600" y1="0" x2="600" y2="200"/>
+  </g>
+
+  <!-- Logo icon (scaled and positioned) -->
+  <g transform="translate(80, 40) scale(1)">
+    <g transform="rotate(-12, 60, 60)">
+      <rect x="23" y="28" width="76" height="48" rx="3" fill="#000000" opacity="0.15" transform="translate(2,3)"/>
+      <rect x="23" y="28" width="76" height="48" rx="3" fill="#ffffff" stroke="#a5b4fc" stroke-width="1.5"/>
+      <line x1="43" y1="28" x2="43" y2="76" stroke="#6366f1" stroke-width="1.2" stroke-dasharray="3,2.5"/>
+      <path d="M99,28 Q102,31 99,34 Q102,37 99,40 Q102,43 99,46 Q102,49 99,52 Q102,55 99,58 Q102,61 99,64 Q102,67 99,70 Q102,73 99,76" fill="none" stroke="#a5b4fc" stroke-width="1"/>
+      <g stroke="#6366f1" stroke-width="0.7" opacity="0.5">
+        <line x1="62" y1="50" x2="52" y2="40"/>
+        <line x1="64" y1="49" x2="61" y2="35"/>
+        <line x1="67" y1="50" x2="78" y2="41"/>
+        <line x1="68" y1="53" x2="79" y2="62"/>
+        <line x1="64" y1="56" x2="57" y2="66"/>
+        <line x1="60" y1="54" x2="50" y2="60"/>
+      </g>
+      <circle cx="64" cy="52" r="7" fill="url(#bulletHole)"/>
+      <circle cx="64" cy="52" r="5" fill="#000000"/>
+      <circle cx="64" cy="52" r="7" fill="none" stroke="#1e1e2e" stroke-width="1.2"/>
+      <path d="M62,28 Q58,22 62,16 Q66,10 62,4" fill="none" stroke="#a5b4fc" stroke-width="1.2" stroke-linecap="round" opacity="0.3"/>
+      <path d="M66,28 Q70,20 67,13" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-linecap="round" opacity="0.2"/>
+    </g>
+  </g>
+
+  <!-- K in ticket -->
+  <g transform="translate(285, 50)">
+    <rect x="0" y="8" width="42" height="36" rx="6" fill="#6366f1"/>
+    <circle cx="0" cy="26" r="6" fill="#0f0f1a"/>
+    <circle cx="42" cy="26" r="6" fill="#0f0f1a"/>
+    <text x="10" y="33" font-size="24" font-weight="bold" fill="white" font-family="monospace">K</text>
+  </g>
+
+  <!-- Text: idehiiri -->
+  <text x="337" y="83" font-size="28" font-weight="700" fill="#e2e8f0" font-family="system-ui, -apple-system, sans-serif" letter-spacing="0.5">idehiiri</text>
+
+  <!-- Mouse icon -->
+  <circle cx="540" cy="60" r="6" fill="#818cf8"/>
+  <circle cx="550" cy="60" r="6" fill="#818cf8"/>
+  <ellipse cx="545" cy="68" rx="10" ry="8" fill="#818cf8"/>
+  <circle cx="542" cy="67" r="1.8" fill="#0f0f1a"/>
+  <circle cx="548" cy="67" r="1.8" fill="#0f0f1a"/>
+  <circle cx="545" cy="70" r="1.2" fill="#c7d2fe"/>
+
+  <!-- Tagline -->
+  <text x="285" y="118" font-size="14" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif">Automaattinen lippuostaja Kide.app-tapahtumiin</text>
+
+  <!-- Decorative dots -->
+  <circle cx="710" cy="50" r="2" fill="#6366f1" opacity="0.3"/>
+  <circle cx="725" cy="65" r="1.5" fill="#818cf8" opacity="0.2"/>
+  <circle cx="700" cy="80" r="1" fill="#a5b4fc" opacity="0.25"/>
+  <circle cx="735" cy="45" r="1" fill="#6366f1" opacity="0.2"/>
+  <circle cx="720" cy="90" r="1.5" fill="#818cf8" opacity="0.15"/>
+
+  <!-- Bottom accent line -->
+  <rect x="285" y="135" width="120" height="2" rx="1" fill="#6366f1" opacity="0.4"/>
+</svg>

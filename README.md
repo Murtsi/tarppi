@@ -1,96 +1,153 @@
-# Kidehiiri
+<p align="center">
+  <img src="public/banner.svg" alt="Kidehiiri" width="700" />
+</p>
 
-> Automatic ticket tool for [kide.app](https://kide.app) — monitors event sales and snipes tickets to your cart. Includes an AI-powered event scorer.
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19-61dafb?logo=react&style=flat-square" />
+  <img src="https://img.shields.io/badge/TypeScript-5.9-3178c6?logo=typescript&style=flat-square" />
+  <img src="https://img.shields.io/badge/Vite-7-646cff?logo=vite&style=flat-square" />
+  <img src="https://img.shields.io/badge/AI-Koneoppiminen-ff6b6b?style=flat-square" />
+</p>
 
-![React](https://img.shields.io/badge/React-19-61dafb?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?logo=typescript)
-![Vite](https://img.shields.io/badge/Vite-7-646cff?logo=vite)
-![Vercel](https://img.shields.io/badge/Deploy-Vercel-000?logo=vercel)
+---
 
-## Features
+## Mikä on Kidehiiri?
 
-### Ticket Sniper
-- 5-step wizard: Event → Delay → Keywords → Summary → Monitor
-- Real-time polling with configurable interval (200ms–5s)
-- Automatic cart action the instant tickets become available
-- Token validation with expiry check
-- Keyword filtering for specific ticket types
+**Kidehiiri** on automaattinen lippuostaja [Kide.app](https://kide.app)-tapahtumiin. Se seuraa lippujen myyntiä reaaliajassa ja lisää ne ostoskoriin heti, kun ne tulevat saataville — nopeammin kuin käsin ikinä ehdit.
 
-### AI Event Scorer
-- Scan events by Finnish city
-- Heuristic scoring engine (popularity, demand, pricing, timing, organiser)
-- Optional ML reranker (BUY / MAYBE / SKIP with confidence bars)
-- Grouped card view with expandable feature breakdowns
-- City picker with all Finnish cities
+Sovellus sisältää myös **tekoälypohjaisen tapahtumapisteyttäjän**, joka analysoi tulevia tapahtumia ja kertoo mitkä niistä kannattaa napata.
 
-### UI
-- Mobile-first responsive design
-- Dark theme with smooth animations
-- Finnish + English language support
-- Accessible (keyboard nav, focus indicators, reduced-motion support)
+> **Huom:** Kidehiiri hoitaa vain seurannan ja koriin lisäämisen. Maksaminen on aina sinun käsissäsi.
 
-## Quick Start
+---
 
-```bash
-npm install
-cp .env.example .env    # Set your backend API URL
-npm run dev             # http://localhost:5173
-```
+## Ominaisuudet
 
-## Environment Variables
+### Lippuostaja
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `VITE_API_URL` | Backend API base URL | `https://your-backend.up.railway.app` |
+Selkeä 5-vaiheinen ohjattu toiminto vie sinut alusta loppuun:
 
-## Deployment (Vercel)
+| Vaihe | Kuvaus |
+|-------|--------|
+| **1. Tapahtuma** | Liitä tapahtuman URL ja sovellus hakee tiedot automaattisesti |
+| **2. Viive** | Säädä pollausväli (200 ms – 5 s) tarpeidesi mukaan |
+| **3. Avainsanat** | Suodata lipputyypit avainsanoilla (esim. "early bird", "VIP") |
+| **4. Yhteenveto** | Tarkista asetukset ennen seurannan käynnistämistä |
+| **5. Seuranta** | Reaaliaikainen loki näyttää kaiken mitä tapahtuu |
 
-1. Connect this repo to [Vercel](https://vercel.com)
-2. Framework preset: **Vite**
-3. Set `VITE_API_URL` in environment variables
-4. Deploy
+- Automaattinen tokenin validointi ja vanhenemistarkistus
+- Reaaliaikainen pollaus — reagoi heti kun liput tulevat myyntiin
+- Toimii sekä tietokoneella että puhelimella
 
-The `vercel.json` includes rewrite rules to proxy `/api/*` requests during development.
+### AI-tapahtumapisteyttäjä
 
-## Tech Stack
+Tekoäly analysoi Kide.app-tapahtumia usean eri tekijän perusteella ja pisteyttää ne asteikolla 0–100:
+
+- **Suosio** — kuinka paljon kiinnostusta tapahtuma herättää
+- **Kysyntä** — lippujen saatavuus suhteessa kysyntään
+- **Hinnoittelu** — onko hinta kohdallaan
+- **Ajoitus** — myynnin ajankohta ja tapahtumapäivä
+- **Järjestäjä** — tunnettuus ja historia
+
+Pisteytyksen lisäksi koneoppimismalli luokittelee jokaisen tapahtuman kolmeen kategoriaan:
+
+| Luokitus | Merkitys |
+|----------|----------|
+| 🟢 **BUY** | Kannattaa napata heti |
+| 🟡 **MAYBE** | Seuraamisen arvoinen |
+| 🔴 **SKIP** | Ei todennäköisesti kiinnosta |
+
+Jokainen tapahtuma näyttää myös **AI-luottamuspalkin**, joka kertoo kuinka varma malli on ennusteestaan.
+
+### Käyttöliittymä
+
+- **Tumma teema** sulavailla animaatioilla
+- **Mobiilioptimioitu** — toimii saumattomasti puhelimella
+- **Suomi + englanti** — kielivalinta yhdellä klikkauksella
+- **Saavutettava** — näppäimistönavigaatio, fokusindikaattorit, reduced-motion-tuki
+
+---
+
+## Teknologia
 
 | | |
 |---|---|
-| Framework | React 19 |
-| Language | TypeScript 5.9 (strict) |
-| Bundler | Vite 7 |
-| Styling | Pure CSS with custom properties |
-| i18n | Custom translations (EN + FI) |
+| **Käyttöliittymä** | React 19 + TypeScript 5.9 (strict mode) |
+| **Rakennustyökalu** | Vite 7 — salamannopea kehitysympäristö |
+| **Tyylit** | Puhdas CSS custom propertiesilla — ei UI-kirjastoja |
+| **Tekoäly** | Heuristinen pisteytysmoottori + koneoppimismalli (scikit-learn) |
+| **Kielituki** | Oma i18n-ratkaisu suomeksi ja englanniksi |
+| **Julkaisu** | Vercel (frontend) — automaattinen CI/CD |
 
-## Project Structure
+### Tekoälystä tarkemmin
+
+Tapahtumapisteyttäjä toimii kahdessa vaiheessa:
+
+1. **Heuristinen analyysi** — sääntöpohjainen moottori laskee pisteet viiden eri tekijän perusteella
+2. **Koneoppiminen** — ML-malli (Random Forest) on koulutettu aiemmilla tapahtumadatalla ja uudelleenluokittelee tapahtumat BUY/MAYBE/SKIP-kategorioihin
+
+Malli oppii jatkuvasti uusista tapahtumista ja parantaa ennusteitaan ajan myötä. Jos ML-palvelu ei ole saatavilla, sovellus näyttää silti heuristiset pisteet — toiminta ei koskaan keskeydy.
+
+---
+
+## Pika-aloitus
+
+```bash
+npm install
+cp .env.example .env    # Aseta backend-palvelimen osoite
+npm run dev             # → http://localhost:5173
+```
+
+## Ympäristömuuttujat
+
+| Muuttuja | Kuvaus |
+|----------|--------|
+| `VITE_API_URL` | Backend-palvelimen osoite |
+
+## Julkaisu (Vercel)
+
+1. Yhdistä tämä repo [Verceliin](https://vercel.com)
+2. Valitse framework: **Vite**
+3. Aseta `VITE_API_URL` ympäristömuuttujiin
+4. Deploy — valmis!
+
+---
+
+## Projektin rakenne
 
 ```
 src/
-├── App.tsx              # Main app — sniper logic, scorer
-├── App.css              # Full responsive styles
+├── App.tsx              # Pääsovellus — lippuostaja + pisteyttäjä
+├── App.css              # Responsiiviset tyylit
 ├── components/
-│   ├── CityPicker.tsx   # City selector with search
+│   ├── CityPicker.tsx   # Kaupunkivalitsin haulla
 │   ├── ErrorBoundary.tsx
-│   └── Logo.tsx
+│   └── Logo.tsx         # SVG-logot
 └── lib/
-    ├── translations.ts  # EN + FI strings
+    ├── translations.ts  # Suomi + englanti -käännökset
     └── kide/
-        ├── api.ts       # Backend API client
-        ├── types.ts     # Type definitions
+        ├── api.ts       # API-kutsujen hallinta
+        ├── types.ts     # Tyyppimäärittelyt
         └── kide-cities.json
 ```
 
-## How It Works
+---
 
-1. **All API calls go through the backend** — the browser never hits kide.app directly
-2. The sniper polls the backend at the configured interval
-3. When tickets appear, the backend adds them to the user's kide.app cart
-4. The user completes checkout manually on kide.app
+<p align="center">
+  <sub>Tehty Suomessa 🇫🇮</sub>
+</p>
+
+## Miten se toimii?
+
+1. **Kaikki API-kutsut kulkevat backendin kautta** — selain ei koskaan ota suoraan yhteyttä kide.app:iin
+2. Sovellus kyselee backendiä valitulla aikavälillä
+3. Kun lippuja ilmestyy, backend lisää ne käyttäjän kide.app-ostoskoriin
+4. Käyttäjä viimeistelee ostoksen itse kide.app:ssa
 
 ## Backend
 
-This frontend requires a separate backend API server. See the backend repository for setup instructions.
+Tämä frontend vaatii erillisen backend-palvelimen toimiakseen.
 
-## License
+## Lisenssi
 
 MIT
