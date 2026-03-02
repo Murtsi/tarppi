@@ -1,9 +1,5 @@
 [
   { "id": null, "name": "Everywhere", "nameKey": "everywhere" },
-  { "id": "capitalAreaFinlandCities", "name": "Helsinki Metropolitan Area", "nameKey": "helsinkiMetro" },
-  { "id": "urbanAreaTurkuCities", "name": "Turku Urban Area", "nameKey": "turkuUrban" },
-  { "id": "urbanAreaTampereCities", "name": "Tampere Urban Area", "nameKey": "tampereUrban" },
-  { "id": "urbanAreaOuluCities", "name": "Oulu region", "nameKey": "ouluRegion" },
   { "id": "Ähtäri", "name": "Ähtäri" },
   { "id": "Espoo", "name": "Espoo" },
   { "id": "Hämeenlinna", "name": "Hämeenlinna" },

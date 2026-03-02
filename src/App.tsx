@@ -380,6 +380,15 @@ function App() {
   // ── State ───────────────────────────────────────────────────────────────────
   const [activeSection, setActiveSection] = useState<MainSection>('kide')
   const [kideTab, setKideTab] = useState<KideSubTab>('sniper')
+
+  // Hidden section unlock — type the secret phrase to reveal it
+  const [unlockedSections, setUnlockedSections] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('kidehiiri-unlocked')
+    return saved ? new Set(JSON.parse(saved)) : new Set()
+  })
+  const keystrokeBufferRef = useRef('')
+
+  const isTikettiUnlocked = unlockedSections.has('tiketti')
   const [step, setStep] = useState<Step>(0)
   const [infoPanelOpen, setInfoPanelOpen] = useState(false)
   const [eventUrl, setEventUrl] = useState('')
@@ -512,6 +521,38 @@ function App() {
   useEffect(() => {
     localStorage.setItem('kidehiiri-token', authToken)
   }, [authToken])
+
+  // Listen for secret unlock phrase typed anywhere on the page
+  useEffect(() => {
+    const SECRET_PHRASE = 'Perunamuusi495?!'
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Skip when user is typing in an input or textarea
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+
+      keystrokeBufferRef.current += e.key
+
+      // Only keep the last N characters (length of the secret)
+      if (keystrokeBufferRef.current.length > SECRET_PHRASE.length) {
+        keystrokeBufferRef.current = keystrokeBufferRef.current.slice(-SECRET_PHRASE.length)
+      }
+
+      if (keystrokeBufferRef.current === SECRET_PHRASE) {
+        keystrokeBufferRef.current = ''
+        setUnlockedSections((prev) => {
+          const next = new Set(prev)
+          next.add('tiketti')
+          localStorage.setItem('kidehiiri-unlocked', JSON.stringify([...next]))
+          return next
+        })
+        setActiveSection('tiketti')
+      }
+    }
+
+    window.addEventListener('keypress', handleKeyPress)
+    return () => window.removeEventListener('keypress', handleKeyPress)
+  }, [])
 
   // ── Close qty picker on outside click / Escape ─────────────────────────
   useEffect(() => {
@@ -1094,12 +1135,14 @@ function App() {
           >
             {t('navKide')}
           </button>
-          <button
-            className={`nav-btn ${activeSection === 'tiketti' ? 'nav-active' : ''}`}
-            onClick={() => setActiveSection('tiketti')}
-          >
-            {t('navTiketti')}
-          </button>
+          {isTikettiUnlocked && (
+            <button
+              className={`nav-btn ${activeSection === 'tiketti' ? 'nav-active' : ''}`}
+              onClick={() => setActiveSection('tiketti')}
+            >
+              {t('navTiketti')}
+            </button>
+          )}
           <button
             className={`nav-btn ${activeSection === 'coming-soon' ? 'nav-active' : ''}`}
             onClick={() => setActiveSection('coming-soon')}
@@ -1945,7 +1988,7 @@ function App() {
         {/* ═══════════════════════════════════════════════════════════════════
             TIKETTI SECTION — Sniper + Events sub-tabs
             ═══════════════════════════════════════════════════════════════════ */}
-        {activeSection === 'tiketti' && (
+        {activeSection === 'tiketti' && isTikettiUnlocked && (
           <section className="tiketti-panel">
             {/* ── Tiketti sub-tabs ── */}
             <div className="tab-bar">

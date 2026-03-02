@@ -10,16 +10,13 @@ type CityPickerProps = {
   disabled?: boolean
 }
 
-// Separate regions (id contains "Cities") from individual cities
-const REGIONS = (KIDE_CITIES as KideCity[]).filter(
-  (c) => c.id !== null && c.id.includes('Cities'),
-)
+// Only keep actual cities — region IDs (contain "Cities") don't work with the API
 const CITIES = (KIDE_CITIES as KideCity[]).filter(
   (c) => c.id !== null && !c.id.includes('Cities'),
 )
 
-function findCity(id: string): KideCity | undefined {
-  return (KIDE_CITIES as KideCity[]).find((c) => c.id === id || c.name === id)
+function findCityById(id: string): KideCity | undefined {
+  return CITIES.find((c) => c.id === id)
 }
 
 export default function CityPicker({ value, onChange, placeholder, disabled }: CityPickerProps) {
@@ -28,32 +25,25 @@ export default function CityPicker({ value, onChange, placeholder, disabled }: C
   const wrapperRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Close on outside click
+  // Close dropdown when clicking outside
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setOpen(false)
       }
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Filter cities based on search text
   const filteredCities = useMemo(() => {
     if (!search.trim()) return CITIES
-    const q = search.toLowerCase()
-    return CITIES.filter((c) => c.name.toLowerCase().includes(q))
-  }, [search])
-
-  const filteredRegions = useMemo(() => {
-    if (!search.trim()) return REGIONS
-    const q = search.toLowerCase()
-    return REGIONS.filter((c) => c.name.toLowerCase().includes(q))
+    const query = search.toLowerCase()
+    return CITIES.filter((c) => c.name.toLowerCase().includes(query))
   }, [search])
 
   const displayValue = value
-    ? (findCity(value)?.name ?? value)
+    ? (findCityById(value)?.name ?? value)
     : 'Everywhere'
 
   const handleSelect = (city: KideCity) => {
@@ -88,7 +78,7 @@ export default function CityPicker({ value, onChange, placeholder, disabled }: C
           />
 
           <ul className="city-picker-list">
-            {/* "Everywhere" option */}
+            {/* Show all cities */}
             <li
               className={`city-picker-option ${value === '' ? 'selected' : ''}`}
               onClick={() => handleSelect({ id: null, name: 'Everywhere' })}
@@ -96,28 +86,9 @@ export default function CityPicker({ value, onChange, placeholder, disabled }: C
               🌍 Everywhere
             </li>
 
-            {/* Regions */}
-            {filteredRegions.length > 0 && (
-              <>
-                <li className="city-picker-divider" />
-                <li className="city-picker-group-label">Regions</li>
-                {filteredRegions.map((region) => (
-                  <li
-                    key={region.id}
-                    className={`city-picker-option region ${region.id === value ? 'selected' : ''}`}
-                    onClick={() => handleSelect(region)}
-                  >
-                    📍 {region.name}
-                  </li>
-                ))}
-              </>
-            )}
-
-            {/* Individual cities */}
             {filteredCities.length > 0 && (
               <>
                 <li className="city-picker-divider" />
-                <li className="city-picker-group-label">Cities</li>
                 {filteredCities.map((city) => (
                   <li
                     key={city.id}
@@ -130,7 +101,7 @@ export default function CityPicker({ value, onChange, placeholder, disabled }: C
               </>
             )}
 
-            {filteredRegions.length === 0 && filteredCities.length === 0 && (
+            {filteredCities.length === 0 && (
               <li className="city-picker-empty">No matches</li>
             )}
           </ul>
