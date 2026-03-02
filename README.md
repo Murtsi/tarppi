@@ -10,7 +10,6 @@
   <img src="https://img.shields.io/badge/AI-Koneoppiminen-ff6b6b?style=flat-square" />
 </p>
 
----
 
 ## Mikä on Kidehiiri?
 
@@ -20,7 +19,6 @@ Sovellus sisältää myös **tekoälypohjaisen tapahtumapisteyttäjän**, joka a
 
 > **Huom:** Kidehiiri hoitaa vain seurannan ja koriin lisäämisen. Maksaminen on aina sinun käsissäsi.
 
----
 
 ## Ominaisuudet
 
@@ -35,20 +33,11 @@ Selkeä 4-vaiheinen ohjattu toiminto vie sinut alusta loppuun:
 | **3. Yhteenveto** | Tarkista asetukset ennen seurannan käynnistämistä |
 | **4. Seuranta** | Reaaliaikainen loki näyttää kaiken mitä tapahtuu |
 
-- Automaattinen tokenin validointi ja vanhenemistarkistus
-- Reaaliaikainen pollaus — reagoi heti kun liput tulevat myyntiin
-- **Varaläpitila** — jos valittua lippua ei saa, botti kokeilee automaattisesti muita saatavilla olevia lippuja
-- Toimii sekä tietokoneella että puhelimella
 
 ### AI-tapahtumapisteyttäjä
 
 Tekoäly analysoi Kide.app-tapahtumia usean eri tekijän perusteella ja pisteyttää ne asteikolla 0–100:
 
-- **Suosio** — kuinka paljon kiinnostusta tapahtuma herättää
-- **Kysyntä** — lippujen saatavuus suhteessa kysyntään
-- **Hinnoittelu** — onko hinta kohdallaan
-- **Ajoitus** — myynnin ajankohta ja tapahtumapäivä
-- **Järjestäjä** — tunnettuus ja historia
 
 Pisteytyksen lisäksi koneoppimismalli luokittelee jokaisen tapahtuman kolmeen kategoriaan:
 
@@ -62,12 +51,7 @@ Jokainen tapahtuma näyttää myös **AI-luottamuspalkin**, joka kertoo kuinka v
 
 ### Käyttöliittymä
 
-- **Tumma teema** sulavailla animaatioilla
-- **Mobiilioptimioitu** — toimii saumattomasti puhelimella
-- **Suomi + englanti** — kielivalinta yhdellä klikkauksella
-- **Saavutettava** — näppäimistönavigaatio, fokusindikaattorit, reduced-motion-tuki
 
----
 
 ## Teknologia
 
@@ -89,7 +73,6 @@ Tapahtumapisteyttäjä toimii kahdessa vaiheessa:
 
 Malli oppii jatkuvasti uusista tapahtumista ja parantaa ennusteitaan ajan myötä. Jos ML-palvelu ei ole saatavilla, sovellus näyttää silti heuristiset pisteet — toiminta ei koskaan keskeydy.
 
----
 
 ## Pika-aloitus
 
@@ -112,7 +95,6 @@ npm run dev             # → http://localhost:5173
 3. Aseta `VITE_API_URL` ympäristömuuttujiin
 4. Deploy — valmis!
 
----
 
 ## Projektin rakenne
 
@@ -132,7 +114,6 @@ src/
         └── kide-cities.json
 ```
 
----
 
 <p align="center">
   <sub>Tehty Suomessa 🇫🇮</sub>
@@ -150,6 +131,111 @@ src/
 Tämä frontend vaatii erillisen backend-palvelimen toimiakseen.
 
 ## Lisenssi
+<div align="center">
+
+<img src="public/banner.svg" alt="Kidehiiri" width="380"/>
+
+<br/><br/>
+
+![React](https://img.shields.io/badge/React-19-61dafb?logo=react&style=flat-square)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?logo=typescript&style=flat-square)
+![Vite](https://img.shields.io/badge/Vite-7-646cff?logo=vite&style=flat-square)
+![Vercel](https://img.shields.io/badge/Live-kidehiiri.vercel.app-000000?style=flat-square&logo=vercel)
+
+[kidehiiri.vercel.app](https://kidehiiri.vercel.app/)
+
+</div>
+
+---
+
+## Overview
+
+**Kidehiiri** is an automated ticket acquisition tool for [Kide.app](https://kide.app/) events. It monitors ticket availability in real time and adds tickets to the cart the moment they go on sale — faster than any manual interaction.
+
+The application includes a built-in **AI-powered event scoring system** that analyses upcoming events and ranks them based on predicted demand and user interest.
+
+> Kidehiiri handles monitoring and cart placement only. Payment is always completed manually by the user on Kide.app.
+
+---
+
+## Features
+
+### Ticket Bot
+
+A guided 4-step flow walks the user from setup to active monitoring:
+
+| Step | Description |
+|------|-------------|
+| 1. Event | Paste the event URL and select a ticket type |
+| 2. Settings | Configure polling interval and fallback mode |
+| 3. Summary | Review all settings before starting |
+| 4. Monitoring | Live log output of all bot activity |
+
+- Automatic token validation and expiry detection
+- **Fallback mode** — if the selected ticket sells out, the bot automatically attempts other available ticket types
+- Responsive layout, works on desktop and mobile
+
+### AI Event Scoring
+
+A machine learning model analyses events across 25 features and classifies each into one of three categories:
+
+| Category | Description |
+|----------|-------------|
+| **BUY** | High demand — worth targeting immediately |
+| **MAYBE** | Moderate interest — worth monitoring |
+| **SKIP** | Low predicted demand |
+
+Each event also displays a **confidence indicator** showing how certain the model is about its classification.
+
+### Interface
+
+- Dark theme with smooth animations and glass-panel design language
+- Mobile-optimised — full functionality on small screens
+- Finnish and English — language toggle available at all times
+- Accessible — full keyboard navigation, focus indicators, `prefers-reduced-motion` support
+
+---
+
+## Technology
+
+| Layer | Stack |
+|-------|-------|
+| UI framework | React 19 + TypeScript 5.9 (strict mode) |
+| Build tool | Vite 7 |
+| Styling | Plain CSS with custom properties — no UI libraries |
+| AI / ML | Heuristic scoring engine + scikit-learn Random Forest classifier |
+| Internationalisation | Custom i18n solution — Finnish and English |
+| Deployment | Vercel with automatic CI/CD on push |
+
+### AI Architecture
+
+The event scoring pipeline operates in two stages:
+
+1. **Heuristic analysis** — a rule-based engine calculates a score from 0–100 based on popularity, demand, pricing, timing, and organiser history
+2. **Machine learning** — a Random Forest model, trained on historical event data, reclassifies each event into BUY / MAYBE / SKIP categories
+
+The model retrains automatically as new labelled data becomes available. If the ML service is unavailable, the application falls back to heuristic scores — functionality is never interrupted.
+
+---
+
+## How It Works
+
+1. All API requests are proxied through a backend server — the browser never contacts Kide.app directly
+2. The application polls the backend on a configurable interval
+3. When tickets become available, the backend places them in the user's Kide.app cart
+4. The user completes the purchase on Kide.app
+
+> This repository contains the frontend only. A separate backend service is required.
+
+---
+
+## Getting Started
+
+```bash
+npm install
+cp .env.example .env   # Set VITE_API_URL to your backend address
+npm run dev            # Starts dev server at http://localhost:5173
+
 =======
 # Kidehiiri
 
