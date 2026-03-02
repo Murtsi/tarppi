@@ -14,7 +14,9 @@ import type {
   TikettiEventsResponse,
   TikettiEventResponse,
   TikettiReserveResponse,
+  TikettiBrowserBuyResponse,
 } from './types'
+import type { TikettiBrowserSSEEvent } from './types'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -213,4 +215,87 @@ export async function addToTikettiCart(
     quantity,
     sessionCookie,
   })
+}
+
+// ─── Tiketti Browser Automation API ─────────────────────────────────────────
+
+/**
+ * Start a Playwright browser session for a Tiketti event.
+ * Returns an EventSource-like reader that streams status updates via SSE.
+ * The browser navigates to the event, handles Queue-it, and parks ready to buy.
+ */
+export function startTikettiBrowserSession(
+  eventUrl: string,
+  quantity: number,
+  onEvent: (event: TikettiBrowserSSEEvent) => void,
+  onError: (error: string) => void,
+): AbortController {
+  const controller = new AbortController()
+  const url = `${API_URL}/api/tiketti/browser/session`
+
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ eventUrl, quantity }),
+    signal: controller.signal,
+  })
+    .then(async (response) => {
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: `HTTP ${response.status}` }))
+        onError((err as Record<string, string>).error || 'Failed to start browser session')
+        return
+      }
+
+      const reader = response.body?.getReader()
+      if (!reader) {
+        onError('No SSE stream from server')
+        return
+      }
+
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6)) as TikettiBrowserSSEEvent
+              onEvent(data)
+            } catch {
+              // Malformed SSE line, skip
+            }
+          }
+        }
+      }
+    })
+    .catch((err) => {
+      if (err instanceof Error && err.name === 'AbortError') return
+      onError(err instanceof Error ? err.message : 'Network error')
+    })
+
+  return controller
+}
+
+/**
+ * Trigger the buy action on an active browser session.
+ */
+export async function triggerTikettiBrowserBuy(
+  sessionId: string,
+): Promise<TikettiBrowserBuyResponse> {
+  return apiCall<TikettiBrowserBuyResponse>('/api/tiketti/browser/buy', { sessionId })
+}
+
+/**
+ * Close a browser session.
+ */
+export async function closeTikettiBrowserSession(sessionId: string): Promise<void> {
+  const url = `${API_URL}/api/tiketti/browser/session/${sessionId}`
+  await fetch(url, { method: 'DELETE' }).catch(() => {})
 }

@@ -235,3 +235,35 @@ export type TikettiReserveResponse = {
   success: boolean
   message: string
 }
+
+// ─── Tiketti Browser Automation Types ────────────────────────────────────────
+
+export type TikettiBrowserSessionStatus =
+  | 'launching'
+  | 'navigating'
+  | 'queue-it'
+  | 'ready'
+  | 'buying'
+  | 'success'
+  | 'failed'
+  | 'closed'
+
+export type TikettiBrowserSSEEvent = {
+  sessionId: string
+  status: TikettiBrowserSessionStatus
+  message: string
+  done?: boolean
+}
+
+export type TikettiBrowserBuyResponse = {
+  success: boolean
+  message: string
+}
+
+export type TikettiBrowserSessionInfo = {
+  id: string
+  eventId: string
+  status: TikettiBrowserSessionStatus
+  statusMessage: string
+  createdAt: number
+}

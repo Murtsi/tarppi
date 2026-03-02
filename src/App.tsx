@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity, adminLogin, adminVerify, fetchTikettiEvents, triggerTikettiScrape, fetchTikettiEvent, addToTikettiCart } from './lib/kide/api'
+import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity, adminLogin, adminVerify, fetchTikettiEvents, triggerTikettiScrape, fetchTikettiEvent, addToTikettiCart, startTikettiBrowserSession, triggerTikettiBrowserBuy, closeTikettiBrowserSession } from './lib/kide/api'
 import { getTranslation, type LanguageCode } from './lib/translations'
-import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant, TikettiEvent, TikettiEventDetail } from './lib/kide/types'
+import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant, TikettiEvent, TikettiEventDetail, TikettiBrowserSessionStatus } from './lib/kide/types'
 import CityPicker from './components/CityPicker'
 import { TicketSniperIcon } from './components/Logo'
 import './App.css'
@@ -467,6 +467,13 @@ function App() {
   const [tikettiSessionCookie, setTikettiSessionCookie] = useState('')
   const [tikettiSniperQty, setTikettiSniperQty] = useState(1)
   const tikettiSniperIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // ── Tiketti Browser Automation state ──────────────────────────────────────
+  const [tikettiMode, setTikettiMode] = useState<'cookie' | 'browser'>('browser')
+  const [tikettiBrowserSessionId, setTikettiBrowserSessionId] = useState<string | null>(null)
+  const [tikettiBrowserStatus, setTikettiBrowserStatus] = useState<TikettiBrowserSessionStatus | null>(null)
+  const [tikettiBrowserMessage, setTikettiBrowserMessage] = useState('')
+  const tikettiBrowserAbortRef = useRef<AbortController | null>(null)
 
   const t = (key: string, params?: Record<string, string | number>) =>
     getTranslation(language, key, params)
@@ -1033,6 +1040,41 @@ function App() {
     }
   }, [tikettiSniperUrl, addTikettiLog])
 
+  // ── Browser session launcher ──────────────────────────────────────────────
+  const launchBrowserSession = useCallback(() => {
+    if (!tikettiSniperEvent || !tikettiSniperUrl.trim()) return
+
+    addTikettiLog('🚀 Launching browser session...')
+    setTikettiBrowserStatus('launching')
+    setTikettiBrowserMessage('Starting headless browser...')
+
+    // Abort any existing session
+    if (tikettiBrowserAbortRef.current) {
+      tikettiBrowserAbortRef.current.abort()
+    }
+    if (tikettiBrowserSessionId) {
+      closeTikettiBrowserSession(tikettiBrowserSessionId).catch(() => {})
+    }
+
+    const controller = startTikettiBrowserSession(
+      tikettiSniperUrl,
+      tikettiSniperQty,
+      (event) => {
+        setTikettiBrowserSessionId(event.sessionId)
+        setTikettiBrowserStatus(event.status)
+        setTikettiBrowserMessage(event.message)
+        addTikettiLog(`[Browser] ${event.message}`)
+      },
+      (error) => {
+        setTikettiBrowserStatus('failed')
+        setTikettiBrowserMessage(error)
+        addTikettiLog(`[Browser] ❌ ${error}`)
+      },
+    )
+
+    tikettiBrowserAbortRef.current = controller
+  }, [tikettiSniperEvent, tikettiSniperUrl, tikettiSniperQty, tikettiBrowserSessionId, addTikettiLog])
+
   const handleTikettiSniperStart = useCallback(() => {
     if (!tikettiSniperEvent) return
 
@@ -1040,6 +1082,11 @@ function App() {
     setTikettiSniperSuccess(false)
     addTikettiLog('Monitoring started — watching for tickets...')
     addTikettiLog(`Polling every ${tikettiSniperDelayMs}ms...`)
+
+    // In browser mode, also launch the browser session for pre-warming
+    if (tikettiMode === 'browser' && tikettiBrowserStatus !== 'ready') {
+      launchBrowserSession()
+    }
 
     const doCheck = async () => {
       try {
@@ -1065,8 +1112,21 @@ function App() {
         // Tickets are available!
         addTikettiLog(`🎉 TICKETS AVAILABLE! ${ticketsFree} free`)
 
-        // Try to add to cart if session cookie is provided
-        if (tikettiSessionCookie.trim()) {
+        if (tikettiMode === 'browser' && tikettiBrowserSessionId) {
+          // ── Browser automation mode ──
+          addTikettiLog(`🤖 Triggering browser buy for ${tikettiSniperQty} ticket(s)...`)
+          try {
+            const buyRes = await triggerTikettiBrowserBuy(tikettiBrowserSessionId)
+            if (buyRes.success) {
+              addTikettiLog(`✅ ${buyRes.message}`)
+            } else {
+              addTikettiLog(`⚠️ Browser buy failed: ${buyRes.message} — go to tiketti.fi manually!`)
+            }
+          } catch (buyErr) {
+            addTikettiLog(`⚠️ Browser buy error: ${buyErr instanceof Error ? buyErr.message : 'Unknown'} — go to tiketti.fi manually!`)
+          }
+        } else if (tikettiMode === 'cookie' && tikettiSessionCookie.trim()) {
+          // ── Cookie mode ──
           addTikettiLog(`Attempting to add ${tikettiSniperQty} ticket(s) to cart...`)
           try {
             const cartRes = await addToTikettiCart(tikettiSniperUrl, tikettiSniperQty, tikettiSessionCookie)
@@ -1079,7 +1139,7 @@ function App() {
             addTikettiLog(`⚠️ Cart error: ${cartErr instanceof Error ? cartErr.message : 'Unknown'} — go to tiketti.fi manually!`)
           }
         } else {
-          addTikettiLog('No cookies provided — go to tiketti.fi now to buy!')
+          addTikettiLog('No cart method configured — go to tiketti.fi now to buy!')
         }
 
         setTikettiSniperSuccess(true)
@@ -1110,7 +1170,7 @@ function App() {
 
     // Set up polling
     tikettiSniperIntervalRef.current = setInterval(doCheck, tikettiSniperDelayMs)
-  }, [tikettiSniperEvent, tikettiSniperUrl, tikettiSniperDelayMs, tikettiSessionCookie, tikettiSniperQty, addTikettiLog])
+  }, [tikettiSniperEvent, tikettiSniperUrl, tikettiSniperDelayMs, tikettiSessionCookie, tikettiSniperQty, tikettiMode, tikettiBrowserSessionId, tikettiBrowserStatus, addTikettiLog, launchBrowserSession])
 
   const handleTikettiSniperStop = useCallback(() => {
     if (tikettiSniperIntervalRef.current) {
@@ -1119,14 +1179,29 @@ function App() {
     }
     setTikettiSniperStatus('stopped')
     addTikettiLog('Monitoring stopped')
-  }, [addTikettiLog])
+
+    // Close browser session if one exists
+    if (tikettiBrowserSessionId) {
+      closeTikettiBrowserSession(tikettiBrowserSessionId).catch(() => {})
+      setTikettiBrowserSessionId(null)
+      setTikettiBrowserStatus(null)
+      setTikettiBrowserMessage('')
+      addTikettiLog('[Browser] Session closed')
+    }
+    if (tikettiBrowserAbortRef.current) {
+      tikettiBrowserAbortRef.current.abort()
+      tikettiBrowserAbortRef.current = null
+    }
+  }, [addTikettiLog, tikettiBrowserSessionId])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (tikettiSniperIntervalRef.current) clearInterval(tikettiSniperIntervalRef.current)
+      if (tikettiBrowserAbortRef.current) tikettiBrowserAbortRef.current.abort()
+      if (tikettiBrowserSessionId) closeTikettiBrowserSession(tikettiBrowserSessionId).catch(() => {})
     }
-  }, [])
+  }, [tikettiBrowserSessionId])
 
   const steps = [t('step1'), t('step2'), t('step3'), t('step4')]
 
@@ -2084,20 +2159,66 @@ function App() {
                       <p>{t('tikettiSniperHowItWorks')}</p>
                     </div>
 
-                    {/* Session cookie (optional — for auto-cart) */}
-                    <div className="sniper-field">
-                      <label>{t('tikettiSniperCookieLabel')}</label>
-                      <textarea
-                        className="cookie-textarea"
-                        value={tikettiSessionCookie}
-                        onChange={(e) => setTikettiSessionCookie(e.target.value)}
-                        placeholder={t('tikettiSniperCookiePlaceholder')}
-                        disabled={tikettiSniperStatus === 'monitoring'}
-                        rows={3}
-                        spellCheck={false}
-                      />
-                      <p className="field-hint">{t('tikettiSniperCookieHint')}</p>
+                    {/* Cart mode toggle */}
+                    <div className="tiketti-mode-toggle">
+                      <span className="tiketti-mode-label">{t('tikettiCartMode')}</span>
+                      <div className="tiketti-mode-buttons">
+                        <button
+                          className={`tiketti-mode-btn ${tikettiMode === 'browser' ? 'active' : ''}`}
+                          onClick={() => setTikettiMode('browser')}
+                          disabled={tikettiSniperStatus === 'monitoring'}
+                        >
+                          🤖 {t('tikettiBrowserMode')}
+                        </button>
+                        <button
+                          className={`tiketti-mode-btn ${tikettiMode === 'cookie' ? 'active' : ''}`}
+                          onClick={() => setTikettiMode('cookie')}
+                          disabled={tikettiSniperStatus === 'monitoring'}
+                        >
+                          🍪 {t('tikettiCookieMode')}
+                        </button>
+                      </div>
+                      <p className="field-hint">
+                        {tikettiMode === 'browser' ? t('tikettiBrowserModeHint') : t('tikettiCookieModeHint')}
+                      </p>
                     </div>
+
+                    {/* Browser automation status indicator */}
+                    {tikettiMode === 'browser' && tikettiBrowserStatus && (
+                      <div className={`tiketti-browser-status status-${tikettiBrowserStatus}`}>
+                        <span className="browser-status-dot" />
+                        <span className="browser-status-label">{t(`tikettiBrowserStatus_${tikettiBrowserStatus}`)}</span>
+                        {tikettiBrowserMessage && <span className="browser-status-msg">{tikettiBrowserMessage}</span>}
+                      </div>
+                    )}
+
+                    {/* Browser: Pre-warm button (before monitoring starts) */}
+                    {tikettiMode === 'browser' && tikettiSniperStatus !== 'monitoring' && (!tikettiBrowserStatus || tikettiBrowserStatus === 'failed' || tikettiBrowserStatus === 'closed') && (
+                      <button
+                        className="btn-secondary tiketti-prewarm-btn"
+                        onClick={launchBrowserSession}
+                        disabled={tikettiSniperStatus === 'monitoring'}
+                      >
+                        🚀 {t('tikettiBrowserPrewarm')}
+                      </button>
+                    )}
+
+                    {/* Cookie mode: Session cookie input */}
+                    {tikettiMode === 'cookie' && (
+                      <div className="sniper-field">
+                        <label>{t('tikettiSniperCookieLabel')}</label>
+                        <textarea
+                          className="cookie-textarea"
+                          value={tikettiSessionCookie}
+                          onChange={(e) => setTikettiSessionCookie(e.target.value)}
+                          placeholder={t('tikettiSniperCookiePlaceholder')}
+                          disabled={tikettiSniperStatus === 'monitoring'}
+                          rows={3}
+                          spellCheck={false}
+                        />
+                        <p className="field-hint">{t('tikettiSniperCookieHint')}</p>
+                      </div>
+                    )}
 
                     {/* Quantity + delay */}
                     <div className="sniper-row">

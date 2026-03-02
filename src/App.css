@@ -2804,6 +2804,153 @@ button.danger {
   margin: 0;
 }
 
+/* ─── Tiketti Mode Toggle ────────────────────────────────────────────────── */
+
+.tiketti-mode-toggle {
+  margin: 0.8rem 0;
+}
+
+.tiketti-mode-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.tiketti-mode-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tiketti-mode-btn {
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: center;
+}
+
+.tiketti-mode-btn:hover:not(:disabled) {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.06);
+}
+
+.tiketti-mode-btn.active {
+  border-color: var(--accent);
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--accent);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.1);
+}
+
+.tiketti-mode-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Tiketti Browser Status ─────────────────────────────────────────────── */
+
+.tiketti-browser-status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  margin: 0.5rem 0;
+  animation: fadeSlideIn 0.25s ease-out both;
+}
+
+.browser-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--text-secondary);
+}
+
+.tiketti-browser-status.status-launching .browser-status-dot,
+.tiketti-browser-status.status-navigating .browser-status-dot {
+  background: var(--warning);
+  animation: statusPulse 1.5s ease-in-out infinite;
+}
+
+.tiketti-browser-status.status-queue-it .browser-status-dot {
+  background: #f59e0b;
+  animation: statusPulse 1s ease-in-out infinite;
+}
+
+.tiketti-browser-status.status-ready .browser-status-dot {
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+.tiketti-browser-status.status-buying .browser-status-dot {
+  background: var(--accent);
+  animation: statusPulse 0.6s ease-in-out infinite;
+}
+
+.tiketti-browser-status.status-success .browser-status-dot {
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+.tiketti-browser-status.status-failed .browser-status-dot {
+  background: var(--danger);
+}
+
+.tiketti-browser-status.status-closed .browser-status-dot {
+  background: var(--text-dim);
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.browser-status-label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.browser-status-msg {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.tiketti-browser-status.status-ready {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.tiketti-browser-status.status-success {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.tiketti-browser-status.status-failed {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.tiketti-prewarm-btn {
+  width: 100%;
+  margin: 0.5rem 0;
+}
+
 @keyframes pulse-success {
   0% { transform: scale(0.95); opacity: 0.7; }
   50% { transform: scale(1.02); }
