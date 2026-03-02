@@ -1,14 +1,11 @@
 /**
- * Frontend API client — calls the Railway backend instead of Kide.app directly.
- *
- * No more Tauri imports, no more axios, no more direct kide.app calls.
- * Everything goes through the backend proxy.
+ * Frontend API client — all requests go through the backend.
  */
 import type {
   EventResponse,
   ReserveResponse,
   ValidateTokenResponse,
-  DeobfuscateResponse,
+  BackendStatusResponse,
   EventFeatures,
   ScorerResponse,
   ScanResponse,
@@ -79,21 +76,21 @@ export async function addToCart(
 }
 
 /**
- * Trigger a refresh of the anti-bot deobfuscated values on the backend.
+ * Check backend readiness and warm up session.
  */
-export async function fetchExtraProperties(): Promise<DeobfuscateResponse> {
-  return apiCall<DeobfuscateResponse>('/api/deobfuscate', {})
+export async function fetchExtraProperties(): Promise<BackendStatusResponse> {
+  return apiCall<BackendStatusResponse>('/api/deobfuscate', {})
 }
 
 /**
- * Score a batch of events for resell potential via the backend AI scorer.
+ * Score a batch of events for resell potential.
  */
 export async function scoreEvents(events: EventFeatures[]): Promise<ScorerResponse> {
   return apiCall<ScorerResponse>('/api/score', { events })
 }
 
 /**
- * Scan Kide.app events by city, auto-extract features, and score them.
+ * Scan events by city, extract features, and score them.
  */
 export async function scanCity(city: string): Promise<ScanResponse> {
   return apiCall<ScanResponse>('/api/scan', { city, productType: 1 })
@@ -174,7 +171,7 @@ export async function fetchTikettiEvents(adminToken: string, city?: string): Pro
 }
 
 /**
- * Trigger manual Tiketti scrape (admin only).
+ * Trigger manual event refresh (admin only).
  */
 export async function triggerTikettiScrape(adminToken: string): Promise<{ success: boolean; scraped: number; upserted: number }> {
   const url = `${API_URL}/api/tiketti/scrape`

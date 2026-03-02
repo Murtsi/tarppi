@@ -594,10 +594,10 @@ function App() {
     const init = async () => {
       try {
         const props = await fetchExtraProperties()
-        if (props?.hash) {
-          appendLogRef.current(`Backend properties ready: ${props.headerKey}`)
+        if (props?.ready) {
+          appendLogRef.current('Backend ready')
         } else {
-          appendLogRef.current('Using cached backend properties')
+          appendLogRef.current('Backend connected (cached)')
         }
       } catch {
         appendLogRef.current('Could not reach backend for properties')

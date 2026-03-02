@@ -1829,7 +1829,7 @@ button.danger {
   font-size: 0.8rem;
 }
 
-/* ─── AI Reranker styles ──────────────────────────────────────────────────── */
+/* ─── AI Score styles ─────────────────────────────────────────────────────── */
 
 /* AI badge — inline label next to heuristic score */
 .ai-badge {

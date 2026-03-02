@@ -136,7 +136,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     howItWorks: 'How It Works',
     howItWorksText: 'Kidehiiri monitors Kide.app for event availability and automatically adds tickets to your cart when they go on sale. You then complete the checkout manually.',
     authentication: 'Authentication',
-    authenticationText: 'Your Bearer token is used to authenticate with the Kide.app API. Never share it with anyone. The app only sends requests to the backend server which proxies to api.kide.app.',
+    authenticationText: 'Your Bearer token is used to authenticate with Kide.app. Never share it with anyone. The app sends requests through a secure backend server.',
     pollingInterval: 'Polling Interval',
     pollingIntervalText: 'The app checks for availability every N milliseconds (default: 1200ms). Minimum recommended: 200ms.',
     keywordFilter: 'Keyword Filter',
@@ -202,14 +202,14 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     scorerPaused: 'Paused',
     scorerFavorites: 'favorites',
 
-    // AI Reranker
+    // AI Scoring
     scorerAiView: 'AI Grouped',
     scorerAiBuy: 'BUY',
     scorerAiMaybe: 'MAYBE',
     scorerAiSkip: 'SKIP',
     scorerAiConfidence: 'AI Confidence',
     scorerAiModelVersion: 'Model version',
-    scorerAiUnavailable: 'AI reranker unavailable — showing heuristic scores only',
+    scorerAiUnavailable: 'AI scoring unavailable — showing heuristic scores only',
 
     // Event detail (expanded)
     ticketOptions: 'Ticket Options',
@@ -479,7 +479,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     howItWorks: 'Kuinka se toimii',
     howItWorksText: 'Kidehiiri valvoo kide.app:ia tapahtumien saatavuuden osalta ja lisää liput automaattisesti ostoskoriin niiden tultua myynnille. Tämän jälkeen voit tehdä kaupan itse.',
     authentication: 'Tunnistaminen',
-    authenticationText: 'Bearer-tokenia käytetään kide.app API:n kanssa todentamiseen. Älä koskaan jaa sitä kenelle tahansa. Sovellus lähettää pyynnöt palvelimen kautta api.kide.app:iin.',
+    authenticationText: 'Bearer-tokenia käytetään kide.app:n kanssa todentamiseen. Älä koskaan jaa sitä kenelle tahansa. Sovellus lähettää pyynnöt turvallisen palvelimen kautta.',
     pollingInterval: 'Kyselyväli',
     pollingIntervalText: 'Sovellus tarkistaa saatavuuden N millisekunnin välein (oletus: 1200ms). Suositeltu minimi: 200ms.',
     keywordFilter: 'Avainsanasuodatin',
@@ -544,14 +544,14 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     scorerTriggerBot: 'Snippaa tämä',
     scorerNoResults: 'Ei tuloksia vielä. Valitse kaupunki ja klikkaa Skannaa tapahtumat.',
 
-    // AI Reranker
+    // AI Scoring
     scorerAiView: 'AI-ryhmittely',
     scorerAiBuy: 'OSTA',
     scorerAiMaybe: 'EHKÄ',
     scorerAiSkip: 'OHITA',
     scorerAiConfidence: 'AI-luottamus',
     scorerAiModelVersion: 'Mallin versio',
-    scorerAiUnavailable: 'AI-uudelleenarvioija ei käytettävissä — näytetään vain heuristiset pisteet',
+    scorerAiUnavailable: 'AI-pisteytys ei käytettävissä — näytetään vain heuristiset pisteet',
 
     // Event detail (expanded)
     ticketOptions: 'Lipputyypit',
