@@ -395,11 +395,12 @@ function App() {
   const [authToken, setAuthToken] = useState(() => localStorage.getItem('kidehiiri-token') || '')
   const [quantity, setQuantity] = useState(1)
   const [proxyUrl, setProxyUrl] = useState('')
-  const [delayMs, setDelayMs] = useState(1200)
+  const [delayMs, setDelayMs] = useState(400)
   const [activeMonitoringDelayMs, setActiveMonitoringDelayMs] = useState(0)
   const [fallbackMode, setFallbackMode] = useState(false)
 
   const [status, setStatus] = useState<MonitorStatus>('idle')
+  const [rateLimitBackoffMs, setRateLimitBackoffMs] = useState(0)
   const [tokenStatus, setTokenStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid' | 'error'>('idle')
   const [tokenUser, setTokenUser] = useState('')
   const [tokenEmail, setTokenEmail] = useState('')
@@ -416,6 +417,8 @@ function App() {
   const [eventImageUrl, setEventImageUrl] = useState('')
   const [eventVariants, setEventVariants] = useState<Array<{ inventoryId: string; name: string; price: number; availability: number }>>([])
   const [selectedVariantId, setSelectedVariantId] = useState('')
+  const [variantIdPreselect, setVariantIdPreselect] = useState('')
+  const [variantKeywordFilter, setVariantKeywordFilter] = useState('')
   const [fetchingEvent, setFetchingEvent] = useState(false)
   const [showTokenGuide, setShowTokenGuide] = useState(false)
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
@@ -493,7 +496,7 @@ function App() {
         return false
       }
     }
-    if (step === 1) return Number.isFinite(delayMs) && delayMs >= 200 && quantity > 0
+    if (step === 1) return Number.isFinite(delayMs) && delayMs >= 100 && quantity > 0
     return true
   }, [delayMs, eventUrl, step, eventVariants, selectedVariantId, quantity])
 
@@ -653,7 +656,25 @@ function App() {
         }))
         setEventVariants(variants)
         if (variants.length > 0 && !selectedVariantId) {
-          setSelectedVariantId(variants[0].inventoryId)
+          // Auto-select: ID pre-selection takes priority, then keyword filter
+          if (variantIdPreselect.trim()) {
+            const match = variants.find((v) => v.inventoryId.includes(variantIdPreselect.trim()))
+            if (match) {
+              setSelectedVariantId(match.inventoryId)
+            } else {
+              setSelectedVariantId(variants[0].inventoryId)
+            }
+          } else if (variantKeywordFilter.trim()) {
+            const keyword = variantKeywordFilter.trim().toLowerCase()
+            const match = variants.find((v) => v.name.toLowerCase().includes(keyword))
+            if (match) {
+              setSelectedVariantId(match.inventoryId)
+            } else {
+              setSelectedVariantId(variants[0].inventoryId)
+            }
+          } else {
+            setSelectedVariantId(variants[0].inventoryId)
+          }
         }
       } catch {
         setEventName('')
@@ -667,7 +688,7 @@ function App() {
 
     const timer = setTimeout(fetchDetails, 500)
     return () => clearTimeout(timer)
-  }, [eventUrl, step, selectedVariantId])
+  }, [eventUrl, step, selectedVariantId, variantIdPreselect, variantKeywordFilter])
 
   // ── Monitoring loop ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -676,6 +697,18 @@ function App() {
     const countdownTimer = window.setInterval(() => {
       setNextCheckInMs((prev) => (prev <= 1000 ? activeMonitoringDelayMs : prev - 1000))
     }, 1000)
+
+    // Rate limit backoff countdown
+    const backoffTimer = rateLimitBackoffMs > 0 ? window.setInterval(() => {
+      setRateLimitBackoffMs((prev) => {
+        if (prev <= 1000) {
+          setActiveMonitoringDelayMs(delayMs) // Reset to original delay
+          appendLogRef.current('Rate limit backoff expired, resuming normal polling')
+          return 0
+        }
+        return prev - 1000
+      })
+    }, 1000) : null
 
     const checkTimer = window.setInterval(async () => {
       const { eventUrl: url, selectedVariantId: variantId, authToken: token, quantity: targetQty } = configRef.current
@@ -687,7 +720,22 @@ function App() {
       if (!variantId) { log('Error: no ticket variant selected'); return }
 
       try {
-        const { product, variants } = await fetchEventProducts(url)
+        // Retry logic with exponential backoff for transient network failures
+        let fetchResult
+        let retries = 0
+        const maxRetries = 2
+        while (retries < maxRetries) {
+          try {
+            fetchResult = await fetchEventProducts(url)
+            break
+          } catch (err) {
+            retries++
+            if (retries >= maxRetries) throw err
+            const waitMs = Math.min(100 * Math.pow(2, retries - 1), 500)
+            await new Promise((r) => setTimeout(r, waitMs))
+          }
+        }
+        const { product, variants } = fetchResult!
         const available = variants.filter((v) => v.availability > 0)
 
         setLastCheckedAt(new Date().toLocaleTimeString())
@@ -736,8 +784,17 @@ function App() {
               setQuantity(result.retryWithQuantity)
               log(`Will retry next poll with quantity ${result.retryWithQuantity}...`)
             } else {
-              log(`Failed: ${result.message}`)
-              log('Retrying next poll...')
+              // Check for rate limiting
+              if (result.message.includes('Rate limited')) {
+                const backoff = Math.min((rateLimitBackoffMs || 5000) * 2, 60000) // Max 60s
+                setRateLimitBackoffMs(backoff)
+                log(`Rate limited! Pausing for ${Math.round(backoff / 1000)}s...`)
+                // Increase delay temporarily
+                setActiveMonitoringDelayMs((prev) => Math.max(prev, backoff / 2))
+              } else {
+                log(`Failed: ${result.message}`)
+                log('Retrying next poll...')
+              }
             }
           } catch (addErr) {
             log(`Error adding to cart: ${addErr instanceof Error ? addErr.message : String(addErr)}`)
@@ -755,8 +812,9 @@ function App() {
     return () => {
       window.clearInterval(countdownTimer)
       window.clearInterval(checkTimer)
+      if (backoffTimer) window.clearInterval(backoffTimer)
     }
-  }, [status, activeMonitoringDelayMs])
+  }, [status, activeMonitoringDelayMs, rateLimitBackoffMs, delayMs])
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const moveBack = () => {
@@ -1331,6 +1389,30 @@ function App() {
                 />
               </label>
 
+              <div className="pre-selection-options">
+                <p className="pre-selection-hint">Pre-select ticket before sales start (optional):</p>
+                <label>
+                  Variant ID
+                  <input
+                    type="text"
+                    placeholder="Leave empty to auto-select first"
+                    value={variantIdPreselect}
+                    onChange={(e) => setVariantIdPreselect(e.target.value)}
+                  />
+                  <div className="hint-text">Paste a variant ID if you know it in advance</div>
+                </label>
+                <label>
+                  OR Search by name
+                  <input
+                    type="text"
+                    placeholder="e.g. 'VIP' or 'Early Bird'"
+                    value={variantKeywordFilter}
+                    onChange={(e) => setVariantKeywordFilter(e.target.value)}
+                  />
+                  <div className="hint-text">Will auto-select the first matching ticket type</div>
+                </label>
+              </div>
+
               {fetchingEvent && !eventName && <p className="loading-text">{t('loadingEvent')}</p>}
 
               {eventName && (
@@ -1489,7 +1571,8 @@ function App() {
               <h2>{t('setRefreshDelay')}</h2>
               <label>
                 {t('pollInterval')}
-                <input type="number" min={200} step={100} value={delayMs} onChange={(e) => setDelayMs(Number(e.target.value))} />
+                <input type="number" min={100} step={50} value={delayMs} onChange={(e) => setDelayMs(Number(e.target.value))} />
+                {delayMs < 200 && <div className="hint-text" style={{ color: 'var(--warning)' }}>⚠ Very fast polling (&lt;200ms) may trigger rate limiting. Use with caution.</div>}
               </label>
 
               <label className="checkbox-row fallback-toggle">

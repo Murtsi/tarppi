@@ -3306,3 +3306,19 @@ textarea:focus-visible {
 .logs > p {
   animation: contentFadeIn 0.15s ease-out both;
 }
+
+/* Pre-selection options section */
+.pre-selection-options {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(34, 197, 94, 0.05);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: var(--radius-md);
+}
+
+.pre-selection-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--gray);
+  font-weight: 500;
+}
