@@ -445,6 +445,7 @@ function App() {
   // ── Discussion state ───────────────────────────────────────────────────────
   const [discussState, setDiscussState] = useState<Record<string, {
     loading: boolean
+    open: boolean
     sections?: DiscussSections
     error?: string
   }>>({})
@@ -983,23 +984,22 @@ function App() {
   function handleDiscuss(ev: { event_id: string } & Record<string, unknown>) {
     const id = ev.event_id
 
-    // Toggle: if already loaded, collapse
+    // Toggle open/closed without re-fetching if already loaded
     if (discussState[id]?.sections) {
-      setDiscussState(prev => {
-        const next = { ...prev }
-        delete next[id]
-        return next
-      })
+      setDiscussState(prev => ({
+        ...prev,
+        [id]: { ...prev[id], open: !prev[id].open },
+      }))
       return
     }
 
-    setDiscussState(prev => ({ ...prev, [id]: { loading: true } }))
+    setDiscussState(prev => ({ ...prev, [id]: { loading: true, open: true } }))
 
     discussEvent(ev as Record<string, unknown>)
       .then(result => {
         setDiscussState(prev => ({
           ...prev,
-          [id]: { loading: false, sections: result.sections },
+          [id]: { loading: false, open: true, sections: result.sections },
         }))
       })
       .catch(err => {
@@ -1007,6 +1007,7 @@ function App() {
           ...prev,
           [id]: {
             loading: false,
+            open: true,
             error: err instanceof Error ? err.message : 'Analyysi epäonnistui',
           },
         }))
@@ -1844,18 +1845,18 @@ function App() {
                               >
                                 {discussState[ev.event_id]?.loading
                                   ? 'Ladataan...'
-                                  : discussState[ev.event_id]?.sections
+                                  : discussState[ev.event_id]?.open && discussState[ev.event_id]?.sections
                                   ? 'Piilota analyysi ▲'
                                   : 'Analysoi →'}
                               </button>
 
                               {/* Discussion panel */}
-                              {discussState[ev.event_id]?.error && (
+                              {discussState[ev.event_id]?.open && discussState[ev.event_id]?.error && (
                                 <p style={{ color: '#888', fontSize: '0.75rem', margin: '4px 0 0' }}>
                                   Analyysi ei saatavilla juuri nyt.
                                 </p>
                               )}
-                              {discussState[ev.event_id]?.sections && (
+                              {discussState[ev.event_id]?.open && discussState[ev.event_id]?.sections && (
                                 <div style={{
                                   marginTop: '8px',
                                   padding: '8px 12px',
@@ -2026,16 +2027,16 @@ function App() {
                                       >
                                         {discussState[ev.event_id]?.loading
                                           ? 'Ladataan...'
-                                          : discussState[ev.event_id]?.sections
+                                          : discussState[ev.event_id]?.open && discussState[ev.event_id]?.sections
                                           ? 'Piilota analyysi ▲'
                                           : 'Analysoi →'}
                                       </button>
-                                      {discussState[ev.event_id]?.error && (
+                                      {discussState[ev.event_id]?.open && discussState[ev.event_id]?.error && (
                                         <p style={{ color: '#888', fontSize: '0.75rem', margin: '4px 0 0' }}>
                                           Analyysi ei saatavilla juuri nyt.
                                         </p>
                                       )}
-                                      {discussState[ev.event_id]?.sections && (
+                                      {discussState[ev.event_id]?.open && discussState[ev.event_id]?.sections && (
                                         <div style={{
                                           marginTop: '8px',
                                           padding: '8px 12px',
@@ -2202,16 +2203,16 @@ function App() {
                                 >
                                   {discussState[ev.event_id]?.loading
                                     ? 'Ladataan...'
-                                    : discussState[ev.event_id]?.sections
+                                    : discussState[ev.event_id]?.open && discussState[ev.event_id]?.sections
                                     ? 'Piilota analyysi ▲'
                                     : 'Analysoi →'}
                                 </button>
-                                {discussState[ev.event_id]?.error && (
+                                {discussState[ev.event_id]?.open && discussState[ev.event_id]?.error && (
                                   <p style={{ color: '#888', fontSize: '0.75rem', margin: '4px 0 0' }}>
                                     Analyysi ei saatavilla juuri nyt.
                                   </p>
                                 )}
-                                {discussState[ev.event_id]?.sections && (
+                                {discussState[ev.event_id]?.open && discussState[ev.event_id]?.sections && (
                                   <div style={{
                                     marginTop: '8px',
                                     padding: '8px 12px',
