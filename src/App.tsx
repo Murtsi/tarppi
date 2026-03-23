@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity, adminLogin, adminVerify, fetchTikettiEvents, triggerTikettiScrape, fetchTikettiEvent, addToTikettiCart, startTikettiBrowserSession, triggerTikettiBrowserBuy, closeTikettiBrowserSession } from './lib/kide/api'
+import { extractEventId, fetchEventProducts, fetchEventDetail, maskToken, validateToken, addToCart, fetchExtraProperties, scanCity, adminLogin, adminVerify, fetchTikettiEvents, triggerTikettiScrape, fetchTikettiEvent, addToTikettiCart, startTikettiBrowserSession, triggerTikettiBrowserBuy, closeTikettiBrowserSession, discussEvent } from './lib/kide/api'
 import { getTranslation, type LanguageCode } from './lib/translations'
-import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant, TikettiEvent, TikettiEventDetail, TikettiBrowserSessionStatus } from './lib/kide/types'
+import type { ScoredEvent, TopEvent, SalesStatus, AiScore, KideVariant, TikettiEvent, TikettiEventDetail, TikettiBrowserSessionStatus, DiscussSections } from './lib/kide/types'
 import CityPicker from './components/CityPicker'
 import { TicketSniperIcon } from './components/Logo'
 import './App.css'
@@ -441,6 +441,13 @@ function App() {
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
   const [scanMeta, setScanMeta] = useState<{ scanned_count: number; filtered_count: number; filtered_out_sold_out: number; filtered_out_free: number; city: string } | null>(null)
   const [eventVariantCache, setEventVariantCache] = useState<Record<string, { variants: KideVariant[]; loading: boolean; error?: string }>>({})
+
+  // ── Discussion state ───────────────────────────────────────────────────────
+  const [discussState, setDiscussState] = useState<Record<string, {
+    loading: boolean
+    sections?: DiscussSections
+    error?: string
+  }>>({})
 
   // ── Admin auth state ──────────────────────────────────────────────────────
   const [adminToken, setAdminToken] = useState(() => localStorage.getItem('kidehiiri-admin-token') || '')
@@ -972,6 +979,39 @@ function App() {
       return opening ? eventId : null
     })
   }, [eventVariantCache])
+
+  function handleDiscuss(ev: { event_id: string } & Record<string, unknown>) {
+    const id = ev.event_id
+
+    // Toggle: if already loaded, collapse
+    if (discussState[id]?.sections) {
+      setDiscussState(prev => {
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
+      return
+    }
+
+    setDiscussState(prev => ({ ...prev, [id]: { loading: true } }))
+
+    discussEvent(ev as Record<string, unknown>)
+      .then(result => {
+        setDiscussState(prev => ({
+          ...prev,
+          [id]: { loading: false, sections: result.sections },
+        }))
+      })
+      .catch(err => {
+        setDiscussState(prev => ({
+          ...prev,
+          [id]: {
+            loading: false,
+            error: err instanceof Error ? err.message : 'Analyysi epäonnistui',
+          },
+        }))
+      })
+  }
 
   // ── Admin auth handlers ───────────────────────────────────────────────────
 
@@ -1789,6 +1829,55 @@ function App() {
                                 {eventDate && <span className="scorer-date">{eventDate}</span>}
                               </div>
                               <span className="scorer-reason">{ev.reason}</span>
+                              {/* Analysoi button */}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDiscuss(ev as unknown as { event_id: string } & Record<string, unknown>) }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#888',
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer',
+                                  padding: '2px 0',
+                                  textDecoration: 'underline',
+                                }}
+                              >
+                                {discussState[ev.event_id]?.loading
+                                  ? 'Ladataan...'
+                                  : discussState[ev.event_id]?.sections
+                                  ? 'Piilota analyysi ▲'
+                                  : 'Analysoi →'}
+                              </button>
+
+                              {/* Discussion panel */}
+                              {discussState[ev.event_id]?.error && (
+                                <p style={{ color: '#888', fontSize: '0.75rem', margin: '4px 0 0' }}>
+                                  Analyysi ei saatavilla juuri nyt.
+                                </p>
+                              )}
+                              {discussState[ev.event_id]?.sections && (
+                                <div style={{
+                                  marginTop: '8px',
+                                  padding: '8px 12px',
+                                  background: 'rgba(255,255,255,0.04)',
+                                  borderRadius: '6px',
+                                  fontSize: '0.8rem',
+                                  lineHeight: '1.6',
+                                }}>
+                                  {(
+                                    ['suosio', 'hinta', 'ajoitus', 'järjestäjä', 'trendi', 'yhteenveto'] as const
+                                  )
+                                    .filter((key) => discussState[ev.event_id]?.sections?.[key])
+                                    .map((key) => (
+                                      <div key={key} style={{ display: 'flex', gap: '8px', marginBottom: '3px' }}>
+                                        <span style={{ color: '#aaa', minWidth: '90px', textTransform: 'capitalize' }}>
+                                          {key === 'järjestäjä' ? 'Järjestäjä' : key.charAt(0).toUpperCase() + key.slice(1)}
+                                        </span>
+                                        <span>{discussState[ev.event_id]?.sections?.[key]}</span>
+                                      </div>
+                                    ))}
+                                </div>
+                              )}
                             </div>
                             <div className="scorer-card-score">
                               <span className="scorer-score-value" style={{ color: scoreColor(ev.resell_score) }}>
@@ -1923,6 +2012,52 @@ function App() {
                                         {eventDate && <span className="scorer-date">{eventDate}</span>}
                                       </div>
                                       <span className="scorer-reason">{ev.reason}</span>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleDiscuss(ev as unknown as { event_id: string } & Record<string, unknown>) }}
+                                        style={{
+                                          background: 'none',
+                                          border: 'none',
+                                          color: '#888',
+                                          fontSize: '0.75rem',
+                                          cursor: 'pointer',
+                                          padding: '2px 0',
+                                          textDecoration: 'underline',
+                                        }}
+                                      >
+                                        {discussState[ev.event_id]?.loading
+                                          ? 'Ladataan...'
+                                          : discussState[ev.event_id]?.sections
+                                          ? 'Piilota analyysi ▲'
+                                          : 'Analysoi →'}
+                                      </button>
+                                      {discussState[ev.event_id]?.error && (
+                                        <p style={{ color: '#888', fontSize: '0.75rem', margin: '4px 0 0' }}>
+                                          Analyysi ei saatavilla juuri nyt.
+                                        </p>
+                                      )}
+                                      {discussState[ev.event_id]?.sections && (
+                                        <div style={{
+                                          marginTop: '8px',
+                                          padding: '8px 12px',
+                                          background: 'rgba(255,255,255,0.04)',
+                                          borderRadius: '6px',
+                                          fontSize: '0.8rem',
+                                          lineHeight: '1.6',
+                                        }}>
+                                          {(
+                                            ['suosio', 'hinta', 'ajoitus', 'järjestäjä', 'trendi', 'yhteenveto'] as const
+                                          )
+                                            .filter((key) => discussState[ev.event_id]?.sections?.[key])
+                                            .map((key) => (
+                                              <div key={key} style={{ display: 'flex', gap: '8px', marginBottom: '3px' }}>
+                                                <span style={{ color: '#aaa', minWidth: '90px', textTransform: 'capitalize' }}>
+                                                  {key === 'järjestäjä' ? 'Järjestäjä' : key.charAt(0).toUpperCase() + key.slice(1)}
+                                                </span>
+                                                <span>{discussState[ev.event_id]?.sections?.[key]}</span>
+                                              </div>
+                                            ))}
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="scorer-card-score">
                                       <span className="scorer-score-value" style={{ color: scoreColor(ev.resell_score) }}>
@@ -2053,6 +2188,52 @@ function App() {
                                   {eventDate && <span className="scorer-date">{eventDate}</span>}
                                 </div>
                                 <span className="scorer-reason">{ev.reason}</span>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleDiscuss(ev as unknown as { event_id: string } & Record<string, unknown>) }}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#888',
+                                    fontSize: '0.75rem',
+                                    cursor: 'pointer',
+                                    padding: '2px 0',
+                                    textDecoration: 'underline',
+                                  }}
+                                >
+                                  {discussState[ev.event_id]?.loading
+                                    ? 'Ladataan...'
+                                    : discussState[ev.event_id]?.sections
+                                    ? 'Piilota analyysi ▲'
+                                    : 'Analysoi →'}
+                                </button>
+                                {discussState[ev.event_id]?.error && (
+                                  <p style={{ color: '#888', fontSize: '0.75rem', margin: '4px 0 0' }}>
+                                    Analyysi ei saatavilla juuri nyt.
+                                  </p>
+                                )}
+                                {discussState[ev.event_id]?.sections && (
+                                  <div style={{
+                                    marginTop: '8px',
+                                    padding: '8px 12px',
+                                    background: 'rgba(255,255,255,0.04)',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem',
+                                    lineHeight: '1.6',
+                                  }}>
+                                    {(
+                                      ['suosio', 'hinta', 'ajoitus', 'järjestäjä', 'trendi', 'yhteenveto'] as const
+                                    )
+                                      .filter((key) => discussState[ev.event_id]?.sections?.[key])
+                                      .map((key) => (
+                                        <div key={key} style={{ display: 'flex', gap: '8px', marginBottom: '3px' }}>
+                                          <span style={{ color: '#aaa', minWidth: '90px', textTransform: 'capitalize' }}>
+                                            {key === 'järjestäjä' ? 'Järjestäjä' : key.charAt(0).toUpperCase() + key.slice(1)}
+                                          </span>
+                                          <span>{discussState[ev.event_id]?.sections?.[key]}</span>
+                                        </div>
+                                      ))}
+                                  </div>
+                                )}
                               </div>
                               <div className="scorer-card-score">
                                 <span className="scorer-score-value" style={{ color: scoreColor(ev.resell_score) }}>
