@@ -267,3 +267,20 @@ export type TikettiBrowserSessionInfo = {
   statusMessage: string
   createdAt: number
 }
+
+// ─── Event Discussion ────────────────────────────────────────────────────────
+
+/** Finnish-language sections returned by POST /api/discuss */
+export type DiscussSections = {
+  suosio?: string
+  hinta?: string
+  ajoitus?: string
+  järjestäjä?: string
+  trendi?: string
+  yhteenveto?: string
+}
+
+export type DiscussResponse = {
+  sections: DiscussSections
+  generated_at: string
+}

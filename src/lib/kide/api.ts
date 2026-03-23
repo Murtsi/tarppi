@@ -15,6 +15,7 @@ import type {
   TikettiEventResponse,
   TikettiReserveResponse,
   TikettiBrowserBuyResponse,
+  DiscussResponse,
 } from './types'
 import type { TikettiBrowserSSEEvent } from './types'
 
@@ -298,4 +299,14 @@ export async function triggerTikettiBrowserBuy(
 export async function closeTikettiBrowserSession(sessionId: string): Promise<void> {
   const url = `${API_URL}/api/tiketti/browser/session/${sessionId}`
   await fetch(url, { method: 'DELETE' }).catch(() => {})
+}
+
+// ─── Event Discussion API ────────────────────────────────────────────────────
+
+/**
+ * Fetch a Finnish-language structured analysis for a scored event.
+ * On-demand only — called when the user clicks "Analysoi".
+ */
+export async function discussEvent(event: Record<string, unknown>): Promise<DiscussResponse> {
+  return apiCall<DiscussResponse>('/api/discuss', { event })
 }
