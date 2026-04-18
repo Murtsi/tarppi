@@ -57,7 +57,7 @@ export default function RightPanel(p: Props) {
   return (
     <aside className="lt-right">
       <div className="lt-right__head">
-        <Lbl>Zoom · tapahtuma</Lbl>
+        <Lbl>Tapahtuman tiedot</Lbl>
         <span style={{ flex: 1 }} />
         <button className="lt-iconbtn" onClick={p.onClose} aria-label="Sulje">×</button>
       </div>
@@ -76,7 +76,7 @@ export default function RightPanel(p: Props) {
         </div>
 
         <div style={{ padding: '14px 16px 0', fontFamily: F.mono, fontSize: 11, color: C.inkSoft, lineHeight: 1.7 }}>
-          <div><span style={{ color: C.inkMuted }}>järj.</span> {ev.organiser ?? '—'}</div>
+          <div><span style={{ color: C.inkMuted }}>järjestäjä</span> {ev.organiser ?? '—'}</div>
           <div><span style={{ color: C.inkMuted }}>aika</span> {ev.start_time ? new Date(ev.start_time).toLocaleString('fi-FI') : '—'}</div>
           <div><span style={{ color: C.inkMuted }}>kaupunki</span> {ev.city ?? '—'}</div>
           <div><span style={{ color: C.inkMuted }}>hinta</span> {ev.base_price_eur ?? '—'}
@@ -92,7 +92,7 @@ export default function RightPanel(p: Props) {
         )}
 
         <div style={{ padding: '16px 16px 0' }}>
-          <Lbl>Tekoäly · signaalit</Lbl>
+          <Lbl>Tekoälysignaalit</Lbl>
           <div style={{ marginTop: 8 }}>
             {[
               ['Suosio', feat.popularity],
@@ -121,7 +121,7 @@ export default function RightPanel(p: Props) {
           <Lbl>Lipputyypit</Lbl>
           {p.detailLoading && (
             <div style={{ color: C.inkMuted, fontFamily: F.mono, fontSize: 11, padding: '10px 0' }}>
-              Ladataan variantteja…
+              Ladataan lipputyyppejä…
             </div>
           )}
           {p.detailError && (
@@ -146,7 +146,7 @@ export default function RightPanel(p: Props) {
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 500 }}>{v.name}</div>
                     <div style={{ fontFamily: F.mono, fontSize: 10, color: C.inkSoft, marginTop: 2 }}>
-                      {soldOut ? 'LOPPUUNMYYTY' : `${v.availability} vapaata · max ${v.productVariantMaximumReservableQuantity ?? 10}`}
+                      {soldOut ? 'LOPPUUNMYYTY' : `${v.availability} jäljellä · enintään ${v.productVariantMaximumReservableQuantity ?? 10}`}
                     </div>
                   </div>
                   <div style={{ fontFamily: F.mono, fontSize: 14, fontWeight: 600 }}>
@@ -159,7 +159,7 @@ export default function RightPanel(p: Props) {
         </div>
 
         <div style={{ padding: '16px 16px 0' }}>
-          <Lbl>Metsästysasetukset</Lbl>
+          <Lbl>Automaatioasetukset</Lbl>
           <div className="lt-settings">
             <div className="lt-settings__row">
               <span style={{ color: C.inkSoft }}>määrä</span>
@@ -202,7 +202,7 @@ export default function RightPanel(p: Props) {
             })
           }}
         >
-          <span style={{ fontSize: 13 }}>▶</span> {p.activeSnipe ? 'Hiiri käynnissä' : 'Käynnistä hiiri'}
+          <span style={{ fontSize: 13 }}>▶</span> {p.activeSnipe ? 'Automaatio käynnissä' : 'Käynnistä automaatio'}
           <span style={{ marginLeft: 4, fontFamily: F.mono, fontSize: 10, opacity: 0.7 }}><Kbd>⌘⏎</Kbd></span>
         </button>
       </div>

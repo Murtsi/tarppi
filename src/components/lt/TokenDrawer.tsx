@@ -42,7 +42,7 @@ export default function TokenDrawer(p: Props) {
 
         <div className="lt-drawer__body">
           <div style={{ marginBottom: 18 }}>
-            <Lbl>Kide.app token</Lbl>
+            <Lbl>Kide.app-token</Lbl>
             <textarea
               value={token}
               onChange={(e) => setToken(e.target.value)}
@@ -53,7 +53,7 @@ export default function TokenDrawer(p: Props) {
             <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
               <button className="lt-btn lt-btn--ghost" onClick={p.onValidate}>Tarkista</button>
               <span style={{ fontFamily: F.mono, fontSize: 11, color: p.tokenValid ? C.accent : C.skip }}>
-                {p.tokenValid ? `✓ ${p.tokenEmail ?? 'kelvollinen'}` : '✗ ei vahvistettu'}
+                {p.tokenValid ? `✓ ${p.tokenEmail ?? 'kelvollinen'}` : '✗ virheellinen'}
               </span>
             </div>
           </div>
@@ -70,16 +70,16 @@ export default function TokenDrawer(p: Props) {
               className="lt-slider"
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: F.mono, fontSize: 10, color: C.inkMuted, marginTop: 4 }}>
-              <span>nopea 200</span>
-              <span>rauhallinen 2000</span>
+              <span>nopea 200 ms</span>
+              <span>hidas 2000 ms</span>
             </div>
           </div>
 
           <div style={{ marginBottom: 18 }}>
-            <Lbl>Varaläpi (fallback)</Lbl>
+            <Lbl>Varareitti</Lbl>
             <label className="lt-toggle">
               <input type="checkbox" checked={fallback} onChange={(e) => setFallback(e.target.checked)} />
-              <span>{fallback ? 'Päällä — kokeile pienemmillä määrillä' : 'Pois'}</span>
+              <span>{fallback ? 'Päällä — kokeile pienempää määrää' : 'Pois'}</span>
             </label>
           </div>
         </div>

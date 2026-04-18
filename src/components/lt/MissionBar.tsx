@@ -23,9 +23,9 @@ export default function MissionBar({ snipe, pollMs, latestLog, onStop }: Props) 
     snipe.phase === 'waiting' ? C.maybe :
     snipe.phase === 'error' ? C.skip : C.magenta
   const phaseLabel =
-    snipe.phase === 'landed' ? 'SAALIS' :
+    snipe.phase === 'landed' ? 'ONNISTUI' :
     snipe.phase === 'waiting' ? 'ODOTTAA' :
-    snipe.phase === 'error' ? 'VIRHE' : 'METSÄLLÄ'
+    snipe.phase === 'error' ? 'VIRHE' : 'KÄYNNISSÄ'
 
   return (
     <div className="lt-missionbar">
@@ -41,10 +41,10 @@ export default function MissionBar({ snipe, pollMs, latestLog, onStop }: Props) 
       </div>
       <div className="lt-missionbar__sep" />
       <div style={{ color: C.inkSoft, fontFamily: F.mono, fontSize: 11 }}>
-        poll <span style={{ color: C.ink }}>{pollMs}ms</span>
+        pollaus <span style={{ color: C.ink }}>{pollMs} ms</span>
       </div>
       <div style={{ color: C.inkSoft, fontFamily: F.mono, fontSize: 11 }}>
-        yritystä <span style={{ color: C.ink }}>{snipe.attempts}</span>
+        yrityksiä <span style={{ color: C.ink }}>{snipe.attempts}</span>
       </div>
       <div style={{ color: C.inkSoft, fontFamily: F.mono, fontSize: 11 }}>
         aikaa <span style={{ color: C.ink }}>{fmtElapsed(elapsed)}</span>

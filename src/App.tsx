@@ -147,7 +147,7 @@ export default function App() {
       return
     }
     if (snipe && snipe.phase !== 'error' && snipe.phase !== 'landed') {
-      pushLog('warn', 'Metsästys jo käynnissä')
+      pushLog('warn', 'Seuranta on jo käynnissä')
       return
     }
 
@@ -163,7 +163,7 @@ export default function App() {
       attempts: 0,
     }
     setSnipe(session)
-    pushLog('ok', `Metsästys alkoi · ${ev.name} · ${params.variantName} · ${params.quantity}×`)
+    pushLog('ok', `Seuranta alkoi · ${ev.name} · ${params.variantName} · ${params.quantity}×`)
     const run = { cancelled: false }
     snipeRunRef.current = run
 
@@ -179,18 +179,18 @@ export default function App() {
         setLatencies((ls) => [...ls.slice(-19), latency])
 
         if (!variant) {
-          pushLog('warn', 'Varianttia ei löydy — pysäytän')
-          setSnipe((s) => (s ? { ...s, phase: 'error', message: 'Varianttia ei löydy' } : s))
+          pushLog('warn', 'Lipputyyppiä ei löydy — pysäytän')
+          setSnipe((s) => (s ? { ...s, phase: 'error', message: 'Lipputyyppiä ei löydy' } : s))
           break
         }
 
         if (variant.availability > 0) {
-          pushLog('info', `Saatavilla ${variant.availability} — yritän koriin`)
+          pushLog('info', `Saatavilla ${variant.availability} kpl — yritän lisätä koriin`)
           const qty = Math.min(params.quantity, variant.availability)
           try {
             const r = await addToCart(token.trim(), params.variantId, qty)
             if (r.success) {
-              pushLog('ok', `SAALIS — ${qty}× koriin`)
+              pushLog('ok', `ONNISTUI — ${qty} kpl lisätty koriin`)
               setSnipe((s) => (s ? { ...s, phase: 'landed', quantity: qty } : s))
               setLandedCount((n) => n + 1)
               break
@@ -198,7 +198,7 @@ export default function App() {
             if (fallbackMode && r.retryWithQuantity && r.retryWithQuantity > 0) {
               const r2 = await addToCart(token.trim(), params.variantId, r.retryWithQuantity)
               if (r2.success) {
-                pushLog('ok', `SAALIS (varaläpi) — ${r.retryWithQuantity}× koriin`)
+                pushLog('ok', `ONNISTUI (varareitti) — ${r.retryWithQuantity} kpl lisätty koriin`)
                 setSnipe((s) => (s ? { ...s, phase: 'landed', quantity: r.retryWithQuantity! } : s))
                 setLandedCount((n) => n + 1)
                 break
@@ -206,11 +206,11 @@ export default function App() {
             }
             pushLog('warn', r.message || 'Varaus ei onnistunut — jatkan')
           } catch (err) {
-            pushLog('err', `Varaus virhe: ${err instanceof Error ? err.message : 'tuntematon'}`)
+            pushLog('err', `Varausvirhe: ${err instanceof Error ? err.message : 'tuntematon'}`)
           }
         }
       } catch (err) {
-        pushLog('warn', `Poll virhe: ${err instanceof Error ? err.message : 'tuntematon'}`)
+        pushLog('warn', `Pollausvirhe: ${err instanceof Error ? err.message : 'tuntematon'}`)
       }
       await new Promise((r) => setTimeout(r, pollMs))
     }
@@ -246,8 +246,8 @@ export default function App() {
   const lastUpdatedLabel = useMemo(() => {
     if (!lastScanAt) return 'ei päivitetty'
     const s = Math.max(0, Math.floor((Date.now() - lastScanAt) / 1000))
-    if (s < 60) return `päivitetty ${s}s sitten`
-    return `päivitetty ${Math.floor(s / 60)}m sitten`
+    if (s < 60) return `päivitetty ${s} s sitten`
+    return `päivitetty ${Math.floor(s / 60)} min sitten`
   }, [lastScanAt])
 
   const snipesForLeft = snipe ? [snipe] : []
@@ -264,15 +264,15 @@ export default function App() {
     setActiveId(id)
     setShowRight(true)
     loadDetail(id)
-    pushLog('info', `Tapahtuma ladattu URL:sta: ${id.slice(0, 8)}…`)
+    pushLog('info', `Tapahtuma ladattu URL-osoitteesta: ${id.slice(0, 8)}…`)
   }
 
   const commands: Command[] = [
     { id: 'scan', icon: '◎', label: `Skannaa ${city} uudelleen`, hint: 'S', run: () => runScan() },
-    { id: 'stop', icon: '⏻', label: 'Pysäytä aktiivinen metsästys', hint: '⌘⇧.', run: stopSnipe },
+    { id: 'stop', icon: '⏻', label: 'Pysäytä aktiivinen seuranta', hint: '⌘⇧.', run: stopSnipe },
     { id: 'settings', icon: '⚙', label: 'Avaa asetukset', hint: '⌘,', run: () => setDrawerOpen(true) },
     { id: 'city', icon: '◉', label: 'Vaihda kaupunki', run: () => setCityPickerOpen(true) },
-    { id: 'refresh', icon: '⟳', label: 'Päivitä anti-bot headerit', run: () => { fetchExtraProperties().then(() => pushLog('ok', 'Headerit päivitetty')).catch(() => pushLog('err', 'Headerien päivitys epäonnistui')) } },
+    { id: 'refresh', icon: '⟳', label: 'Päivitä anti-bot-otsakkeet', run: () => { fetchExtraProperties().then(() => pushLog('ok', 'Otsakkeet päivitetty')).catch(() => pushLog('err', 'Otsakkeiden päivitys epäonnistui')) } },
   ]
 
   return (
@@ -351,7 +351,7 @@ export default function App() {
             .then((r) => {
               setTokenValid(!!r.valid)
               setTokenEmail(r.info?.email ?? r.user?.email)
-              pushLog(r.valid ? 'ok' : 'err', r.valid ? 'Token kelvollinen' : 'Token hylätty')
+              pushLog(r.valid ? 'ok' : 'err', r.valid ? 'Token kelvollinen' : 'Token virheellinen')
             })
             .catch(() => { setTokenValid(false); pushLog('err', 'Tokenin tarkistus epäonnistui') })
         }}
@@ -379,7 +379,7 @@ export default function App() {
       )}
 
       <div className="lt-hint">
-        <span>paina</span> <span className="lt-kbd">⌘K</span> <span>komentoihin</span>
+        <span>Komennot:</span> <span className="lt-kbd">⌘K</span>
       </div>
     </div>
   )

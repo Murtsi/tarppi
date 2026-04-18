@@ -65,7 +65,7 @@ export default function CommandPalette({ open, onClose, commands, onSubmitUrl }:
             ref={inputRef}
             value={q}
             onChange={(e) => { setQ(e.target.value); setIdx(0) }}
-            placeholder="Hae tai liitä kide.app-URL…"
+            placeholder="Hae tai liitä Kide.app-URL…"
             className="lt-palette__input"
           />
           <Kbd>esc</Kbd>
@@ -77,14 +77,14 @@ export default function CommandPalette({ open, onClose, commands, onSubmitUrl }:
             onClick={() => { if (onSubmitUrl) { onSubmitUrl(q.trim()); onClose() } }}
           >
             <span style={{ width: 22, textAlign: 'center', color: C.accent }}>⤓</span>
-            <span style={{ flex: 1 }}>Käynnistä metsästys URL:sta</span>
+            <span style={{ flex: 1 }}>Käynnistä seuranta URL:sta</span>
             <Kbd>⏎</Kbd>
           </div>
         )}
 
         {!looksLikeUrl && filtered.length === 0 && (
           <div style={{ padding: '16px', color: C.inkMuted, fontFamily: F.mono, fontSize: 12 }}>
-            Ei osumia — liitä Kide.app URL käynnistääksesi metsästyksen.
+            Ei osumia — liitä Kide.app-URL käynnistääksesi seurannan.
           </div>
         )}
 

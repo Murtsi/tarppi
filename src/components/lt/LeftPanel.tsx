@@ -15,9 +15,9 @@ type Props = {
 }
 
 const phaseMeta = {
-  hunting: { color: C.magenta, label: 'METSÄLLÄ', pulse: true },
+  hunting: { color: C.magenta, label: 'KÄYNNISSÄ', pulse: true },
   waiting: { color: C.maybe, label: 'ODOTTAA', pulse: false },
-  landed:  { color: C.accent, label: 'SAALIS', pulse: false },
+  landed:  { color: C.accent, label: 'ONNISTUI', pulse: false },
   error:   { color: C.skip, label: 'VIRHE', pulse: false },
 } as const
 
@@ -25,7 +25,7 @@ export default function LeftPanel(p: Props) {
   if (p.collapsed) {
     return (
       <aside className="lt-left lt-left--collapsed">
-        <button className="lt-iconbtn" onClick={p.onToggle} aria-label="Laajenna">›</button>
+        <button className="lt-iconbtn" onClick={p.onToggle} aria-label="Laajenna paneeli">›</button>
         <div className="lt-thinrule" />
         {p.snipes.map((s) => (
           <button
@@ -46,17 +46,17 @@ export default function LeftPanel(p: Props) {
       <div className="lt-left__head">
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
           <div style={{ fontFamily: F.display, fontStyle: 'italic', fontSize: 20, color: C.ink, letterSpacing: '-0.02em' }}>
-            Saalis
+            Seurannat
           </div>
-          <Lbl>{p.snipes.length} aktiivista</Lbl>
+          <Lbl>{p.snipes.length} aktiivista seurantaa</Lbl>
         </div>
-        <button className="lt-iconbtn" onClick={p.onToggle} aria-label="Tiivistä">‹</button>
+        <button className="lt-iconbtn" onClick={p.onToggle} aria-label="Tiivistä paneeli">‹</button>
       </div>
 
       <div style={{ padding: '0 14px 12px' }}>
         <button className="lt-newhunt" onClick={p.onNewSnipe}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 15 }}>+</span> Uusi metsästys
+            <span style={{ fontSize: 15 }}>+</span> Uusi seuranta
           </span>
           <Kbd>N</Kbd>
         </button>
@@ -65,7 +65,7 @@ export default function LeftPanel(p: Props) {
       <div className="lt-left__scroll">
         {p.snipes.length === 0 && (
           <div style={{ padding: '18px 14px', color: C.inkMuted, fontFamily: F.mono, fontSize: 11, lineHeight: 1.6 }}>
-            Ei aktiivisia metsästyksiä. Liitä Kide.app URL tai valitse kortti tutkasta.
+            Ei aktiivisia seurantoja. Liitä Kide.app-URL tai valitse tapahtuma tutkasta.
           </div>
         )}
         {p.snipes.map((s) => {
@@ -88,9 +88,9 @@ export default function LeftPanel(p: Props) {
                 <div className="lt-snipecard__title">{s.eventName}</div>
                 <div style={{ fontFamily: F.mono, fontSize: 10, color: C.inkSoft, marginTop: 2 }}>
                   {s.phase === 'waiting' && countdown > 0
-                    ? `${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')} myyntiin`
+                    ? `${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')} myynnin alkuun`
                     : s.phase === 'landed'
-                    ? `✓ ${s.quantity}× koriin`
+                    ? `✓ ${s.quantity} kpl lisätty koriin`
                     : s.phase === 'error'
                     ? s.message ?? 'Virhe'
                     : `${s.attempts} yritystä · ${fmtElapsed(elapsed)}`}
@@ -103,7 +103,7 @@ export default function LeftPanel(p: Props) {
         {p.watchlist.length > 0 && (
           <>
             <div style={{ padding: '16px 14px 6px' }}>
-              <Lbl>Seurantalistassa</Lbl>
+              <Lbl>Seurantalista</Lbl>
             </div>
             {p.watchlist.slice(0, 5).map((ev) => (
               <button
@@ -133,12 +133,12 @@ export default function LeftPanel(p: Props) {
             {(p.userEmail ?? 'KH').slice(0, 2).toUpperCase()}
           </div>
           <div style={{ flex: 1, color: C.ink, fontSize: 12, fontFamily: F.sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {p.userEmail ?? 'Ei tokenia'}
+            {p.userEmail ?? 'Token puuttuu'}
           </div>
           <Kbd>⌘,</Kbd>
         </div>
         <div style={{ fontFamily: F.mono, fontSize: 10, color: C.inkMuted, lineHeight: 1.5 }}>
-          <span style={{ color: C.accentDim }}>§</span> Maksun vahvistat aina itse kide.app:ssa.
+          <span style={{ color: C.accentDim }}>§</span> Vahvistat maksun aina itse Kide.appissa.
         </div>
       </div>
     </aside>

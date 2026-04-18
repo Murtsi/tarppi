@@ -51,7 +51,7 @@ export default function CenterPanel(p: Props) {
         <button className="lt-cmdfield" onClick={p.onOpenPalette}>
           <span style={{ color: C.inkMuted, fontSize: 13 }}>⌕</span>
           <span style={{ fontFamily: F.sans, fontSize: 13, color: C.inkSoft }}>
-            Etsi tapahtumia, liitä URL, kirjoita komento…
+            Etsi tapahtumia, liitä URL tai kirjoita komento…
           </span>
           <span style={{ flex: 1 }} />
           <Kbd>⌘K</Kbd>
@@ -61,11 +61,11 @@ export default function CenterPanel(p: Props) {
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             <Dot size={5} pulse color={p.loading ? C.maybe : C.accent} />
             <span style={{ color: p.loading ? C.maybe : C.accent, letterSpacing: '0.08em' }}>
-              {p.loading ? 'SCAN' : 'LIVE'}
+              {p.loading ? 'SKANNAUS' : 'LIVE'}
             </span>
           </span>
           {typeof p.avgLatencyMs === 'number' && <span>⌀ {p.avgLatencyMs} ms</span>}
-          <span>{p.landedCount} napattu</span>
+          <span>{p.landedCount} onnistumista</span>
           <Pill>FI</Pill>
         </div>
       </div>
@@ -108,7 +108,7 @@ export default function CenterPanel(p: Props) {
           className="lt-sortbtn"
           onClick={() => setSort((s) => (s === 'score' ? 'name' : s === 'name' ? 'price' : 'score'))}
         >
-          Järj. <span style={{ color: C.ink }}>
+          Lajittelu: <span style={{ color: C.ink }}>
             {sort === 'score' ? 'pisteet ↓' : sort === 'name' ? 'nimi ↑' : 'hinta ↑'}
           </span>
         </button>
@@ -120,7 +120,7 @@ export default function CenterPanel(p: Props) {
           <span>Tapahtuma</span>
           <span>Järjestäjä</span>
           <span style={{ textAlign: 'right' }}>€</span>
-          <span>Varasto</span>
+          <span>Saatavuus</span>
           <span style={{ textAlign: 'right' }}>Pisteet</span>
           <span>Todennäköisyys</span>
         </div>
