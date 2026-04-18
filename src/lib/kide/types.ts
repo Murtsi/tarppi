@@ -159,31 +159,6 @@ export type ScanResponse = ScorerResponse & {
   city: string
 }
 
-// ─── Tiketti Types ───────────────────────────────────────────────────────────
-
-export type TikettiEvent = {
-  id: string
-  title: string
-  artist?: string
-  venue: string
-  city: string
-  date: string
-  price: number
-  maxPrice?: number
-  availableCount?: number
-  totalCount?: number
-  url: string
-  imageUrl?: string
-  source: 'tiketti'
-  fetchedAt: string
-}
-
-export type TikettiEventsResponse = {
-  success: boolean
-  events: TikettiEvent[]
-  count: number
-}
-
 // ─── Auth Types ──────────────────────────────────────────────────────────────
 
 export type AuthLoginResponse = {
@@ -195,77 +170,6 @@ export type AuthVerifyResponse = {
   valid: boolean
   user?: string
   expiresAt?: string
-}
-
-// ─── Tiketti Sniper Types ────────────────────────────────────────────────────
-
-export type TikettiVariant = {
-  id: string
-  name: string
-  price: number
-  available: boolean
-  maxQuantity: number
-}
-
-export type TikettiEventDetail = {
-  id: string
-  title: string
-  url: string
-  date: string
-  venue: string
-  city: string
-  variants: TikettiVariant[]
-  imageUrl?: string
-  ticketsFree?: number
-  ticketsTotal?: number
-  soldOut?: boolean
-  cancelled?: boolean
-  ageInfo?: string
-  timeInfo?: string
-  endDate?: string
-}
-
-export type TikettiEventResponse = {
-  success: boolean
-  event?: TikettiEventDetail
-  error?: string
-}
-
-export type TikettiReserveResponse = {
-  success: boolean
-  message: string
-}
-
-// ─── Tiketti Browser Automation Types ────────────────────────────────────────
-
-export type TikettiBrowserSessionStatus =
-  | 'launching'
-  | 'navigating'
-  | 'queue-it'
-  | 'ready'
-  | 'buying'
-  | 'success'
-  | 'failed'
-  | 'closed'
-
-export type TikettiBrowserSSEEvent = {
-  sessionId: string
-  status: TikettiBrowserSessionStatus
-  message: string
-  done?: boolean
-}
-
-export type TikettiBrowserBuyResponse = {
-  success: boolean
-  message: string
-}
-
-export type TikettiBrowserSessionInfo = {
-  id: string
-  eventId: string
-  status: TikettiBrowserSessionStatus
-  statusMessage: string
-  createdAt: number
 }
 
 // ─── Event Discussion ────────────────────────────────────────────────────────
