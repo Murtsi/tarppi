@@ -37,6 +37,7 @@ export default function App() {
   const [tokenEmail, setTokenEmail] = useState<string | undefined>()
   const [pollMs, setPollMs] = useState<number>(() => Number(readLS('kh.pollMs', String(DEFAULT_POLL_MS))))
   const [fallbackMode, setFallbackMode] = useState<boolean>(() => readLS('kh.fallback', '1') === '1')
+  const [proxyUrl, setProxyUrl] = useState<string>(() => readLS('kh.proxy', ''))
   const [city, setCity] = useState<string>(() => readLS('kh.city', DEFAULT_CITY))
 
   // scan
@@ -77,6 +78,7 @@ export default function App() {
   useEffect(() => { writeLS('kh.fallback', fallbackMode ? '1' : '0') }, [fallbackMode])
   useEffect(() => { writeLS('kh.city', city) }, [city])
   useEffect(() => { writeLS('kh.landed', String(landedCount)) }, [landedCount])
+  useEffect(() => { writeLS('kh.proxy', proxyUrl) }, [proxyUrl])
 
   useEffect(() => { fetchExtraProperties().catch(() => {}) }, [])
 
@@ -100,6 +102,11 @@ export default function App() {
     return () => window.removeEventListener('resize', apply)
   }, [leftUserOverride, rightUserOverride])
 
+  // ─── sniper loop ────────────────────────────────────────────────────────
+  const pushLog = useCallback((level: LogLine['level'], text: string) => {
+    setLogs((prev) => [{ id: uid(), ts: nowStr(), level, text }, ...prev].slice(0, MAX_LOG))
+  }, [])
+
   // scan on city change
   const runScan = useCallback(async (target?: string) => {
     const c = target ?? city
@@ -116,7 +123,7 @@ export default function App() {
     } finally {
       setScanning(false)
     }
-  }, [city])
+  }, [city, pushLog])
 
   useEffect(() => { runScan(city) }, [city])
 
@@ -131,11 +138,6 @@ export default function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [paletteOpen, drawerOpen, cityPickerOpen])
-
-  // ─── sniper loop ────────────────────────────────────────────────────────
-  const pushLog = useCallback((level: LogLine['level'], text: string) => {
-    setLogs((prev) => [{ id: uid(), ts: nowStr(), level, text }, ...prev].slice(0, MAX_LOG))
-  }, [])
 
   const stopSnipe = useCallback(() => {
     if (snipeRunRef.current) snipeRunRef.current.cancelled = true
@@ -293,6 +295,7 @@ export default function App() {
           onNewSnipe={() => setPaletteOpen(true)}
           collapsed={leftCollapsed}
           onToggle={() => { setLeftUserOverride(true); setLeftCollapsed((c) => !c) }}
+          onRescan={() => runScan()}
           userEmail={tokenEmail ?? (token ? maskToken(token) : undefined)}
           onOpenSettings={() => setDrawerOpen(true)}
         />
@@ -349,10 +352,12 @@ export default function App() {
         tokenEmail={tokenEmail}
         pollMs={pollMs}
         fallbackMode={fallbackMode}
+        proxyUrl={proxyUrl}
         onSave={(next) => {
           setToken(next.token)
           setPollMs(next.pollMs)
           setFallbackMode(next.fallbackMode)
+          setProxyUrl(next.proxyUrl)
         }}
         onValidate={() => {
           if (!token.trim()) return

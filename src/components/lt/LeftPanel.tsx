@@ -11,6 +11,7 @@ type Props = {
   activeId?: string
   onPick: (id: string) => void
   onNewSnipe: () => void
+  onRescan: () => void
   collapsed: boolean
   onToggle: () => void
   userEmail?: string
@@ -87,9 +88,12 @@ export default function LeftPanel(p: Props) {
           const elapsed = Math.max(0, Math.floor((Date.now() - s.startedAt) / 1000))
           const countdown = s.salesStartAt ? Math.max(0, Math.floor((s.salesStartAt - Date.now()) / 1000)) : 0
           return (
-            <button
+            <div
               key={s.id}
+              role="button"
+              tabIndex={0}
               onClick={() => p.onPick(s.eventId)}
+              onKeyDown={(e) => e.key === 'Enter' && p.onPick(s.eventId)}
               className={`lt-snipecard ${active ? 'is-active' : ''}`}
             >
               <Glyph text={evGlyph(s.eventName)} size={38} />
@@ -109,7 +113,13 @@ export default function LeftPanel(p: Props) {
                     : `${s.attempts} yritystä · ${fmtElapsed(elapsed)}`}
                 </div>
               </div>
-            </button>
+              <button
+                className="lt-iconbtn"
+                onClick={(e) => { e.stopPropagation(); p.onRescan() }}
+                title="Skannaa uudelleen"
+                style={{ flexShrink: 0, fontSize: 13 }}
+              >⟳</button>
+            </div>
           )
         })}
 

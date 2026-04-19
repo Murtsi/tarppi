@@ -5,7 +5,7 @@ import type { ScoredEvent } from '../../lib/kide/types'
 import type { SnipeSession, LogLine } from '../../lib/lt/types'
 import MissionBar from './MissionBar'
 
-type Tab = 'all' | 'buy' | 'maybe' | 'skip'
+type Tab = 'all' | 'buy' | 'maybe' | 'skip' | 'top10'
 type SortKey = 'score' | 'name' | 'price'
 
 type Props = {
@@ -29,8 +29,12 @@ type Props = {
 export default function CenterPanel(p: Props) {
   const [tab, setTab] = useState<Tab>('all')
   const [sort, setSort] = useState<SortKey>('score')
+  const [histOpen, setHistOpen] = useState(false)
 
   const filtered = useMemo(() => {
+    if (tab === 'top10') {
+      return [...p.events].sort((a, b) => b.resell_score - a.resell_score).slice(0, 10)
+    }
     const byTab = tab === 'all' ? p.events : p.events.filter((e) => e.decision.toLowerCase() === tab)
     return [...byTab].sort((a, b) => {
       if (sort === 'name') return a.name.localeCompare(b.name)
@@ -38,6 +42,18 @@ export default function CenterPanel(p: Props) {
       return b.resell_score - a.resell_score
     })
   }, [p.events, tab, sort])
+
+  const histogram = useMemo(() => {
+    const buckets = Array.from({ length: 10 }, (_, i) => ({ min: i * 10, buy: 0, maybe: 0, skip: 0, total: 0 }))
+    for (const ev of p.events) {
+      const idx = Math.min(9, Math.floor(ev.resell_score / 10))
+      const key = ev.decision.toLowerCase() as 'buy' | 'maybe' | 'skip'
+      buckets[idx][key]++
+      buckets[idx].total++
+    }
+    return buckets
+  }, [p.events])
+  const histMax = useMemo(() => Math.max(1, ...histogram.map((b) => b.total)), [histogram])
 
   const counts = useMemo(() => ({
     all: p.events.length,
@@ -103,6 +119,7 @@ export default function CenterPanel(p: Props) {
           { k: 'buy',   l: 'Osta',    n: counts.buy, c: C.buy },
           { k: 'maybe', l: 'Ehkä',    n: counts.maybe, c: C.maybe },
           { k: 'skip',  l: 'Ohita',   n: counts.skip, c: C.skip },
+          { k: 'top10', l: 'Top 10',  n: Math.min(10, counts.all) },
         ] as const).map((t) => (
           <button
             key={t.k}
@@ -124,6 +141,38 @@ export default function CenterPanel(p: Props) {
           </span>
         </button>
       </div>
+
+      {p.events.length > 0 && (
+        <div className="lt-histogram" onClick={() => setHistOpen((o) => !o)} title={histOpen ? 'Piilota jakauma' : 'Näytä pisteet-jakauma'}>
+          {histogram.map((b, i) => {
+            const domColor = b.buy >= b.maybe && b.buy >= b.skip ? C.buy
+                           : b.maybe > b.buy && b.maybe >= b.skip ? C.maybe
+                           : C.skip
+            return (
+              <div key={i} className="lt-histogram__col">
+                {histOpen && (
+                  <div style={{ fontFamily: F.mono, fontSize: 8, color: C.inkMuted, textAlign: 'center', marginBottom: 2 }}>
+                    {b.total || ''}
+                  </div>
+                )}
+                <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end' }}>
+                  <div
+                    className="lt-histogram__bar"
+                    style={{
+                      height: `${(b.total / histMax) * 100}%`,
+                      background: b.total === 0 ? 'var(--lt-rule)' : domColor,
+                      opacity: b.total === 0 ? 0.3 : 0.75,
+                    }}
+                  />
+                </div>
+                <div style={{ fontFamily: F.mono, fontSize: 8, color: C.inkMuted, textAlign: 'center', marginTop: 2 }}>
+                  {b.min}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <div className="lt-tablewrap">
         <div className="lt-row lt-row--head">

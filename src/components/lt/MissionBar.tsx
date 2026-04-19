@@ -49,6 +49,19 @@ export default function MissionBar({ snipe, pollMs, latestLog, onStop }: Props) 
       <div style={{ color: C.inkSoft, fontFamily: F.mono, fontSize: 11 }}>
         aikaa <span style={{ color: C.ink }}>{fmtElapsed(elapsed)}</span>
       </div>
+      {snipe.lastCheckedAt && (
+        <>
+          <div className="lt-missionbar__sep" />
+          <div style={{ color: C.inkSoft, fontFamily: F.mono, fontSize: 11 }}>
+            tark. <span style={{ color: C.ink }}>{Math.round((Date.now() - snipe.lastCheckedAt) / 100) / 10} s</span> sitten
+          </div>
+          <div style={{ color: C.inkSoft, fontFamily: F.mono, fontSize: 11 }}>
+            seur. <span style={{ color: C.ink }}>
+              {Math.max(0, Math.round((pollMs - (Date.now() - snipe.lastCheckedAt)) / 100) / 10)} s
+            </span>
+          </div>
+        </>
+      )}
       <span style={{ flex: 1 }} />
       {latestLog && (
         <div className="lt-missionbar__log">

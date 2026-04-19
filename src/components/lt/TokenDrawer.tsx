@@ -10,7 +10,8 @@ type Props = {
   tokenEmail?: string
   pollMs: number
   fallbackMode: boolean
-  onSave: (next: { token: string; pollMs: number; fallbackMode: boolean }) => void
+  proxyUrl: string
+  onSave: (next: { token: string; pollMs: number; fallbackMode: boolean; proxyUrl: string }) => void
   onValidate: () => void
 }
 
@@ -18,8 +19,9 @@ export default function TokenDrawer(p: Props) {
   const [token, setToken] = useState(p.token)
   const [pollMs, setPollMs] = useState(p.pollMs)
   const [fallback, setFallback] = useState(p.fallbackMode)
+  const [proxyUrl, setProxyUrl] = useState(p.proxyUrl)
 
-  useEffect(() => { if (p.open) { setToken(p.token); setPollMs(p.pollMs); setFallback(p.fallbackMode) } }, [p.open])
+  useEffect(() => { if (p.open) { setToken(p.token); setPollMs(p.pollMs); setFallback(p.fallbackMode); setProxyUrl(p.proxyUrl) } }, [p.open])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && p.open) p.onClose() }
@@ -82,13 +84,27 @@ export default function TokenDrawer(p: Props) {
               <span>{fallback ? 'Päällä — kokeile pienempää määrää' : 'Pois'}</span>
             </label>
           </div>
+
+          <div style={{ marginBottom: 18 }}>
+            <Lbl>Proxy URL (valinnainen)</Lbl>
+            <input
+              type="text"
+              value={proxyUrl}
+              onChange={(e) => setProxyUrl(e.target.value)}
+              placeholder="http://proxy:8080"
+              className="lt-input"
+            />
+            <div style={{ fontFamily: 'Geist Mono, monospace', fontSize: 10, color: 'var(--lt-ink-muted)', marginTop: 4 }}>
+              HTTP/HTTPS-proxy pyyntöjen reitittämiseen
+            </div>
+          </div>
         </div>
 
         <div className="lt-drawer__foot">
           <button className="lt-btn lt-btn--ghost" onClick={p.onClose}>Peruuta</button>
           <button
             className="lt-btn lt-btn--primary"
-            onClick={() => { p.onSave({ token, pollMs, fallbackMode: fallback }); p.onClose() }}
+            onClick={() => { p.onSave({ token, pollMs, fallbackMode: fallback, proxyUrl }); p.onClose() }}
           >
             Tallenna
           </button>
