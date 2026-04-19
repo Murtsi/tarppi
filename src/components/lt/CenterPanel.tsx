@@ -54,7 +54,7 @@ export default function CenterPanel(p: Props) {
             Etsi tapahtumia, liitä URL tai kirjoita komento…
           </span>
           <span style={{ flex: 1 }} />
-          <Kbd>⌘K</Kbd>
+          <Kbd>Ctrl+K</Kbd>
         </button>
         <span style={{ flex: 1 }} />
         <div className="lt-livemeta">

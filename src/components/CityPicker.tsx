@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { C, F } from '../lib/lt/tokens'
 import KIDE_CITIES from '../lib/kide/kide-cities.json'
 
 type KideCity = { id: string | null; name: string; nameKey?: string }
@@ -10,7 +11,6 @@ type CityPickerProps = {
   disabled?: boolean
 }
 
-// Only keep actual cities — region IDs (contain "Cities") don't work with the API
 const CITIES = (KIDE_CITIES as KideCity[]).filter(
   (c) => c.id !== null && !c.id.includes('Cities'),
 )
@@ -20,93 +20,62 @@ function findCityById(id: string): KideCity | undefined {
 }
 
 export default function CityPicker({ value, onChange, placeholder, disabled }: CityPickerProps) {
-  const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const wrapperRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    setTimeout(() => inputRef.current?.focus(), 50)
   }, [])
 
-  const filteredCities = useMemo(() => {
+  const filtered = useMemo(() => {
     if (!search.trim()) return CITIES
-    const query = search.toLowerCase()
-    return CITIES.filter((c) => c.name.toLowerCase().includes(query))
+    const q = search.toLowerCase()
+    return CITIES.filter((c) => c.name.toLowerCase().includes(q))
   }, [search])
 
-  const displayValue = value
-    ? (findCityById(value)?.name ?? value)
-    : 'Everywhere'
-
-  const handleSelect = (city: KideCity) => {
-    onChange(city.id ?? '')
-    setSearch('')
-    setOpen(false)
-  }
+  const selected = value ? findCityById(value)?.name : 'Everywhere'
 
   return (
-    <div className="city-picker" ref={wrapperRef}>
-      <button
-        type="button"
-        className="city-picker-trigger"
-        onClick={() => { if (!disabled) { setOpen(!open); setTimeout(() => inputRef.current?.focus(), 50) } }}
+    <div>
+      <div style={{ marginBottom: 10, fontFamily: F.mono, fontSize: 11, color: C.inkSoft }}>
+        Valittu: <span style={{ color: C.ink }}>{selected ?? value}</span>
+      </div>
+      <input
+        ref={inputRef}
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder={placeholder}
         disabled={disabled}
-      >
-        <span className="city-picker-flag">🇫🇮</span>
-        <span className="city-picker-value">{displayValue}</span>
-        <span className={`city-picker-arrow ${open ? 'open' : ''}`}>▾</span>
-      </button>
-
-      {open && (
-        <div className="city-picker-dropdown">
-          <input
-            ref={inputRef}
-            type="text"
-            className="city-picker-search"
-            placeholder={placeholder}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            autoFocus
-          />
-
-          <ul className="city-picker-list">
-            {/* Show all cities */}
-            <li
-              className={`city-picker-option ${value === '' ? 'selected' : ''}`}
-              onClick={() => handleSelect({ id: null, name: 'Everywhere' })}
-            >
-              🌍 Everywhere
-            </li>
-
-            {filteredCities.length > 0 && (
-              <>
-                <li className="city-picker-divider" />
-                {filteredCities.map((city) => (
-                  <li
-                    key={city.id}
-                    className={`city-picker-option ${city.id === value ? 'selected' : ''}`}
-                    onClick={() => handleSelect(city)}
-                  >
-                    {city.name}
-                  </li>
-                ))}
-              </>
-            )}
-
-            {filteredCities.length === 0 && (
-              <li className="city-picker-empty">No matches</li>
-            )}
-          </ul>
-        </div>
-      )}
+        className="lt-input"
+        style={{ marginBottom: 8 }}
+      />
+      <div style={{ maxHeight: 280, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <button
+          className={`lt-cityrow ${value === '' ? 'is-active' : ''}`}
+          onClick={() => onChange('')}
+        >
+          <span style={{ fontSize: 14 }}>🌍</span>
+          <span>Everywhere</span>
+          {value === '' && <span style={{ marginLeft: 'auto', color: C.accent, fontSize: 12 }}>✓</span>}
+        </button>
+        {filtered.map((city) => (
+          <button
+            key={city.id}
+            className={`lt-cityrow ${city.id === value ? 'is-active' : ''}`}
+            onClick={() => city.id && onChange(city.id)}
+          >
+            <span style={{ fontSize: 14, color: C.inkMuted }}>◎</span>
+            <span>{city.name}</span>
+            {city.id === value && <span style={{ marginLeft: 'auto', color: C.accent, fontSize: 12 }}>✓</span>}
+          </button>
+        ))}
+        {filtered.length === 0 && (
+          <div style={{ padding: '12px 0', fontFamily: F.mono, fontSize: 11, color: C.inkMuted, textAlign: 'center' }}>
+            Ei tuloksia
+          </div>
+        )}
+      </div>
     </div>
   )
 }

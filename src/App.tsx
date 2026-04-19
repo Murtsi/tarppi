@@ -142,7 +142,7 @@ export default function App() {
     const ev = events.find((e) => e.event_id === activeId)
     if (!ev) return
     if (!token.trim() || !tokenValid) {
-      pushLog('err', 'Token ei ole voimassa — avaa asetukset (⌘,)')
+      pushLog('err', 'Token ei ole voimassa — avaa asetukset')
       setDrawerOpen(true)
       return
     }
@@ -268,9 +268,9 @@ export default function App() {
   }
 
   const commands: Command[] = [
-    { id: 'scan', icon: '◎', label: `Skannaa ${city} uudelleen`, hint: 'S', run: () => runScan() },
-    { id: 'stop', icon: '⏻', label: 'Pysäytä aktiivinen seuranta', hint: '⌘⇧.', run: stopSnipe },
-    { id: 'settings', icon: '⚙', label: 'Avaa asetukset', hint: '⌘,', run: () => setDrawerOpen(true) },
+    { id: 'scan', icon: '◎', label: `Skannaa ${city} uudelleen`, run: () => runScan() },
+    { id: 'stop', icon: '⏻', label: 'Pysäytä aktiivinen seuranta', run: stopSnipe },
+    { id: 'settings', icon: '⚙', label: 'Avaa asetukset', hint: 'Ctrl+,', run: () => setDrawerOpen(true) },
     { id: 'city', icon: '◉', label: 'Vaihda kaupunki', run: () => setCityPickerOpen(true) },
     { id: 'refresh', icon: '⟳', label: 'Päivitä anti-bot-otsakkeet', run: () => { fetchExtraProperties().then(() => pushLog('ok', 'Otsakkeet päivitetty')).catch(() => pushLog('err', 'Otsakkeiden päivitys epäonnistui')) } },
   ]
@@ -287,6 +287,7 @@ export default function App() {
           collapsed={leftCollapsed}
           onToggle={() => { setLeftUserOverride(true); setLeftCollapsed((c) => !c) }}
           userEmail={tokenEmail ?? (token ? maskToken(token) : undefined)}
+          onOpenSettings={() => setDrawerOpen(true)}
         />
         <div className="lt-center-wrap">
           <div className="lt-center-col">
@@ -378,9 +379,6 @@ export default function App() {
         </div>
       )}
 
-      <div className="lt-hint">
-        <span>Komennot:</span> <span className="lt-kbd">⌘K</span>
-      </div>
     </div>
   )
 }

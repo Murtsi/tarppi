@@ -12,6 +12,7 @@ type Props = {
   collapsed: boolean
   onToggle: () => void
   userEmail?: string
+  onOpenSettings: () => void
 }
 
 const phaseMeta = {
@@ -37,6 +38,8 @@ export default function LeftPanel(p: Props) {
             <Glyph text={evGlyph(s.eventName)} size={32} />
           </button>
         ))}
+        <span style={{ flex: 1 }} />
+        <button className="lt-iconbtn" onClick={p.onOpenSettings} title="Asetukset" style={{ fontSize: 13 }}>⚙</button>
       </aside>
     )
   }
@@ -128,16 +131,20 @@ export default function LeftPanel(p: Props) {
       </div>
 
       <div className="lt-left__foot">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <button
+          className="lt-footrow"
+          onClick={p.onOpenSettings}
+          title="Avaa asetukset"
+        >
           <div className="lt-avatar">
             {(p.userEmail ?? 'KH').slice(0, 2).toUpperCase()}
           </div>
-          <div style={{ flex: 1, color: C.ink, fontSize: 12, fontFamily: F.sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {p.userEmail ?? 'Token puuttuu'}
+          <div style={{ flex: 1, color: p.userEmail ? C.ink : C.skip, fontSize: 12, fontFamily: F.sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {p.userEmail ?? 'Aseta token →'}
           </div>
-          <Kbd>⌘,</Kbd>
-        </div>
-        <div style={{ fontFamily: F.mono, fontSize: 10, color: C.inkMuted, lineHeight: 1.5 }}>
+          <span style={{ color: C.inkMuted, fontSize: 14 }}>⚙</span>
+        </button>
+        <div style={{ fontFamily: F.mono, fontSize: 10, color: C.inkMuted, lineHeight: 1.5, marginTop: 6 }}>
           <span style={{ color: C.accentDim }}>§</span> Vahvistat maksun aina itse Kide.appissa.
         </div>
       </div>

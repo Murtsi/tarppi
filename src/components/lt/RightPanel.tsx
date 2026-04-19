@@ -150,7 +150,11 @@ export default function RightPanel(p: Props) {
                     </div>
                   </div>
                   <div style={{ fontFamily: F.mono, fontSize: 14, fontWeight: 600 }}>
-                    {v.price ?? v.pricePerItem ?? '—'}€
+                    {typeof v.price === 'number'
+                      ? `${(v.price / 100).toFixed(2).replace('.', ',')}€`
+                      : typeof v.pricePerItem === 'number'
+                      ? `${(v.pricePerItem / 100).toFixed(2).replace('.', ',')}€`
+                      : '—'}
                   </div>
                 </button>
               )
@@ -203,7 +207,7 @@ export default function RightPanel(p: Props) {
           }}
         >
           <span style={{ fontSize: 13 }}>▶</span> {p.activeSnipe ? 'Automaatio käynnissä' : 'Käynnistä automaatio'}
-          <span style={{ marginLeft: 4, fontFamily: F.mono, fontSize: 10, opacity: 0.7 }}><Kbd>⌘⏎</Kbd></span>
+          <span style={{ marginLeft: 4, fontFamily: F.mono, fontSize: 10, opacity: 0.7 }}><Kbd>Ctrl+↵</Kbd></span>
         </button>
       </div>
     </aside>
