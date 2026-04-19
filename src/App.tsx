@@ -68,6 +68,8 @@ export default function App() {
   const [latencies, setLatencies] = useState<number[]>([])
   const [landedCount, setLandedCount] = useState<number>(() => Number(readLS('kh.landed', '0')))
   const snipeRunRef = useRef<{ cancelled: boolean } | null>(null)
+  const snipeRef = useRef(snipe)
+  useEffect(() => { snipeRef.current = snipe }, [snipe])
 
   // ─── persistence + initial load ─────────────────────────────────────────
   useEffect(() => { writeLS('kh.token', token) }, [token])
@@ -103,6 +105,7 @@ export default function App() {
     const c = target ?? city
     if (!c) return
     setScanning(true)
+    setDetailFor(undefined)
     try {
       const r = await scanCity(c)
       setEvents(r.events)
@@ -148,7 +151,8 @@ export default function App() {
       setDrawerOpen(true)
       return
     }
-    if (snipe && snipe.phase !== 'error' && snipe.phase !== 'landed') {
+    const currentSnipe = snipeRef.current
+    if (currentSnipe && currentSnipe.phase !== 'error' && currentSnipe.phase !== 'landed') {
       pushLog('warn', 'Seuranta on jo käynnissä')
       return
     }
@@ -216,7 +220,7 @@ export default function App() {
       }
       await new Promise((r) => setTimeout(r, pollMs))
     }
-  }, [events, activeId, token, tokenValid, snipe, fallbackMode, pollMs, pushLog])
+  }, [events, activeId, token, tokenValid, fallbackMode, pollMs, pushLog])
 
   // ─── event detail fetcher ───────────────────────────────────────────────
   const loadDetail = useCallback(async (id: string) => {
