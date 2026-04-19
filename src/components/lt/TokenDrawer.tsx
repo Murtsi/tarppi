@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { C, F } from '../../lib/lt/tokens'
 import { Lbl } from '../../lib/lt/primitives'
 
@@ -12,14 +12,22 @@ type Props = {
   fallbackMode: boolean
   proxyUrl: string
   onSave: (next: { token: string; pollMs: number; fallbackMode: boolean; proxyUrl: string }) => void
-  onValidate: () => void
+  onValidate: (draftToken: string) => Promise<void>
 }
 
-// Kide.app shows "WARNING: ...! <actual_token>" in DevTools — strip the prefix automatically
+// Strip Kide.app WARNING prefix and surrounding JSON quotes, then trim.
+// Handles: plain token, "token", WARNING:...! token, "WARNING:...! token"
 function stripKideWarning(raw: string): string {
-  const trimmed = raw.trim()
-  const match = trimmed.match(/^WARNING:.*?!\s+(.+)$/s)
-  return match ? match[1].trim() : trimmed
+  let s = raw.trim()
+  // Remove surrounding JSON quotes (copied from DevTools Application panel)
+  if (s.startsWith('"') && s.endsWith('"')) s = s.slice(1, -1)
+  // Remove WARNING prefix (Kide.app DevTools console warning)
+  const idx = s.lastIndexOf('!')
+  if (idx !== -1) {
+    const after = s.slice(idx + 1).trim()
+    if (after.length > 10) return after
+  }
+  return s.trim()
 }
 
 export default function TokenDrawer(p: Props) {
@@ -27,8 +35,17 @@ export default function TokenDrawer(p: Props) {
   const [pollMs, setPollMs] = useState(p.pollMs)
   const [fallback, setFallback] = useState(p.fallbackMode)
   const [proxyUrl, setProxyUrl] = useState(p.proxyUrl)
+  const [validating, setValidating] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { if (p.open) { setToken(p.token); setPollMs(p.pollMs); setFallback(p.fallbackMode); setProxyUrl(p.proxyUrl) } }, [p.open])
+  useEffect(() => {
+    if (p.open) {
+      setToken(p.token)
+      setPollMs(p.pollMs)
+      setFallback(p.fallbackMode)
+      setProxyUrl(p.proxyUrl)
+    }
+  }, [p.open])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && p.open) p.onClose() }
@@ -36,11 +53,30 @@ export default function TokenDrawer(p: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [p.open, p.onClose])
 
+  const handleValidate = async () => {
+    if (!token.trim()) return
+    setValidating(true)
+    try { await p.onValidate(token) } finally { setValidating(false) }
+  }
+
+  const handleProxyFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const text = (ev.target?.result as string) ?? ''
+      const line = text.split('\n').map((l) => l.trim()).find((l) => l.startsWith('http'))
+      if (line) setProxyUrl(line)
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
   if (!p.open) return null
 
   return (
     <div className="lt-palette-overlay">
-      <div className="lt-drawer" onClick={(e) => e.stopPropagation()}>
+      <div className="lt-drawer">
         <div className="lt-drawer__head">
           <div style={{ fontFamily: F.display, fontStyle: 'italic', fontSize: 22, color: C.ink, letterSpacing: '-0.02em' }}>
             Asetukset
@@ -50,6 +86,7 @@ export default function TokenDrawer(p: Props) {
         </div>
 
         <div className="lt-drawer__body">
+          {/* Token */}
           <div style={{ marginBottom: 18 }}>
             <Lbl>Kide.app-token</Lbl>
             <textarea
@@ -60,11 +97,18 @@ export default function TokenDrawer(p: Props) {
               className="lt-input lt-input--area"
             />
             <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
-              <button className="lt-btn lt-btn--ghost" onClick={p.onValidate}>Tarkista</button>
+              <button
+                className="lt-btn lt-btn--ghost"
+                onClick={handleValidate}
+                disabled={validating}
+              >
+                {validating ? 'Tarkistetaan…' : 'Tarkista'}
+              </button>
               <span style={{ fontFamily: F.mono, fontSize: 11, color: p.tokenValid ? C.accent : C.skip }}>
                 {p.tokenValid ? `✓ ${p.tokenEmail ?? 'kelvollinen'}` : '✗ virheellinen'}
               </span>
             </div>
+
             <div style={{
               marginTop: 12,
               padding: '10px 12px',
@@ -84,6 +128,7 @@ export default function TokenDrawer(p: Props) {
             </div>
           </div>
 
+          {/* Poll interval */}
           <div style={{ marginBottom: 18 }}>
             <Lbl>Pollausväli · {pollMs} ms</Lbl>
             <input
@@ -101,6 +146,7 @@ export default function TokenDrawer(p: Props) {
             </div>
           </div>
 
+          {/* Fallback mode */}
           <div style={{ marginBottom: 18 }}>
             <Lbl>Varareitti</Lbl>
             <label className="lt-toggle">
@@ -109,17 +155,45 @@ export default function TokenDrawer(p: Props) {
             </label>
           </div>
 
+          {/* Proxy URL */}
           <div style={{ marginBottom: 18 }}>
             <Lbl>Proxy URL (valinnainen)</Lbl>
-            <input
-              type="text"
-              value={proxyUrl}
-              onChange={(e) => setProxyUrl(e.target.value)}
-              placeholder="http://proxy:8080"
-              className="lt-input"
-            />
+            <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+              <input
+                type="text"
+                value={proxyUrl}
+                onChange={(e) => setProxyUrl(e.target.value)}
+                placeholder="http://proxy:8080"
+                style={{
+                  flex: 1,
+                  background: 'var(--lt-panel2)',
+                  border: '1px solid var(--lt-rule)',
+                  color: 'var(--lt-ink)',
+                  borderRadius: 6,
+                  padding: '8px 10px',
+                  fontFamily: F.mono,
+                  fontSize: 12,
+                  outline: 'none',
+                }}
+              />
+              <button
+                className="lt-btn lt-btn--ghost"
+                onClick={() => fileInputRef.current?.click()}
+                title="Lataa proxy-osoite tiedostosta"
+                style={{ flexShrink: 0, padding: '0 12px', fontSize: 13 }}
+              >
+                📂
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt,.conf,.pac,.env"
+                style={{ display: 'none' }}
+                onChange={handleProxyFile}
+              />
+            </div>
             <div style={{ fontFamily: F.mono, fontSize: 10, color: C.inkMuted, marginTop: 4 }}>
-              HTTP/HTTPS-proxy pyyntöjen reitittämiseen
+              Kirjoita osoite tai lataa tiedostosta (etsii ensimmäisen http-rivin)
             </div>
           </div>
         </div>

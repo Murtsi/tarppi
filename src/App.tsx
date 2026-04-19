@@ -359,15 +359,18 @@ export default function App() {
           setFallbackMode(next.fallbackMode)
           setProxyUrl(next.proxyUrl)
         }}
-        onValidate={() => {
-          if (!token.trim()) return
-          validateToken(token.trim())
-            .then((r) => {
-              setTokenValid(!!r.valid)
-              setTokenEmail(r.info?.email ?? r.user?.email)
-              pushLog(r.valid ? 'ok' : 'err', r.valid ? 'Token kelvollinen' : 'Token virheellinen')
-            })
-            .catch(() => { setTokenValid(false); pushLog('err', 'Tokenin tarkistus epäonnistui') })
+        onValidate={async (draftToken) => {
+          const t = draftToken.trim()
+          if (!t) return
+          try {
+            const r = await validateToken(t)
+            setTokenValid(!!r.valid)
+            setTokenEmail(r.info?.email ?? r.user?.email)
+            pushLog(r.valid ? 'ok' : 'err', r.valid ? 'Token kelvollinen' : 'Token virheellinen')
+          } catch {
+            setTokenValid(false)
+            pushLog('err', 'Tokenin tarkistus epäonnistui')
+          }
         }}
       />
 
