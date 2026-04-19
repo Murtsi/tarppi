@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { C, F, evGlyph, fmtElapsed } from '../../lib/lt/tokens'
-import { Dot, Glyph, Lbl, Pill } from '../../lib/lt/primitives'
+import { Dot, Glyph, Kbd, Lbl, Pill } from '../../lib/lt/primitives'
 import type { SnipeSession, LogLine } from '../../lib/lt/types'
 import type { ScoredEvent } from '../../lib/kide/types'
 
