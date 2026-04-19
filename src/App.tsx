@@ -375,17 +375,17 @@ export default function App() {
         <div className="lt-palette-overlay" onClick={() => setCityPickerOpen(false)}>
           <div className="lt-drawer lt-drawer--narrow" onClick={(e) => e.stopPropagation()}>
             <div className="lt-drawer__head">
-              <div style={{ fontFamily: 'Fraunces, Georgia, serif', fontStyle: 'italic', fontSize: 20 }}>
+              <div style={{ fontFamily: "'Fraunces', Georgia, serif", fontStyle: 'italic', fontSize: 20, color: 'var(--lt-ink)', letterSpacing: '-0.02em' }}>
                 Valitse kaupunki
               </div>
               <span style={{ flex: 1 }} />
               <button className="lt-iconbtn" onClick={() => setCityPickerOpen(false)}>×</button>
             </div>
-            <div className="lt-drawer__body">
+            <div className="lt-drawer__body" style={{ paddingTop: 14 }}>
               <CityPicker
                 value={city}
                 onChange={(c) => { setCity(c); setCityPickerOpen(false) }}
-                placeholder="Valitse kaupunki…"
+                placeholder="Hae kaupunkia…"
               />
             </div>
           </div>

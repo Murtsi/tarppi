@@ -79,7 +79,7 @@ export default function TokenDrawer(p: Props) {
               <div style={{ color: C.inkMuted, marginBottom: 4, letterSpacing: '0.10em', textTransform: 'uppercase', fontSize: 9 }}>Miten saan tokenin</div>
               <div>1. Avaa <span style={{ color: C.ink }}>kide.app</span> selaimessa ja kirjaudu sisään</div>
               <div>2. Paina <span style={{ color: C.ink }}>F12</span> → <span style={{ color: C.ink }}>Console</span>-välilehti</div>
-              <div>3. Kirjoita: <span style={{ color: C.accent, letterSpacing: 0 }}>copy(localStorage.getItem('token'))</span></div>
+              <div>3. Kirjoita: <span style={{ color: C.accent, letterSpacing: 0 }}>copy(localStorage.getItem('authorization.token'))</span></div>
               <div>4. Liitä tähän — WARNING-viesti poistetaan automaattisesti</div>
             </div>
           </div>

@@ -15,11 +15,9 @@ const CITIES = (KIDE_CITIES as KideCity[]).filter(
   (c) => c.id !== null && !c.id.includes('Cities'),
 )
 
-function findCityById(id: string): KideCity | undefined {
-  return CITIES.find((c) => c.id === id)
-}
+const QUICK = ['Helsinki', 'Tampere', 'Turku', 'Espoo', 'Oulu', 'Jyväskylä']
 
-export default function CityPicker({ value, onChange, placeholder, disabled }: CityPickerProps) {
+export default function CityPicker({ value, onChange, disabled }: CityPickerProps) {
   const [search, setSearch] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -33,46 +31,97 @@ export default function CityPicker({ value, onChange, placeholder, disabled }: C
     return CITIES.filter((c) => c.name.toLowerCase().includes(q))
   }, [search])
 
-  const selected = value ? findCityById(value)?.name : 'Everywhere'
-
   return (
     <div>
-      <div style={{ marginBottom: 10, fontFamily: F.mono, fontSize: 11, color: C.inkSoft }}>
-        Valittu: <span style={{ color: C.ink }}>{selected ?? value}</span>
-      </div>
-      <input
-        ref={inputRef}
-        type="text"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder={placeholder}
-        disabled={disabled}
-        className="lt-input"
-        style={{ marginBottom: 8 }}
-      />
-      <div style={{ maxHeight: 280, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <button
-          className={`lt-cityrow ${value === '' ? 'is-active' : ''}`}
-          onClick={() => onChange('')}
-        >
-          <span style={{ fontSize: 14 }}>🌍</span>
-          <span>Everywhere</span>
-          {value === '' && <span style={{ marginLeft: 'auto', color: C.accent, fontSize: 12 }}>✓</span>}
-        </button>
-        {filtered.map((city) => (
+      {/* Quick picks */}
+      {!search && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
           <button
-            key={city.id}
-            className={`lt-cityrow ${city.id === value ? 'is-active' : ''}`}
-            onClick={() => city.id && onChange(city.id)}
+            className={`lt-quickcity ${value === '' ? 'is-active' : ''}`}
+            onClick={() => onChange('')}
           >
-            <span style={{ fontSize: 14, color: C.inkMuted }}>◎</span>
-            <span>{city.name}</span>
-            {city.id === value && <span style={{ marginLeft: 'auto', color: C.accent, fontSize: 12 }}>✓</span>}
+            Kaikkialla
           </button>
-        ))}
+          {QUICK.map((name) => (
+            <button
+              key={name}
+              className={`lt-quickcity ${value === name ? 'is-active' : ''}`}
+              onClick={() => onChange(name)}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Search */}
+      <div style={{ position: 'relative', marginBottom: 8 }}>
+        <span style={{
+          position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+          color: C.inkMuted, fontSize: 13, pointerEvents: 'none',
+        }}>⌕</span>
+        <input
+          ref={inputRef}
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Hae kaupunkia…"
+          disabled={disabled}
+          style={{
+            width: '100%',
+            background: 'var(--lt-panel2)',
+            border: `1px solid var(--lt-rule)`,
+            borderRadius: 8,
+            padding: '8px 10px 8px 30px',
+            fontFamily: F.sans,
+            fontSize: 13,
+            color: 'var(--lt-ink)',
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
+          onFocus={(e) => (e.target.style.borderColor = 'var(--lt-rule-strong)')}
+          onBlur={(e) => (e.target.style.borderColor = 'var(--lt-rule)')}
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            style={{
+              position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+              background: 'transparent', border: 'none', color: C.inkMuted,
+              cursor: 'pointer', fontSize: 14, padding: '0 2px', lineHeight: 1,
+            }}
+          >×</button>
+        )}
+      </div>
+
+      {/* City list */}
+      <div style={{ maxHeight: 260, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {!search && (
+          <div style={{ padding: '6px 4px 4px', fontFamily: F.mono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.inkMuted }}>
+            Kaikki kaupungit
+          </div>
+        )}
+        {filtered.map((city) => {
+          const active = city.id === value
+          return (
+            <button
+              key={city.id}
+              className="lt-cityrow"
+              style={{
+                borderLeft: active ? `2px solid ${C.accent}` : '2px solid transparent',
+                color: active ? C.ink : 'var(--lt-ink-soft)',
+                paddingLeft: active ? 10 : 10,
+              }}
+              onClick={() => city.id && onChange(city.id)}
+            >
+              <span style={{ flex: 1 }}>{city.name}</span>
+              {active && <span style={{ color: C.accent, fontSize: 11, fontFamily: F.mono }}>valittu</span>}
+            </button>
+          )
+        })}
         {filtered.length === 0 && (
-          <div style={{ padding: '12px 0', fontFamily: F.mono, fontSize: 11, color: C.inkMuted, textAlign: 'center' }}>
-            Ei tuloksia
+          <div style={{ padding: '16px 0', fontFamily: F.mono, fontSize: 11, color: C.inkMuted, textAlign: 'center' }}>
+            Ei tuloksia haulle "{search}"
           </div>
         )}
       </div>
