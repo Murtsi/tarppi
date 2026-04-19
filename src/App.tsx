@@ -66,7 +66,7 @@ export default function App() {
   const [snipe, setSnipe] = useState<SnipeSession | null>(null)
   const [logs, setLogs] = useState<LogLine[]>([])
   const [latencies, setLatencies] = useState<number[]>([])
-  const [landedCount, setLandedCount] = useState(0)
+  const [landedCount, setLandedCount] = useState<number>(() => Number(readLS('kh.landed', '0')))
   const snipeRunRef = useRef<{ cancelled: boolean } | null>(null)
 
   // ─── persistence + initial load ─────────────────────────────────────────
@@ -74,6 +74,7 @@ export default function App() {
   useEffect(() => { writeLS('kh.pollMs', String(pollMs)) }, [pollMs])
   useEffect(() => { writeLS('kh.fallback', fallbackMode ? '1' : '0') }, [fallbackMode])
   useEffect(() => { writeLS('kh.city', city) }, [city])
+  useEffect(() => { writeLS('kh.landed', String(landedCount)) }, [landedCount])
 
   useEffect(() => { fetchExtraProperties().catch(() => {}) }, [])
 
@@ -136,6 +137,7 @@ export default function App() {
   const stopSnipe = useCallback(() => {
     if (snipeRunRef.current) snipeRunRef.current.cancelled = true
     setSnipe((s) => (s ? { ...s, phase: 'error' as SnipePhase, message: 'Pysäytetty' } : s))
+    setLatencies([])
   }, [])
 
   const startSnipe = useCallback(async (params: { variantId: string; variantName: string; quantity: number }) => {

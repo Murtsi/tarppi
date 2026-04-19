@@ -159,8 +159,25 @@ export default function CenterPanel(p: Props) {
               <Glyph text={evGlyph(ev.name)} size={32} />
               <div style={{ minWidth: 0 }}>
                 <div className="lt-row__title">{ev.name}</div>
-                <div className="lt-row__sub">
-                  {ev.start_time ? new Date(ev.start_time).toLocaleString('fi-FI', { weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                <div className="lt-row__sub" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>{ev.start_time ? new Date(ev.start_time).toLocaleString('fi-FI', { weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                  {ev.ai_score && (
+                    <span
+                      title={`AI · ${ev.ai_score.model_version}`}
+                      style={{
+                        fontFamily: F.mono,
+                        fontSize: 9,
+                        letterSpacing: '0.08em',
+                        padding: '1px 5px',
+                        borderRadius: 3,
+                        border: `1px solid currentColor`,
+                        color: ev.ai_score.label === 'BUY' ? C.buy : ev.ai_score.label === 'MAYBE' ? C.maybe : C.skip,
+                        opacity: 0.8,
+                      }}
+                    >
+                      AI
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="lt-row__org">{ev.organiser ?? '—'}</div>
