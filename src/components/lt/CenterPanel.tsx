@@ -23,6 +23,7 @@ type Props = {
   lastUpdatedLabel: string
   loading?: boolean
   onOpenPalette: () => void
+  onRescan: () => void
 }
 
 export default function CenterPanel(p: Props) {
@@ -80,10 +81,20 @@ export default function CenterPanel(p: Props) {
           </div>
         </div>
         <span style={{ flex: 1 }} />
-        <button className="lt-citypill" onClick={p.onCityClick}>
-          {p.city || 'Valitse kaupunki'}
-          <span style={{ fontSize: 10, opacity: 0.6, marginLeft: 6 }}>▾</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            className="lt-rescanbtn"
+            onClick={p.onRescan}
+            disabled={p.loading}
+            title="Skannaa uudelleen"
+          >
+            <span style={{ display: 'inline-block', transition: 'transform 0.4s ease', transform: p.loading ? 'rotate(360deg)' : 'none' }}>⟳</span>
+          </button>
+          <button className="lt-citypill" onClick={p.onCityClick}>
+            {p.city || 'Valitse kaupunki'}
+            <span style={{ fontSize: 10, opacity: 0.6, marginLeft: 6 }}>▾</span>
+          </button>
+        </div>
       </div>
 
       <div className="lt-tabrow">

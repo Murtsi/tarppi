@@ -172,6 +172,40 @@
   flex-shrink: 0;
 }
 
+/* ─── Log strip (LeftPanel) ─────────────────────────────────────────── */
+.lt-logstrip {
+  border-top: 1px solid var(--lt-rule);
+  flex-shrink: 0;
+}
+.lt-logstrip__toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--lt-ink-muted);
+  text-align: left;
+}
+.lt-logstrip__toggle:hover { background: var(--lt-panel2); }
+.lt-logstrip__list {
+  padding: 0 0 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.lt-logline {
+  display: flex;
+  gap: 6px;
+  padding: 3px 12px;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
 .lt-footrow {
   width: 100%;
   display: flex;
@@ -249,6 +283,23 @@
   cursor: pointer;
 }
 .lt-citypill:hover { opacity: 0.9; }
+
+.lt-rescanbtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--lt-rule);
+  background: transparent;
+  color: var(--lt-ink-soft);
+  font-size: 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, border-color 0.15s;
+}
+.lt-rescanbtn:hover:not(:disabled) { color: var(--lt-ink); border-color: var(--lt-rule-strong); }
+.lt-rescanbtn:disabled { opacity: 0.4; cursor: default; }
 
 .lt-tabrow {
   padding: 0 24px 10px;

@@ -1,11 +1,13 @@
+import { useState } from 'react'
 import { C, F, evGlyph, fmtElapsed } from '../../lib/lt/tokens'
-import { Dot, Glyph, Kbd, Lbl, Pill } from '../../lib/lt/primitives'
-import type { SnipeSession } from '../../lib/lt/types'
+import { Dot, Glyph, Lbl, Pill } from '../../lib/lt/primitives'
+import type { SnipeSession, LogLine } from '../../lib/lt/types'
 import type { ScoredEvent } from '../../lib/kide/types'
 
 type Props = {
   snipes: SnipeSession[]
   watchlist: ScoredEvent[]
+  logs: LogLine[]
   activeId?: string
   onPick: (id: string) => void
   onNewSnipe: () => void
@@ -22,7 +24,15 @@ const phaseMeta = {
   error:   { color: C.skip, label: 'VIRHE', pulse: false },
 } as const
 
+const LOG_COLORS: Record<LogLine['level'], string> = {
+  ok: C.accent,
+  err: C.skip,
+  warn: C.maybe,
+  info: C.inkSoft,
+}
+
 export default function LeftPanel(p: Props) {
+  const [logsOpen, setLogsOpen] = useState(false)
   if (p.collapsed) {
     return (
       <aside className="lt-left lt-left--collapsed">
@@ -129,6 +139,29 @@ export default function LeftPanel(p: Props) {
           </>
         )}
       </div>
+
+      {p.logs.length > 0 && (
+        <div className="lt-logstrip">
+          <button className="lt-logstrip__toggle" onClick={() => setLogsOpen((o) => !o)}>
+            <Dot color={p.logs[0].level === 'err' ? C.skip : p.logs[0].level === 'ok' ? C.accent : C.maybe} size={4} />
+            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {p.logs[0].text}
+            </span>
+            <span style={{ opacity: 0.5, fontSize: 10 }}>{logsOpen ? '▴' : '▾'}</span>
+          </button>
+          {logsOpen && (
+            <div className="lt-logstrip__list">
+              {p.logs.slice(0, 10).map((l) => (
+                <div key={l.id} className="lt-logline">
+                  <span style={{ color: C.inkMuted, minWidth: 34 }}>{l.ts}</span>
+                  <span style={{ color: LOG_COLORS[l.level], minWidth: 4 }}>›</span>
+                  <span style={{ color: C.inkSoft }}>{l.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="lt-left__foot">
         <button

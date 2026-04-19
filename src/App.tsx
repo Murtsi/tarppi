@@ -281,6 +281,7 @@ export default function App() {
         <LeftPanel
           snipes={snipesForLeft}
           watchlist={watchlist}
+          logs={logs}
           activeId={activeId}
           onPick={handlePick}
           onNewSnipe={() => setPaletteOpen(true)}
@@ -306,6 +307,7 @@ export default function App() {
               lastUpdatedLabel={lastUpdatedLabel}
               loading={scanning}
               onOpenPalette={() => setPaletteOpen(true)}
+              onRescan={() => runScan()}
             />
           </div>
           {showRight && (
