@@ -22,6 +22,7 @@ type Props = {
   landedCount: number
   lastUpdatedLabel: string
   loading?: boolean
+  scanError?: string | null
   onOpenPalette: () => void
   onRescan: () => void
 }
@@ -187,7 +188,11 @@ export default function CenterPanel(p: Props) {
 
         {filtered.length === 0 && (
           <div style={{ padding: '32px 20px', color: C.inkMuted, fontFamily: F.mono, fontSize: 11, textAlign: 'center' }}>
-            {p.loading ? 'Skannataan…' : 'Ei tapahtumia. Valitse kaupunki yläreunasta.'}
+            {p.loading
+              ? 'Skannataan…'
+              : p.scanError
+              ? `Skannaus epäonnistui: ${p.scanError}. Tarkista backend-yhteys tai yritä uudelleen.`
+              : 'Ei tapahtumia. Valitse kaupunki yläreunasta.'}
           </div>
         )}
 

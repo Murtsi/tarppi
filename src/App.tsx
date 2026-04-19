@@ -44,6 +44,7 @@ export default function App() {
   const [events, setEvents] = useState<ScoredEvent[]>([])
   const [scanning, setScanning] = useState(false)
   const [lastScanAt, setLastScanAt] = useState<number | null>(null)
+  const [scanError, setScanError] = useState<string | null>(null)
 
   // layout
   const [activeId, setActiveId] = useState<string | undefined>()
@@ -110,21 +111,24 @@ export default function App() {
   // scan on city change
   const runScan = useCallback(async (target?: string) => {
     const c = target ?? city
-    if (!c) return
     setScanning(true)
     setDetailFor(undefined)
+    setScanError(null)
     try {
       const r = await scanCity(c)
       setEvents(r.events)
       setLastScanAt(Date.now())
-      pushLog('ok', `Skannaus · ${c} · ${r.events.length} tapahtumaa`)
+      pushLog('ok', `Skannaus · ${c || 'Kaikkialla'} · ${r.events.length} tapahtumaa`)
     } catch (e) {
-      pushLog('err', `Skannaus epäonnistui: ${e instanceof Error ? e.message : 'virhe'}`)
+      const msg = e instanceof Error ? e.message : 'virhe'
+      setScanError(msg)
+      pushLog('err', `Skannaus epäonnistui: ${msg}`)
     } finally {
       setScanning(false)
     }
   }, [city, pushLog])
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { runScan(city) }, [city])
 
   // keyboard shortcuts
@@ -132,8 +136,18 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPaletteOpen((o) => !o); return }
       if ((e.metaKey || e.ctrlKey) && e.key === ',') { e.preventDefault(); setDrawerOpen(true); return }
-      if (e.key === 'Escape') { setPaletteOpen(false); setDrawerOpen(false); setCityPickerOpen(false); return }
-      if (!paletteOpen && !drawerOpen && !cityPickerOpen && e.key.toLowerCase() === 'n') setPaletteOpen(true)
+      if (e.key === 'Escape') {
+        // Sulje vain päällimmäinen overlay, ei kaikkia kerralla
+        if (drawerOpen) { setDrawerOpen(false); return }
+        if (paletteOpen) { setPaletteOpen(false); return }
+        if (cityPickerOpen) { setCityPickerOpen(false); return }
+        return
+      }
+      // N avaa paletin vain jos mikään overlay ei ole auki ja focus ei ole inputissa
+      if (!paletteOpen && !drawerOpen && !cityPickerOpen && e.key.toLowerCase() === 'n') {
+        const tag = (e.target as HTMLElement)?.tagName
+        if (tag !== 'INPUT' && tag !== 'TEXTAREA') setPaletteOpen(true)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -315,6 +329,7 @@ export default function App() {
               landedCount={landedCount}
               lastUpdatedLabel={lastUpdatedLabel}
               loading={scanning}
+              scanError={scanError}
               onOpenPalette={() => setPaletteOpen(true)}
               onRescan={() => runScan()}
             />

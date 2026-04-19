@@ -47,11 +47,7 @@ export default function TokenDrawer(p: Props) {
     }
   }, [p.open])
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && p.open) p.onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [p.open, p.onClose])
+  // Escape käsitellään keskitetysti App.tsx:ssä, joten ei tarvita erillistä kuuntelijaa
 
   const handleValidate = async () => {
     if (!token.trim()) return
@@ -75,8 +71,8 @@ export default function TokenDrawer(p: Props) {
   if (!p.open) return null
 
   return (
-    <div className="lt-palette-overlay">
-      <div className="lt-drawer">
+    <div className="lt-palette-overlay" onClick={p.onClose}>
+      <div className="lt-drawer" onClick={(e) => e.stopPropagation()}>
         <div className="lt-drawer__head">
           <div style={{ fontFamily: F.display, fontStyle: 'italic', fontSize: 22, color: C.ink, letterSpacing: '-0.02em' }}>
             Asetukset

@@ -42,9 +42,9 @@ export class ErrorBoundary extends Component<Props, State> {
             color: '#e0e0e0',
           }}
         >
-          <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Something went wrong</h1>
+          <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Jotain meni pieleen</h1>
           <p style={{ color: '#999', marginBottom: '1.5rem' }}>
-            {this.state.error?.message || 'An unexpected error occurred'}
+            {this.state.error?.message || 'Tapahtui odottamaton virhe'}
           </p>
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
             <button
@@ -59,7 +59,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 fontWeight: 600,
               }}
             >
-              Try again
+              Yritä uudelleen
             </button>
             <button
               onClick={() => window.location.reload()}
@@ -73,7 +73,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 fontWeight: 600,
               }}
             >
-              Reload page
+              Lataa sivu uudelleen
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { C, F } from '../../lib/lt/tokens'
 import { Kbd, Lbl, Pill } from '../../lib/lt/primitives'
 import type { ScoredEvent, EventResponse, KideVariant } from '../../lib/kide/types'
@@ -22,9 +22,11 @@ export default function RightPanel(p: Props) {
   const ev = p.event
   const [selectedVariantId, setSelectedVariantId] = useState<string>('')
   const [quantity, setQuantity] = useState(1)
+  const onLoadDetailRef = useRef(p.onLoadDetail)
+  onLoadDetailRef.current = p.onLoadDetail
 
   useEffect(() => {
-    if (ev) p.onLoadDetail(ev.event_id)
+    if (ev) onLoadDetailRef.current(ev.event_id)
     setSelectedVariantId('')
     setQuantity(1)
   }, [ev?.event_id])
