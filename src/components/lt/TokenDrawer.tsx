@@ -15,6 +15,13 @@ type Props = {
   onValidate: () => void
 }
 
+// Kide.app shows "WARNING: ...! <actual_token>" in DevTools — strip the prefix automatically
+function stripKideWarning(raw: string): string {
+  const trimmed = raw.trim()
+  const match = trimmed.match(/^WARNING:.*?!\s+(.+)$/s)
+  return match ? match[1].trim() : trimmed
+}
+
 export default function TokenDrawer(p: Props) {
   const [token, setToken] = useState(p.token)
   const [pollMs, setPollMs] = useState(p.pollMs)
@@ -32,7 +39,7 @@ export default function TokenDrawer(p: Props) {
   if (!p.open) return null
 
   return (
-    <div className="lt-palette-overlay" onClick={p.onClose}>
+    <div className="lt-palette-overlay">
       <div className="lt-drawer" onClick={(e) => e.stopPropagation()}>
         <div className="lt-drawer__head">
           <div style={{ fontFamily: F.display, fontStyle: 'italic', fontSize: 22, color: C.ink, letterSpacing: '-0.02em' }}>
@@ -47,9 +54,9 @@ export default function TokenDrawer(p: Props) {
             <Lbl>Kide.app-token</Lbl>
             <textarea
               value={token}
-              onChange={(e) => setToken(e.target.value)}
+              onChange={(e) => setToken(stripKideWarning(e.target.value))}
               rows={3}
-              placeholder="eyJ…"
+              placeholder="Liitä token tai koko WARNING-viesti tähän…"
               className="lt-input lt-input--area"
             />
             <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
@@ -57,6 +64,23 @@ export default function TokenDrawer(p: Props) {
               <span style={{ fontFamily: F.mono, fontSize: 11, color: p.tokenValid ? C.accent : C.skip }}>
                 {p.tokenValid ? `✓ ${p.tokenEmail ?? 'kelvollinen'}` : '✗ virheellinen'}
               </span>
+            </div>
+            <div style={{
+              marginTop: 12,
+              padding: '10px 12px',
+              background: 'rgba(255,255,255,0.03)',
+              border: `1px solid ${C.rule}`,
+              borderRadius: 8,
+              fontFamily: F.mono,
+              fontSize: 10,
+              color: C.inkSoft,
+              lineHeight: 1.7,
+            }}>
+              <div style={{ color: C.inkMuted, marginBottom: 4, letterSpacing: '0.10em', textTransform: 'uppercase', fontSize: 9 }}>Miten saan tokenin</div>
+              <div>1. Avaa <span style={{ color: C.ink }}>kide.app</span> selaimessa ja kirjaudu sisään</div>
+              <div>2. Paina <span style={{ color: C.ink }}>F12</span> → <span style={{ color: C.ink }}>Console</span>-välilehti</div>
+              <div>3. Kirjoita: <span style={{ color: C.accent, letterSpacing: 0 }}>copy(localStorage.getItem('token'))</span></div>
+              <div>4. Liitä tähän — WARNING-viesti poistetaan automaattisesti</div>
             </div>
           </div>
 
@@ -94,7 +118,7 @@ export default function TokenDrawer(p: Props) {
               placeholder="http://proxy:8080"
               className="lt-input"
             />
-            <div style={{ fontFamily: 'Geist Mono, monospace', fontSize: 10, color: 'var(--lt-ink-muted)', marginTop: 4 }}>
+            <div style={{ fontFamily: F.mono, fontSize: 10, color: C.inkMuted, marginTop: 4 }}>
               HTTP/HTTPS-proxy pyyntöjen reitittämiseen
             </div>
           </div>
