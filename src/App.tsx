@@ -113,7 +113,6 @@ export default function App() {
   const runScan = useCallback(async (target?: string) => {
     const c = target ?? city
     setScanning(true)
-    setDetailFor(undefined)
     setScanError(null)
     try {
       const r = await scanCity(c)
