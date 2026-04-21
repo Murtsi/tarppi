@@ -4,6 +4,8 @@ import { Dot, Glyph, Kbd, Lbl, Pill } from '../../lib/lt/primitives'
 import type { SnipeSession, LogLine } from '../../lib/lt/types'
 import type { ScoredEvent } from '../../lib/kide/types'
 
+const KIDE_CART_URL = 'https://kide.app/basket'
+
 type Props = {
   snipes: SnipeSession[]
   watchlist: ScoredEvent[]
@@ -20,20 +22,18 @@ type Props = {
 
 const phaseMeta = {
   hunting: { color: C.magenta, label: 'KÄYNNISSÄ', pulse: true },
-  waiting: { color: C.maybe, label: 'ODOTTAA', pulse: false },
-  landed:  { color: C.accent, label: 'ONNISTUI', pulse: false },
-  error:   { color: C.skip, label: 'VIRHE', pulse: false },
+  waiting: { color: C.maybe,   label: 'ODOTTAA',   pulse: false },
+  landed:  { color: C.accent,  label: 'ONNISTUI',  pulse: false },
+  error:   { color: C.skip,    label: 'VIRHE',     pulse: false },
 } as const
 
 const LOG_COLORS: Record<LogLine['level'], string> = {
-  ok: C.accent,
-  err: C.skip,
-  warn: C.maybe,
-  info: C.inkSoft,
+  ok: C.accent, err: C.skip, warn: C.maybe, info: C.inkSoft,
 }
 
 export default function LeftPanel(p: Props) {
   const [logsOpen, setLogsOpen] = useState(false)
+
   if (p.collapsed) {
     return (
       <aside className="lt-left lt-left--collapsed">
@@ -88,37 +88,47 @@ export default function LeftPanel(p: Props) {
           const elapsed = Math.max(0, Math.floor((Date.now() - s.startedAt) / 1000))
           const countdown = s.salesStartAt ? Math.max(0, Math.floor((s.salesStartAt - Date.now()) / 1000)) : 0
           return (
-            <div
-              key={s.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => p.onPick(s.eventId)}
-              onKeyDown={(e) => e.key === 'Enter' && p.onPick(s.eventId)}
-              className={`lt-snipecard ${active ? 'is-active' : ''}`}
-            >
-              <Glyph text={evGlyph(s.eventName)} size={38} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Dot color={meta.color} size={5} pulse={meta.pulse} />
-                  <Lbl style={{ color: meta.color }}>{meta.label}</Lbl>
-                </div>
-                <div className="lt-snipecard__title">{s.eventName}</div>
-                <div style={{ fontFamily: F.mono, fontSize: 10, color: C.inkSoft, marginTop: 2 }}>
-                  {s.phase === 'waiting' && countdown > 0
-                    ? `${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')} myynnin alkuun`
-                    : s.phase === 'landed'
-                    ? `✓ ${s.quantity} kpl lisätty koriin`
-                    : s.phase === 'error'
-                    ? s.message ?? 'Virhe'
-                    : `${s.attempts} yritystä · ${fmtElapsed(elapsed)}`}
-                </div>
-              </div>
+            <div key={s.id} className={`lt-snipecard ${active ? 'is-active' : ''} ${s.phase === 'landed' ? 'is-landed' : ''}`}>
               <button
-                className="lt-iconbtn"
-                onClick={(e) => { e.stopPropagation(); p.onRescan() }}
-                title="Skannaa uudelleen"
-                style={{ flexShrink: 0, fontSize: 13 }}
-              >⟳</button>
+                className="lt-snipecard__body"
+                onClick={() => p.onPick(s.eventId)}
+              >
+                <Glyph text={evGlyph(s.eventName)} size={38} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Dot color={meta.color} size={5} pulse={meta.pulse} />
+                    <Lbl style={{ color: meta.color }}>{meta.label}</Lbl>
+                  </div>
+                  <div className="lt-snipecard__title">{s.eventName}</div>
+                  <div style={{ fontFamily: F.mono, fontSize: 10, color: C.inkSoft, marginTop: 2 }}>
+                    {s.phase === 'waiting' && countdown > 0
+                      ? `${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')} myynnin alkuun`
+                      : s.phase === 'landed'
+                      ? `✓ ${s.quantity} kpl lisätty koriin`
+                      : s.phase === 'error'
+                      ? s.message ?? 'Virhe'
+                      : `${s.attempts} yritystä · ${fmtElapsed(elapsed)}`}
+                  </div>
+                </div>
+              </button>
+              {s.phase === 'landed' ? (
+                <a
+                  href={KIDE_CART_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="lt-snipecard__cartlink"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Siirry kassalle →
+                </a>
+              ) : (
+                <button
+                  className="lt-iconbtn"
+                  onClick={(e) => { e.stopPropagation(); p.onRescan() }}
+                  title="Skannaa uudelleen"
+                  style={{ flexShrink: 0, fontSize: 13 }}
+                >⟳</button>
+              )}
             </div>
           )
         })}
@@ -174,11 +184,7 @@ export default function LeftPanel(p: Props) {
       )}
 
       <div className="lt-left__foot">
-        <button
-          className="lt-footrow"
-          onClick={p.onOpenSettings}
-          title="Avaa asetukset"
-        >
+        <button className="lt-footrow" onClick={p.onOpenSettings} title="Avaa asetukset">
           <div className="lt-avatar">
             {(p.userEmail ?? 'KH').slice(0, 2).toUpperCase()}
           </div>

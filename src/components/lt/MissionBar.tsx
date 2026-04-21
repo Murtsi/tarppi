@@ -3,6 +3,8 @@ import { Dot } from '../../lib/lt/primitives'
 import { useEffect, useState } from 'react'
 import type { SnipeSession, LogLine } from '../../lib/lt/types'
 
+const KIDE_CART_URL = 'https://kide.app/basket'
+
 type Props = {
   snipe: SnipeSession
   pollMs: number
@@ -18,6 +20,8 @@ export default function MissionBar({ snipe, pollMs, latestLog, onStop }: Props) 
   }, [])
 
   const elapsed = Math.max(0, Math.floor((Date.now() - snipe.startedAt) / 1000))
+  const countdown = snipe.salesStartAt ? Math.max(0, Math.floor((snipe.salesStartAt - Date.now()) / 1000)) : 0
+
   const phaseColor =
     snipe.phase === 'landed' ? C.accent :
     snipe.phase === 'waiting' ? C.maybe :
@@ -26,6 +30,32 @@ export default function MissionBar({ snipe, pollMs, latestLog, onStop }: Props) 
     snipe.phase === 'landed' ? 'ONNISTUI' :
     snipe.phase === 'waiting' ? 'ODOTTAA' :
     snipe.phase === 'error' ? 'VIRHE' : 'KÄYNNISSÄ'
+
+  if (snipe.phase === 'landed') {
+    return (
+      <div className="lt-missionbar lt-missionbar--landed">
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <Dot color={C.accent} />
+          <span style={{ color: C.accent, letterSpacing: '0.08em', fontFamily: F.mono, fontSize: 11 }}>
+            ONNISTUI
+          </span>
+        </div>
+        <div className="lt-missionbar__sep" />
+        <div style={{ color: C.ink, fontFamily: F.mono, fontSize: 11 }}>
+          {snipe.quantity} × {snipe.variantName ?? 'lippu'} · {snipe.eventName}
+        </div>
+        <span style={{ flex: 1 }} />
+        <a
+          href={KIDE_CART_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="lt-cartbtn"
+        >
+          Siirry kassalle →
+        </a>
+      </div>
+    )
+  }
 
   return (
     <div className="lt-missionbar">
@@ -40,9 +70,17 @@ export default function MissionBar({ snipe, pollMs, latestLog, onStop }: Props) 
         {snipe.eventName} · {snipe.variantName ?? 'lippu'} · {snipe.quantity}×
       </div>
       <div className="lt-missionbar__sep" />
-      <div style={{ color: C.inkSoft, fontFamily: F.mono, fontSize: 11 }}>
-        pollaus <span style={{ color: C.ink }}>{pollMs} ms</span>
-      </div>
+      {snipe.phase === 'waiting' && countdown > 0 ? (
+        <div style={{ color: C.maybe, fontFamily: F.mono, fontSize: 11 }}>
+          myynti alkaa <span style={{ color: C.ink }}>
+            {Math.floor(countdown / 60) > 0 && `${Math.floor(countdown / 60)}m `}{countdown % 60}s
+          </span>
+        </div>
+      ) : (
+        <div style={{ color: C.inkSoft, fontFamily: F.mono, fontSize: 11 }}>
+          pollaus <span style={{ color: C.ink }}>{pollMs} ms</span>
+        </div>
+      )}
       <div style={{ color: C.inkSoft, fontFamily: F.mono, fontSize: 11 }}>
         yrityksiä <span style={{ color: C.ink }}>{snipe.attempts}</span>
       </div>

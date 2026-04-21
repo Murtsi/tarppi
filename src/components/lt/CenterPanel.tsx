@@ -13,6 +13,7 @@ type Props = {
   activeId?: string
   onPick: (id: string) => void
   activeSnipe?: SnipeSession
+  missionSnipe?: SnipeSession
   pollMs: number
   latestLog?: LogLine
   onStopSnipe: () => void
@@ -282,9 +283,9 @@ export default function CenterPanel(p: Props) {
         })}
       </div>
 
-      {p.activeSnipe && (
+      {(p.missionSnipe ?? p.activeSnipe) && (
         <MissionBar
-          snipe={p.activeSnipe}
+          snipe={(p.missionSnipe ?? p.activeSnipe)!}
           pollMs={p.pollMs}
           latestLog={p.latestLog}
           onStop={p.onStopSnipe}

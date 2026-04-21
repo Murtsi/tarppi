@@ -109,23 +109,51 @@
 .lt-snipecard {
   width: 100%;
   text-align: left;
-  padding: 10px;
   margin: 2px 0;
   border-radius: 8px;
-  cursor: pointer;
   background: transparent;
   border: 1px solid transparent;
   color: var(--lt-ink);
   font-family: 'Geist', sans-serif;
   display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.lt-snipecard__body {
+  display: flex;
   gap: 10px;
   align-items: center;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
 }
 .lt-snipecard:hover { background: var(--lt-panel2); }
 .lt-snipecard.is-active {
   background: var(--lt-panel2);
   border-color: var(--lt-rule-strong);
 }
+.lt-snipecard.is-landed {
+  border-color: rgba(74, 222, 128, 0.25);
+  background: rgba(74, 222, 128, 0.04);
+}
+.lt-snipecard__cartlink {
+  display: block;
+  padding: 7px 10px 8px;
+  background: rgba(74, 222, 128, 0.12);
+  border-top: 1px solid rgba(74, 222, 128, 0.2);
+  color: var(--lt-accent);
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-align: center;
+}
+.lt-snipecard__cartlink:hover { background: rgba(74, 222, 128, 0.2); }
 .lt-snipecard__title {
   font-size: 13px;
   font-weight: 500;
@@ -447,6 +475,23 @@
   gap: 18px;
   flex-shrink: 0;
 }
+.lt-missionbar--landed {
+  background: rgba(74, 222, 128, 0.06);
+  border-top-color: rgba(74, 222, 128, 0.25);
+}
+
+.lt-cartbtn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: var(--lt-accent);
+  color: var(--lt-bg);
+  font-family: 'Geist', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.lt-cartbtn:hover { filter: brightness(1.08); }
 .lt-missionbar__sep { width: 1px; height: 16px; background: var(--lt-rule); }
 .lt-missionbar__log {
   color: var(--lt-ink-soft);
@@ -883,6 +928,74 @@
   .lt-missionbar { padding: 8px 12px; gap: 10px; flex-wrap: wrap; }
   .lt-missionbar__log { max-width: 180px; }
 }
+
+/* ─── Sales start countdown (RightPanel) ───────────────────────────── */
+.lt-salesstart {
+  margin: 14px 16px 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.06);
+  text-align: center;
+}
+
+/* ─── Landed banner (RightPanel) ───────────────────────────────────── */
+.lt-landed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 32px 24px;
+  gap: 8px;
+}
+.lt-landed__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(74, 222, 128, 0.15);
+  border: 2px solid var(--lt-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--lt-accent);
+  margin-bottom: 8px;
+}
+.lt-landed__title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+  font-size: 28px;
+  color: var(--lt-accent);
+  letter-spacing: -0.02em;
+}
+.lt-landed__sub {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--lt-ink);
+}
+.lt-landed__event {
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  color: var(--lt-ink-soft);
+  text-align: center;
+  max-width: 260px;
+}
+
+.lt-cartlink {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 24px;
+  border-radius: 8px;
+  background: var(--lt-accent);
+  color: var(--lt-bg);
+  font-family: 'Geist', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-top: 8px;
+}
+.lt-cartlink:hover { filter: brightness(1.08); }
 
 /* ─── CityPicker ─────────────────────────────────────────────────────── */
 .lt-quickcity {

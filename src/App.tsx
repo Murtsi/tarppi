@@ -71,7 +71,10 @@ export default function App() {
   const [landedCount, setLandedCount] = useState<number>(() => Number(readLS('kh.landed', '0')))
   const snipeRunRef = useRef<{ cancelled: boolean } | null>(null)
   const snipeRef = useRef(snipe)
+  const detailRef = useRef<EventResponse | null>(null)
+
   useEffect(() => { snipeRef.current = snipe }, [snipe])
+  useEffect(() => { detailRef.current = detail }, [detail])
 
   // ─── persistence + initial load ─────────────────────────────────────────
   useEffect(() => { writeLS('kh.token', token) }, [token])
@@ -103,12 +106,11 @@ export default function App() {
     return () => window.removeEventListener('resize', apply)
   }, [leftUserOverride, rightUserOverride])
 
-  // ─── sniper loop ────────────────────────────────────────────────────────
+  // ─── scan ────────────────────────────────────────────────────────────────
   const pushLog = useCallback((level: LogLine['level'], text: string) => {
     setLogs((prev) => [{ id: uid(), ts: nowStr(), level, text }, ...prev].slice(0, MAX_LOG))
   }, [])
 
-  // scan on city change
   const runScan = useCallback(async (target?: string) => {
     const c = target ?? city
     setScanning(true)
@@ -153,6 +155,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [paletteOpen, drawerOpen, cityPickerOpen])
 
+  // ─── sniper loop ────────────────────────────────────────────────────────
   const stopSnipe = useCallback(() => {
     if (snipeRunRef.current) snipeRunRef.current.cancelled = true
     setSnipe((s) => (s ? { ...s, phase: 'error' as SnipePhase, message: 'Pysäytetty' } : s))
@@ -160,8 +163,10 @@ export default function App() {
   }, [])
 
   const startSnipe = useCallback(async (params: { variantId: string; variantName: string; quantity: number }) => {
+    if (!activeId) return
     const ev = events.find((e) => e.event_id === activeId)
-    if (!ev) return
+    const eventName = ev?.name ?? detailRef.current?.product.name ?? 'Tapahtuma'
+
     if (!token.trim() || !tokenValid) {
       pushLog('err', 'Token ei ole voimassa — avaa asetukset')
       setDrawerOpen(true)
@@ -175,8 +180,8 @@ export default function App() {
 
     const session: SnipeSession = {
       id: uid(),
-      eventId: ev.event_id,
-      eventName: ev.name,
+      eventId: activeId,
+      eventName,
       variantId: params.variantId,
       variantName: params.variantName,
       quantity: params.quantity,
@@ -185,7 +190,7 @@ export default function App() {
       attempts: 0,
     }
     setSnipe(session)
-    pushLog('ok', `Seuranta alkoi · ${ev.name} · ${params.variantName} · ${params.quantity}×`)
+    pushLog('ok', `Seuranta alkoi · ${eventName} · ${params.variantName} · ${params.quantity}×`)
     const run = { cancelled: false }
     snipeRunRef.current = run
 
@@ -195,10 +200,37 @@ export default function App() {
       setSnipe((s) => (s ? { ...s, attempts, lastCheckedAt: Date.now() } : s))
       const started = Date.now()
       try {
-        const det = await fetchEventDetail(ev.event_id)
+        const det = await fetchEventDetail(activeId)
         const variant = det.variants.find((v) => v.inventoryId === params.variantId)
         const latency = Date.now() - started
         setLatencies((ls) => [...ls.slice(-19), latency])
+
+        // ─ Sales ended
+        if (det.product.salesEnded) {
+          pushLog('warn', 'Myynti on päättynyt — pysäytän')
+          setSnipe((s) => (s ? { ...s, phase: 'error', message: 'Myynti päättynyt' } : s))
+          break
+        }
+
+        // ─ Pre-sale waiting phase
+        const tUntil = det.product.timeUntilSalesStart ?? 0
+        if (tUntil > 0) {
+          const salesStartAt = Date.now() + tUntil * 1000
+          setSnipe((s) => (s ? { ...s, phase: 'waiting', salesStartAt } : s))
+          if (tUntil <= 10) {
+            pushLog('info', `Myynti aukeaa ${Math.round(tUntil)}s päästä!`)
+          }
+          // Adaptive polling: fast when close, slow when far
+          const adaptiveDelay = tUntil <= 5 ? pollMs : tUntil <= 30 ? 1000 : 10000
+          await new Promise((r) => setTimeout(r, adaptiveDelay))
+          continue
+        }
+
+        // ─ Sales just opened (was waiting)
+        if (snipeRef.current?.phase === 'waiting') {
+          setSnipe((s) => (s ? { ...s, phase: 'hunting', salesStartAt: undefined } : s))
+          pushLog('ok', 'Myynti avautui — yritetään nyt!')
+        }
 
         if (!variant) {
           pushLog('warn', 'Lipputyyppiä ei löydy — pysäytän')
@@ -240,8 +272,10 @@ export default function App() {
 
   // ─── event detail fetcher ───────────────────────────────────────────────
   const loadDetail = useCallback(async (id: string) => {
-    if (detailFor === id) return
-    setDetailFor(id)
+    setDetailFor((prev) => {
+      if (prev === id) return prev
+      return id
+    })
     setDetail(null)
     setDetailError(null)
     setDetailLoading(true)
@@ -253,7 +287,7 @@ export default function App() {
     } finally {
       setDetailLoading(false)
     }
-  }, [detailFor])
+  }, [])
 
   // ─── derived ────────────────────────────────────────────────────────────
   const activeEvent = useMemo(() => events.find((e) => e.event_id === activeId), [events, activeId])
@@ -273,6 +307,8 @@ export default function App() {
   }, [lastScanAt])
 
   const snipesForLeft = snipe ? [snipe] : []
+  const activeSnipeForPanels = snipe && snipe.phase !== 'landed' && snipe.phase !== 'error' ? snipe : undefined
+  const missionSnipe = snipe && snipe.phase !== 'error' ? snipe : undefined
 
   // ─── handlers ───────────────────────────────────────────────────────────
   const handlePick = (id: string) => {
@@ -286,7 +322,7 @@ export default function App() {
     setActiveId(id)
     setShowRight(true)
     loadDetail(id)
-    pushLog('info', `Tapahtuma ladattu URL-osoitteesta: ${id.slice(0, 8)}…`)
+    pushLog('info', `Tapahtuma ladattu URL:sta · ${id.slice(0, 8)}…`)
   }
 
   const commands: Command[] = [
@@ -319,7 +355,8 @@ export default function App() {
               events={events}
               activeId={activeId}
               onPick={handlePick}
-              activeSnipe={snipe && snipe.phase !== 'landed' && snipe.phase !== 'error' ? snipe : undefined}
+              activeSnipe={activeSnipeForPanels}
+              missionSnipe={missionSnipe}
               pollMs={pollMs}
               latestLog={logs[0]}
               onStopSnipe={stopSnipe}
@@ -346,7 +383,8 @@ export default function App() {
               tokenMasked={token ? maskToken(token) : undefined}
               tokenValid={tokenValid}
               pollMs={pollMs}
-              activeSnipe={snipe && snipe.phase !== 'landed' && snipe.phase !== 'error' ? snipe : undefined}
+              activeSnipe={activeSnipeForPanels}
+              landedSnipe={snipe?.phase === 'landed' ? snipe : undefined}
             />
           )}
         </div>
@@ -409,7 +447,6 @@ export default function App() {
           </div>
         </div>
       )}
-
     </div>
   )
 }
