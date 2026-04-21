@@ -60,7 +60,6 @@ export default function App() {
 
   // event detail
   const [detail, setDetail] = useState<EventResponse | null>(null)
-  const [detailFor, setDetailFor] = useState<string | undefined>()
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
 
@@ -272,10 +271,6 @@ export default function App() {
 
   // ─── event detail fetcher ───────────────────────────────────────────────
   const loadDetail = useCallback(async (id: string) => {
-    setDetailFor((prev) => {
-      if (prev === id) return prev
-      return id
-    })
     setDetail(null)
     setDetailError(null)
     setDetailLoading(true)
