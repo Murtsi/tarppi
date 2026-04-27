@@ -35,6 +35,7 @@ export type ReserveResponse = {
   success: boolean
   message: string
   retryWithQuantity?: number
+  retryAfterMs?: number
 }
 
 export type ValidateTokenResponse = {

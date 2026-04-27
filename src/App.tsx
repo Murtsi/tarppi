@@ -21,7 +21,7 @@ import CityPicker from './components/CityPicker'
 import './App.css'
 
 const MAX_LOG = 40
-const DEFAULT_POLL_MS = 500
+const DEFAULT_POLL_MS = 800
 const DEFAULT_CITY = 'Helsinki'
 
 function readLS(key: string, fallback: string): string {
@@ -89,8 +89,6 @@ export default function App() {
   useEffect(() => { writeLS('kh.city', city) }, [city])
   useEffect(() => { writeLS('kh.landed', String(landedCount)) }, [landedCount])
   useEffect(() => { writeLS('kh.proxy', proxyUrl) }, [proxyUrl])
-
-  useEffect(() => { fetchExtraProperties().catch(() => {}) }, [])
 
   // Sync clock against Kide.app server time on mount
   useEffect(() => {
@@ -221,6 +219,10 @@ export default function App() {
         setLandedCount((n) => n + 1)
         return true
       }
+      if (r.retryAfterMs && r.retryAfterMs > 0) {
+        pushLog('warn', `Rate limited — odotan ${Math.round(r.retryAfterMs / 1000)}s`)
+        await new Promise((res) => setTimeout(res, r.retryAfterMs!))
+      }
       if (fallbackMode && r.retryWithQuantity && r.retryWithQuantity > 0) {
         const r2 = await addToCart(token.trim(), params.variantId, r.retryWithQuantity)
         if (r2.success) {
@@ -315,7 +317,9 @@ export default function App() {
       } catch (err) {
         pushLog('warn', `Pollausvirhe: ${err instanceof Error ? err.message : 'tuntematon'}`)
       }
-      await new Promise((r) => setTimeout(r, pollMs))
+      // ±100ms jitter so simultaneous snipe clients don't hit Kide at the same tick
+      const jitter = Math.round(Math.random() * 200 - 100)
+      await new Promise((r) => setTimeout(r, Math.max(100, pollMs + jitter)))
     }
   }, [events, activeId, token, tokenValid, fallbackMode, pollMs, clockOffsetMs, pushLog])
 
