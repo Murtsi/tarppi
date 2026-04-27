@@ -4,6 +4,7 @@ import {
   extractEventId,
   fetchEventDetail,
   fetchExtraProperties,
+  fetchKideTime,
   maskToken,
   scanCity,
   validateToken,
@@ -63,11 +64,17 @@ export default function App() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
 
+  // clock sync — offset between Kide.app server time and browser clock
+  const [clockOffsetMs, setClockOffsetMs] = useState(0)
+
   // snipe
   const [snipe, setSnipe] = useState<SnipeSession | null>(null)
   const [logs, setLogs] = useState<LogLine[]>([])
   const [latencies, setLatencies] = useState<number[]>([])
   const [landedCount, setLandedCount] = useState<number>(() => Number(readLS('kh.landed', '0')))
+
+  // tick for reactive "last updated" label (every 15s)
+  const [labelTick, setTick] = useState(0)
   const snipeRunRef = useRef<{ cancelled: boolean } | null>(null)
   const snipeRef = useRef(snipe)
   const detailRef = useRef<EventResponse | null>(null)
@@ -84,6 +91,17 @@ export default function App() {
   useEffect(() => { writeLS('kh.proxy', proxyUrl) }, [proxyUrl])
 
   useEffect(() => { fetchExtraProperties().catch(() => {}) }, [])
+
+  // Sync clock against Kide.app server time on mount
+  useEffect(() => {
+    fetchKideTime().then((r) => setClockOffsetMs(r.offsetMs)).catch(() => {})
+  }, [])
+
+  // Drive the "last updated X s ago" label
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 15_000)
+    return () => clearInterval(id)
+  }, [])
 
   // validate token on mount / when it changes
   useEffect(() => {
@@ -193,6 +211,29 @@ export default function App() {
     snipeRunRef.current = run
 
     let attempts = 0
+    let didRefreshBeforeSale = false
+
+    const tryCart = async (qty: number): Promise<boolean> => {
+      const r = await addToCart(token.trim(), params.variantId, qty)
+      if (r.success) {
+        pushLog('ok', `ONNISTUI — ${qty} kpl lisätty koriin`)
+        setSnipe((s) => (s ? { ...s, phase: 'landed', quantity: qty } : s))
+        setLandedCount((n) => n + 1)
+        return true
+      }
+      if (fallbackMode && r.retryWithQuantity && r.retryWithQuantity > 0) {
+        const r2 = await addToCart(token.trim(), params.variantId, r.retryWithQuantity)
+        if (r2.success) {
+          pushLog('ok', `ONNISTUI (varareitti) — ${r.retryWithQuantity} kpl lisätty koriin`)
+          setSnipe((s) => (s ? { ...s, phase: 'landed', quantity: r.retryWithQuantity! } : s))
+          setLandedCount((n) => n + 1)
+          return true
+        }
+      }
+      pushLog('warn', r.message || 'Varaus ei onnistunut — jatkan')
+      return false
+    }
+
     while (!run.cancelled) {
       attempts++
       setSnipe((s) => (s ? { ...s, attempts, lastCheckedAt: Date.now() } : s))
@@ -211,23 +252,48 @@ export default function App() {
         }
 
         // ─ Pre-sale waiting phase
-        const tUntil = det.product.timeUntilSalesStart ?? 0
+        // Apply clock offset so we fire relative to Kide's clock, not the browser's.
+        const tUntil = (det.product.timeUntilSalesStart ?? 0) - clockOffsetMs / 1000
         if (tUntil > 0) {
           const salesStartAt = Date.now() + tUntil * 1000
           setSnipe((s) => (s ? { ...s, phase: 'waiting', salesStartAt } : s))
-          if (tUntil <= 10) {
+
+          // Refresh anti-bot values once in the 30 s window before sale opens
+          if (tUntil <= 30 && !didRefreshBeforeSale) {
+            didRefreshBeforeSale = true
+            fetchExtraProperties().catch(() => {})
+            pushLog('info', `Myynti aukeaa ${Math.round(tUntil)}s päästä — otsakkeet päivitetty`)
+          } else if (tUntil <= 10) {
             pushLog('info', `Myynti aukeaa ${Math.round(tUntil)}s päästä!`)
           }
-          // Adaptive polling: fast when close, slow when far
-          const adaptiveDelay = tUntil <= 5 ? pollMs : tUntil <= 30 ? 1000 : 10000
+
+          // Adaptive polling: finer steps close to open time
+          const adaptiveDelay =
+            tUntil <= 2   ? pollMs :
+            tUntil <= 5   ? 200 :
+            tUntil <= 15  ? 500 :
+            tUntil <= 60  ? 2000 :
+            tUntil <= 300 ? 10_000 : 30_000
           await new Promise((r) => setTimeout(r, adaptiveDelay))
           continue
         }
 
-        // ─ Sales just opened (was waiting)
-        if (snipeRef.current?.phase === 'waiting') {
+        // ─ Sales just opened (was waiting) — fire immediately without
+        //   waiting for availability > 0. Kide returns error type 13 if
+        //   still unavailable; that's handled below. One poll cycle of
+        //   latency saved beats a false negative from the availability field.
+        const wasWaiting = snipeRef.current?.phase === 'waiting'
+        if (wasWaiting) {
           setSnipe((s) => (s ? { ...s, phase: 'hunting', salesStartAt: undefined } : s))
-          pushLog('ok', 'Myynti avautui — yritetään nyt!')
+          pushLog('ok', 'Myynti avautui — ammutaan heti!')
+          if (variant) {
+            try {
+              const landed = await tryCart(params.quantity)
+              if (landed) break
+            } catch (err) {
+              pushLog('err', `Varausvirhe: ${err instanceof Error ? err.message : 'tuntematon'}`)
+            }
+          }
         }
 
         if (!variant) {
@@ -238,25 +304,10 @@ export default function App() {
 
         if (variant.availability > 0) {
           pushLog('info', `Saatavilla ${variant.availability} kpl — yritän lisätä koriin`)
-          const qty = Math.min(params.quantity, variant.availability)
           try {
-            const r = await addToCart(token.trim(), params.variantId, qty)
-            if (r.success) {
-              pushLog('ok', `ONNISTUI — ${qty} kpl lisätty koriin`)
-              setSnipe((s) => (s ? { ...s, phase: 'landed', quantity: qty } : s))
-              setLandedCount((n) => n + 1)
-              break
-            }
-            if (fallbackMode && r.retryWithQuantity && r.retryWithQuantity > 0) {
-              const r2 = await addToCart(token.trim(), params.variantId, r.retryWithQuantity)
-              if (r2.success) {
-                pushLog('ok', `ONNISTUI (varareitti) — ${r.retryWithQuantity} kpl lisätty koriin`)
-                setSnipe((s) => (s ? { ...s, phase: 'landed', quantity: r.retryWithQuantity! } : s))
-                setLandedCount((n) => n + 1)
-                break
-              }
-            }
-            pushLog('warn', r.message || 'Varaus ei onnistunut — jatkan')
+            const qty = Math.min(params.quantity, variant.availability)
+            const landed = await tryCart(qty)
+            if (landed) break
           } catch (err) {
             pushLog('err', `Varausvirhe: ${err instanceof Error ? err.message : 'tuntematon'}`)
           }
@@ -266,7 +317,7 @@ export default function App() {
       }
       await new Promise((r) => setTimeout(r, pollMs))
     }
-  }, [events, activeId, token, tokenValid, fallbackMode, pollMs, pushLog])
+  }, [events, activeId, token, tokenValid, fallbackMode, pollMs, clockOffsetMs, pushLog])
 
   // ─── event detail fetcher ───────────────────────────────────────────────
   const loadDetail = useCallback(async (id: string) => {
@@ -293,12 +344,13 @@ export default function App() {
     if (latencies.length === 0) return undefined
     return Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
   }, [latencies])
+  // Recomputes on every tick (every 15s) so the label stays fresh
   const lastUpdatedLabel = useMemo(() => {
     if (!lastScanAt) return 'ei päivitetty'
     const s = Math.max(0, Math.floor((Date.now() - lastScanAt) / 1000))
     if (s < 60) return `päivitetty ${s} s sitten`
     return `päivitetty ${Math.floor(s / 60)} min sitten`
-  }, [lastScanAt])
+  }, [lastScanAt, labelTick])
 
   const snipesForLeft = snipe ? [snipe] : []
   const activeSnipeForPanels = snipe && snipe.phase !== 'landed' && snipe.phase !== 'error' ? snipe : undefined

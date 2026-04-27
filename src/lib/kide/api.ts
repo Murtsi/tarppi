@@ -81,6 +81,19 @@ export async function fetchExtraProperties(): Promise<BackendStatusResponse> {
 }
 
 /**
+ * Fetch Kide.app server time to compute a clock delta.
+ * offsetMs = kideMs - localMs. Add this to Date.now() before computing
+ * how long until sales open so the countdown fires against Kide's clock.
+ */
+export async function fetchKideTime(): Promise<{ offsetMs: number }> {
+  const url = `${API_URL}/api/kide-time`
+  const res = await fetch(url)
+  if (!res.ok) return { offsetMs: 0 }
+  const data = await res.json() as { offsetMs?: number }
+  return { offsetMs: data.offsetMs ?? 0 }
+}
+
+/**
  * Score a batch of events for resell potential.
  */
 export async function scoreEvents(events: EventFeatures[]): Promise<ScorerResponse> {
