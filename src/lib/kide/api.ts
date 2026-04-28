@@ -5,7 +5,7 @@ import type {
   EventResponse,
   ReserveResponse,
   ValidateTokenResponse,
-  BackendStatusResponse,
+  DeobfuscateResponse,
   EventFeatures,
   ScorerResponse,
   ScanResponse,
@@ -76,8 +76,8 @@ export async function addToCart(
 /**
  * Check backend readiness and warm up session.
  */
-export async function fetchExtraProperties(): Promise<BackendStatusResponse> {
-  return apiCall<BackendStatusResponse>('/api/deobfuscate', {})
+export async function fetchExtraProperties(): Promise<DeobfuscateResponse> {
+  return apiCall<DeobfuscateResponse>('/api/deobfuscate', {})
 }
 
 /**

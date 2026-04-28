@@ -47,8 +47,10 @@ export type ValidateTokenResponse = {
   }
 }
 
-export type BackendStatusResponse = {
-  ready: boolean
+export type DeobfuscateResponse = {
+  hash: string
+  headerKey: string
+  extractedAt: string
   cached: boolean
 }
 
