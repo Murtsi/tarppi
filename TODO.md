@@ -31,7 +31,7 @@ Viimeisin tarkistus: 2026-04-19 (koko codebasen skannaus + visuaalinen UI-audito
 - [x] **Komento-palette: pikanäppäin `N` avaa paletin vahingossa** — Korjattu: N-pikanäppäin tarkistaa nyt `e.target.tagName`, jottei inputissa kirjoittaessa avaa palettia.
 - [x] **CityPicker: "Kaikkialla"-nollaus ei toimi loogisesti** — Korjattu: osana P0-korjausta. `runScan` ei enää ohita tyhjää kaupunkia.
 - [ ] **Token-opas modaalina** — Token-ohjeistus on nyt pieni 4-askelen teksti asetuksissa. Selkeä erillinen opas/modaali 6 askeleella ja kuvilla auttaisi vähemmän teknisiä käyttäjiä.
-- [ ] **"lastUpdatedLabel" ei päivity reaaliaikaisesti** — `lastUpdatedLabel` on `useMemo` joka riippuu `lastScanAt`:sta, mutta arvo lasketaan vain kerran ja pysyy jäädytettynä. Tarvitaan `useTick()`-hook päivittämään "x s/min sitten" -teksti sekunnin välein.
+- [x] **"lastUpdatedLabel" ei päivity reaaliaikaisesti** — Korjattu: `labelTick`-state + `useTick()`-hook päivittää laskurin sekunnin välein.
 - [ ] **Lokipaneeli: virheloki ei erotu riittävästi** — "Skannaus epäonnistui: HTTP 500" näkyy lokissa, mutta teksti on small-caps monospace eikä erotu helposti muista logiriveistä. Voisi lisätä taustavärin tai ikonin virhelogeihin.
 
 ---
