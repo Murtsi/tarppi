@@ -111,6 +111,7 @@ export async function scanCity(city: string): Promise<ScanResponse> {
  * Extract event ID from URL (client-side utility).
  */
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const KIDE_MEDIA_BASE = 'https://storage.googleapis.com/kide.app.media/'
 
 export function extractEventId(input: string): string | null {
   const trimmed = input.trim()
@@ -135,6 +136,12 @@ export function maskToken(token: string): string {
   const trimmed = token.trim()
   if (trimmed.length <= 8) return '••••'
   return `${trimmed.slice(0, 4)}...${trimmed.slice(-4)}`
+}
+
+export function buildMediaUrl(mediaFilename?: string | null): string | null {
+  if (!mediaFilename) return null
+  if (mediaFilename.startsWith('http')) return mediaFilename
+  return `${KIDE_MEDIA_BASE}${mediaFilename}`
 }
 
 // ─── Auth API ───────────────────────────────────────────────────────────────

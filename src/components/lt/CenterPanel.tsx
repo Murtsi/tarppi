@@ -34,10 +34,11 @@ export default function CenterPanel(p: Props) {
   const [histOpen, setHistOpen] = useState(false)
 
   const filtered = useMemo(() => {
+    const liveEvents = p.events.filter((e) => e.sales_status !== 'ended' && e.sales_status !== 'sold_out')
     if (tab === 'top10') {
-      return [...p.events].sort((a, b) => b.resell_score - a.resell_score).slice(0, 10)
+      return [...liveEvents].sort((a, b) => b.resell_score - a.resell_score).slice(0, 10)
     }
-    const byTab = tab === 'all' ? p.events : p.events.filter((e) => e.decision.toLowerCase() === tab)
+    const byTab = tab === 'all' ? liveEvents : liveEvents.filter((e) => e.decision.toLowerCase() === tab)
     return [...byTab].sort((a, b) => {
       if (sort === 'name') return a.name.localeCompare(b.name)
       if (sort === 'price') return (a.base_price_eur ?? 0) - (b.base_price_eur ?? 0)

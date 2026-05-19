@@ -240,14 +240,6 @@ export default function RightPanel(p: Props) {
           </div>
         )}
 
-        {ev?.reason && (
-          <div style={{ padding: '12px 16px 0' }}>
-            <div className="lt-reason" style={{ borderLeftColor: col, background: 'rgba(255,255,255,0.03)' }}>
-              {ev.reason}
-            </div>
-          </div>
-        )}
-
         <div style={{ padding: '16px 16px 0' }}>
           <Lbl>Lipputyypit</Lbl>
           {!variants.length && !p.detailLoading && !p.detailError && (
