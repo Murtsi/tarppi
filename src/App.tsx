@@ -219,6 +219,15 @@ export default function App() {
         setLandedCount((n) => n + 1)
         return true
       }
+
+      if (
+        r.message.includes('Variant not available')
+        || r.message.includes('Invalid inventory ID')
+        || r.message.includes('Token validation failed')
+      ) {
+        fetchExtraProperties().catch(() => {})
+      }
+
       if (r.retryAfterMs && r.retryAfterMs > 0) {
         pushLog('warn', `Rate limited — odotan ${Math.round(r.retryAfterMs / 1000)}s`)
         await new Promise((res) => setTimeout(res, r.retryAfterMs!))
@@ -309,6 +318,13 @@ export default function App() {
           try {
             const qty = Math.min(params.quantity, variant.availability)
             const landed = await tryCart(qty)
+            if (landed) break
+          } catch (err) {
+            pushLog('err', `Varausvirhe: ${err instanceof Error ? err.message : 'tuntematon'}`)
+          }
+        } else if (!det.product.salesEnded && (det.product.timeUntilSalesStart ?? 0) <= 0) {
+          try {
+            const landed = await tryCart(params.quantity)
             if (landed) break
           } catch (err) {
             pushLog('err', `Varausvirhe: ${err instanceof Error ? err.message : 'tuntematon'}`)
