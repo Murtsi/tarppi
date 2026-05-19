@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { C, F, evGlyph } from '../../lib/lt/tokens'
 import { Dot, Glyph, Kbd, Pill } from '../../lib/lt/primitives'
 import type { ScoredEvent } from '../../lib/kide/types'
@@ -28,42 +28,64 @@ type Props = {
   onRescan: () => void
 }
 
+function finalDecision(event: ScoredEvent): 'BUY' | 'MAYBE' | 'SKIP' {
+  return event.ai_score?.label ?? event.decision
+}
+
+function decisionColor(decision: 'BUY' | 'MAYBE' | 'SKIP'): string {
+  if (decision === 'BUY') return C.buy
+  if (decision === 'MAYBE') return C.maybe
+  return C.skip
+}
+
+function isVisibleEvent(event: ScoredEvent): boolean {
+  if (event.sales_status === 'ended' || event.sales_status === 'sold_out') return false
+  if ((event.availability_pct ?? 100) <= 0 && event.sales_status !== 'upcoming') return false
+  return true
+}
+
 export default function CenterPanel(p: Props) {
   const [tab, setTab] = useState<Tab>('all')
   const [sort, setSort] = useState<SortKey>('score')
   const [histOpen, setHistOpen] = useState(false)
 
+  const visibleEvents = useMemo(() => p.events.filter(isVisibleEvent), [p.events])
+
   const filtered = useMemo(() => {
-    const liveEvents = p.events.filter((e) => e.sales_status !== 'ended' && e.sales_status !== 'sold_out')
     if (tab === 'top10') {
-      return [...liveEvents].sort((a, b) => b.resell_score - a.resell_score).slice(0, 10)
+      return [...visibleEvents].sort((a, b) => b.resell_score - a.resell_score).slice(0, 10)
     }
-    const byTab = tab === 'all' ? liveEvents : liveEvents.filter((e) => e.decision.toLowerCase() === tab)
+
+    const byTab = tab === 'all'
+      ? visibleEvents
+      : visibleEvents.filter((e) => finalDecision(e).toLowerCase() === tab)
+
     return [...byTab].sort((a, b) => {
-      if (sort === 'name') return a.name.localeCompare(b.name)
+      if (sort === 'name') return a.name.localeCompare(b.name, 'fi')
       if (sort === 'price') return (a.base_price_eur ?? 0) - (b.base_price_eur ?? 0)
       return b.resell_score - a.resell_score
     })
-  }, [p.events, tab, sort])
+  }, [visibleEvents, tab, sort])
 
   const histogram = useMemo(() => {
     const buckets = Array.from({ length: 10 }, (_, i) => ({ min: i * 10, buy: 0, maybe: 0, skip: 0, total: 0 }))
-    for (const ev of p.events) {
+    for (const ev of visibleEvents) {
       const idx = Math.min(9, Math.floor(ev.resell_score / 10))
-      const key = ev.decision.toLowerCase() as 'buy' | 'maybe' | 'skip'
+      const key = finalDecision(ev).toLowerCase() as 'buy' | 'maybe' | 'skip'
       buckets[idx][key]++
       buckets[idx].total++
     }
     return buckets
-  }, [p.events])
+  }, [visibleEvents])
+
   const histMax = useMemo(() => Math.max(1, ...histogram.map((b) => b.total)), [histogram])
 
   const counts = useMemo(() => ({
-    all: p.events.length,
-    buy: p.events.filter((e) => e.decision === 'BUY').length,
-    maybe: p.events.filter((e) => e.decision === 'MAYBE').length,
-    skip: p.events.filter((e) => e.decision === 'SKIP').length,
-  }), [p.events])
+    all: visibleEvents.length,
+    buy: visibleEvents.filter((e) => finalDecision(e) === 'BUY').length,
+    maybe: visibleEvents.filter((e) => finalDecision(e) === 'MAYBE').length,
+    skip: visibleEvents.filter((e) => finalDecision(e) === 'SKIP').length,
+  }), [visibleEvents])
 
   return (
     <div className="lt-center">
@@ -71,7 +93,7 @@ export default function CenterPanel(p: Props) {
         <button className="lt-cmdfield" onClick={p.onOpenPalette}>
           <span style={{ color: C.inkMuted, fontSize: 13 }}>⌕</span>
           <span style={{ fontFamily: F.sans, fontSize: 13, color: C.inkSoft }}>
-            Etsi tapahtumia, liitä URL tai kirjoita komento…
+            Etsi tapahtumia, liitä URL tai kirjoita komento...
           </span>
           <span style={{ flex: 1 }} />
           <Kbd>Ctrl+K</Kbd>
@@ -84,7 +106,7 @@ export default function CenterPanel(p: Props) {
               {p.loading ? 'SKANNAUS' : 'LIVE'}
             </span>
           </span>
-          {typeof p.avgLatencyMs === 'number' && <span>⌀ {p.avgLatencyMs} ms</span>}
+          {typeof p.avgLatencyMs === 'number' && <span>⌛ {p.avgLatencyMs} ms</span>}
           <span>{p.landedCount} onnistumista</span>
           <Pill>FI</Pill>
         </div>
@@ -96,7 +118,7 @@ export default function CenterPanel(p: Props) {
             Lipputerminaali
           </div>
           <div style={{ fontFamily: F.sans, fontSize: 13, color: C.inkSoft, marginTop: 6 }}>
-            {p.city || '—'} · {p.events.length} tapahtumaa · {p.lastUpdatedLabel}
+            {p.city || '—'} · {visibleEvents.length} tapahtumaa · {p.lastUpdatedLabel}
           </div>
         </div>
         <span style={{ flex: 1 }} />
@@ -118,11 +140,11 @@ export default function CenterPanel(p: Props) {
 
       <div className="lt-tabrow">
         {([
-          { k: 'all',   l: 'Kaikki',  n: counts.all },
-          { k: 'buy',   l: 'Osta',    n: counts.buy, c: C.buy },
-          { k: 'maybe', l: 'Ehkä',    n: counts.maybe, c: C.maybe },
-          { k: 'skip',  l: 'Ohita',   n: counts.skip, c: C.skip },
-          { k: 'top10', l: 'Top 10',  n: Math.min(10, counts.all) },
+          { k: 'all', l: 'Kaikki', n: counts.all },
+          { k: 'buy', l: 'Osta', n: counts.buy, c: C.buy },
+          { k: 'maybe', l: 'Ehkä', n: counts.maybe, c: C.maybe },
+          { k: 'skip', l: 'Ohita', n: counts.skip, c: C.skip },
+          { k: 'top10', l: 'Top 10', n: Math.min(10, counts.all) },
         ] as const).map((t) => (
           <button
             key={t.k}
@@ -145,12 +167,12 @@ export default function CenterPanel(p: Props) {
         </button>
       </div>
 
-      {p.events.length > 0 && (
-        <div className="lt-histogram" onClick={() => setHistOpen((o) => !o)} title={histOpen ? 'Piilota jakauma' : 'Näytä pisteet-jakauma'}>
+      {visibleEvents.length > 0 && (
+        <div className="lt-histogram" onClick={() => setHistOpen((o) => !o)} title={histOpen ? 'Piilota jakauma' : 'Näytä pistejakauma'}>
           {histogram.map((b, i) => {
             const domColor = b.buy >= b.maybe && b.buy >= b.skip ? C.buy
-                           : b.maybe > b.buy && b.maybe >= b.skip ? C.maybe
-                           : C.skip
+              : b.maybe > b.buy && b.maybe >= b.skip ? C.maybe
+                : C.skip
             return (
               <div key={i} className="lt-histogram__col">
                 {histOpen && (
@@ -191,20 +213,21 @@ export default function CenterPanel(p: Props) {
         {filtered.length === 0 && (
           <div style={{ padding: '32px 20px', color: C.inkMuted, fontFamily: F.mono, fontSize: 11, textAlign: 'center' }}>
             {p.loading
-              ? 'Skannataan…'
+              ? 'Skannataan...'
               : p.scanError
-              ? `Skannaus epäonnistui: ${p.scanError}. Tarkista backend-yhteys tai yritä uudelleen.`
-              : 'Ei tapahtumia. Valitse kaupunki yläreunasta.'}
+                ? `Skannaus epäonnistui: ${p.scanError}. Tarkista backend-yhteys tai yritä uudelleen.`
+                : 'Ei tapahtumia. Valitse kaupunki yläreunasta.'}
           </div>
         )}
 
         {filtered.map((ev) => {
           const active = p.activeId === ev.event_id
-          const col = ev.decision === 'BUY' ? C.buy : ev.decision === 'MAYBE' ? C.maybe : C.skip
-          const availPct = (ev.availability_pct ?? 0) / 100
-          const buyP = ev.ai_score?.buy_probability ?? (ev.decision === 'BUY' ? 0.7 : ev.decision === 'MAYBE' ? 0.3 : 0.1)
-          const maybeP = ev.ai_score?.maybe_probability ?? (ev.decision === 'MAYBE' ? 0.5 : 0.2)
-          const skipP = ev.ai_score?.skip_probability ?? (1 - buyP - maybeP)
+          const final = finalDecision(ev)
+          const col = decisionColor(final)
+          const availPct = Math.max(0, Math.min(100, ev.availability_pct ?? 0))
+          const buyP = ev.ai_score?.buy_probability ?? (final === 'BUY' ? 0.7 : final === 'MAYBE' ? 0.3 : 0.1)
+          const maybeP = ev.ai_score?.maybe_probability ?? (final === 'MAYBE' ? 0.5 : 0.2)
+          const skipP = ev.ai_score?.skip_probability ?? Math.max(0, 1 - buyP - maybeP)
 
           return (
             <div
@@ -226,8 +249,8 @@ export default function CenterPanel(p: Props) {
                         letterSpacing: '0.08em',
                         padding: '1px 5px',
                         borderRadius: 3,
-                        border: `1px solid currentColor`,
-                        color: ev.ai_score.label === 'BUY' ? C.buy : ev.ai_score.label === 'MAYBE' ? C.maybe : C.skip,
+                        border: '1px solid currentColor',
+                        color: col,
                         opacity: 0.8,
                       }}
                     >
@@ -248,13 +271,13 @@ export default function CenterPanel(p: Props) {
                   <div
                     className="lt-bar__fill"
                     style={{
-                      width: `${availPct * 100}%`,
-                      background: availPct < 0.05 ? C.skip : availPct < 0.3 ? C.maybe : C.accentDim,
+                      width: `${availPct}%`,
+                      background: availPct <= 5 ? C.skip : availPct < 30 ? C.maybe : C.accentDim,
                     }}
                   />
                 </div>
                 <div style={{ fontFamily: F.mono, fontSize: 10, color: C.inkMuted, marginTop: 3 }}>
-                  {typeof ev.availability_pct === 'number' ? `${Math.round(ev.availability_pct)}%` : '—'}
+                  {typeof ev.availability_pct === 'number' ? `${Math.round(availPct)}%` : '—'}
                 </div>
               </div>
               <div style={{

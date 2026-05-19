@@ -1,6 +1,3 @@
-/**
- * Frontend API client — all requests go through the backend.
- */
 import type {
   EventResponse,
   ReserveResponse,
@@ -15,6 +12,8 @@ import type {
 } from './types'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
+const KIDE_MEDIA_BASE = 'https://storage.googleapis.com/kide.app.media/'
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 async function apiCall<T>(path: string, body: Record<string, unknown>): Promise<T> {
   const url = `${API_URL}${path}`
@@ -35,32 +34,18 @@ async function apiCall<T>(path: string, body: Record<string, unknown>): Promise<
   return response.json() as Promise<T>
 }
 
-// ─── Public API ─────────────────────────────────────────────────────────────
-
-/**
- * Fetch event details and ticket variants from the backend.
- */
 export async function fetchEventProducts(eventUrl: string): Promise<EventResponse> {
   return apiCall<EventResponse>('/api/event', { eventUrl })
 }
 
-/**
- * Fetch event detail by event ID (for scorer expanded view).
- */
 export async function fetchEventDetail(eventId: string): Promise<EventResponse> {
   return apiCall<EventResponse>('/api/event', { eventUrl: `https://kide.app/events/${eventId}` })
 }
 
-/**
- * Validate a Kide.app bearer token via the backend.
- */
 export async function validateToken(token: string): Promise<ValidateTokenResponse> {
   return apiCall<ValidateTokenResponse>('/api/validate-token', { token })
 }
 
-/**
- * Add tickets to cart via the backend (proxied to Kide.app).
- */
 export async function addToCart(
   token: string,
   variantId: string,
@@ -73,18 +58,10 @@ export async function addToCart(
   })
 }
 
-/**
- * Check backend readiness and warm up session.
- */
 export async function fetchExtraProperties(): Promise<DeobfuscateResponse> {
   return apiCall<DeobfuscateResponse>('/api/deobfuscate', {})
 }
 
-/**
- * Fetch Kide.app server time to compute a clock delta.
- * offsetMs = kideMs - localMs. Add this to Date.now() before computing
- * how long until sales open so the countdown fires against Kide's clock.
- */
 export async function fetchKideTime(): Promise<{ offsetMs: number }> {
   const url = `${API_URL}/api/kide-time`
   const res = await fetch(url)
@@ -93,30 +70,19 @@ export async function fetchKideTime(): Promise<{ offsetMs: number }> {
   return { offsetMs: data.offsetMs ?? 0 }
 }
 
-/**
- * Score a batch of events for resell potential.
- */
 export async function scoreEvents(events: EventFeatures[]): Promise<ScorerResponse> {
   return apiCall<ScorerResponse>('/api/score', { events })
 }
 
-/**
- * Scan events by city, extract features, and score them.
- */
 export async function scanCity(city: string): Promise<ScanResponse> {
   return apiCall<ScanResponse>('/api/scan', { city, productType: 1 })
 }
-
-/**
- * Extract event ID from URL (client-side utility).
- */
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-const KIDE_MEDIA_BASE = 'https://storage.googleapis.com/kide.app.media/'
 
 export function extractEventId(input: string): string | null {
   const trimmed = input.trim()
   if (!trimmed) return null
   if (UUID_RE.test(trimmed)) return trimmed
+
   try {
     const url = new URL(trimmed)
     const segments = url.pathname.split('/').filter(Boolean)
@@ -129,9 +95,6 @@ export function extractEventId(input: string): string | null {
   }
 }
 
-/**
- * Mask a token for display: first4...last4
- */
 export function maskToken(token: string): string {
   const trimmed = token.trim()
   if (trimmed.length <= 8) return '••••'
@@ -144,18 +107,10 @@ export function buildMediaUrl(mediaFilename?: string | null): string | null {
   return `${KIDE_MEDIA_BASE}${mediaFilename}`
 }
 
-// ─── Auth API ───────────────────────────────────────────────────────────────
-
-/**
- * Admin login — returns JWT token.
- */
 export async function adminLogin(username: string, password: string): Promise<AuthLoginResponse> {
   return apiCall<AuthLoginResponse>('/api/auth/login', { username, password })
 }
 
-/**
- * Verify admin JWT token.
- */
 export async function adminVerify(token: string): Promise<AuthVerifyResponse> {
   const url = `${API_URL}/api/auth/verify`
   const response = await fetch(url, {
@@ -165,12 +120,6 @@ export async function adminVerify(token: string): Promise<AuthVerifyResponse> {
   return response.json() as Promise<AuthVerifyResponse>
 }
 
-// ─── Event Discussion API ────────────────────────────────────────────────────
-
-/**
- * Fetch a Finnish-language structured analysis for a scored event.
- * On-demand only — called when the user clicks "Analysoi".
- */
 export async function discussEvent(event: Record<string, unknown>): Promise<DiscussResponse> {
   return apiCall<DiscussResponse>('/api/discuss', { event })
 }
