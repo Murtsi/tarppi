@@ -6,6 +6,24 @@ import type { SnipeSession } from '../../lib/lt/types'
 
 const KIDE_CART_URL = 'https://kide.app/basket'
 
+function formatMoney(value?: number | null): string {
+  if (typeof value !== 'number') return '—'
+  return `${value.toFixed(value % 1 === 0 ? 0 : 2).replace('.', ',')} €`
+}
+
+function formatDateTime(value?: string): string {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleString('fi-FI', {
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 type Props = {
   event?: ScoredEvent
   detail?: EventResponse | null
@@ -63,6 +81,7 @@ export default function RightPanel(p: Props) {
   const tUntil = p.detail?.product.timeUntilSalesStart ?? 0
   const isUpcoming = tUntil > 0
   const salesEnded = p.detail?.product.salesEnded ?? false
+  const coverImage = ev?.media_url ?? p.detail?.product.mediaFilename
 
   const canStart =
     p.tokenValid &&
@@ -148,7 +167,7 @@ export default function RightPanel(p: Props) {
       <div className="lt-right__scroll">
         <div style={{ padding: 16, paddingBottom: 0 }}>
           <div className="lt-cover">
-            {ev?.media_url && <img src={ev.media_url} alt="" className="lt-cover__img" />}
+            {coverImage && <img src={coverImage} alt="" className="lt-cover__img" />}
             <div className="lt-cover__title">{coverTitle}</div>
             {ev && (
               <div className="lt-cover__badge">
@@ -183,19 +202,19 @@ export default function RightPanel(p: Props) {
 
         <div style={{ padding: '14px 16px 0', fontFamily: F.mono, fontSize: 11, color: C.inkSoft, lineHeight: 1.7 }}>
           <div><span style={{ color: C.inkMuted }}>järjestäjä</span> {ev?.organiser ?? '—'}</div>
-          <div><span style={{ color: C.inkMuted }}>aika</span> {ev?.start_time ? new Date(ev.start_time).toLocaleString('fi-FI') : '—'}</div>
+          <div><span style={{ color: C.inkMuted }}>aika</span> {formatDateTime(ev?.start_time)}</div>
           <div><span style={{ color: C.inkMuted }}>kaupunki</span> {ev?.city ?? '—'}</div>
           <div>
             <span style={{ color: C.inkMuted }}>hinta</span>{' '}
-            {ev?.base_price_eur ?? '—'}
-            {ev?.max_price_eur && ev.max_price_eur !== ev.base_price_eur ? `–${ev.max_price_eur}` : ''} €
+            {formatMoney(ev?.base_price_eur)}
+            {ev?.max_price_eur && ev.max_price_eur !== ev.base_price_eur ? ` – ${formatMoney(ev.max_price_eur)}` : ''}
           </div>
         </div>
 
         {ev?.reason && (
           <div style={{ padding: '12px 16px 0' }}>
             <div className="lt-reason" style={{ borderLeftColor: col, background: col === C.buy ? 'rgba(74,222,128,0.08)' : col === C.maybe ? 'rgba(251,191,36,0.08)' : 'rgba(248,113,113,0.08)' }}>
-              „{ev.reason}"
+              {ev.reason}
             </div>
           </div>
         )}
@@ -230,6 +249,11 @@ export default function RightPanel(p: Props) {
 
         <div style={{ padding: '16px 16px 0' }}>
           <Lbl>Lipputyypit</Lbl>
+          {!variants.length && !p.detailLoading && !p.detailError && (
+            <div style={{ color: C.inkMuted, fontFamily: F.mono, fontSize: 11, padding: '10px 0' }}>
+              Ei lipputietoja.
+            </div>
+          )}
           {p.detailLoading && (
             <div style={{ color: C.inkMuted, fontFamily: F.mono, fontSize: 11, padding: '10px 0' }}>
               Ladataan lipputyyppejä…
@@ -260,15 +284,15 @@ export default function RightPanel(p: Props) {
                       {isUpcoming
                         ? 'Ennakkomyynti — seuranta odottaa'
                         : soldOut
-                        ? 'LOPPUUNMYYTY'
+                        ? 'Loppuunmyyty'
                         : `${v.availability} jäljellä · enintään ${v.productVariantMaximumReservableQuantity ?? 10}`}
                     </div>
                   </div>
                   <div style={{ fontFamily: F.mono, fontSize: 14, fontWeight: 600 }}>
                     {typeof v.price === 'number'
-                      ? `${(v.price / 100).toFixed(2).replace('.', ',')}€`
+                      ? formatMoney(v.price / 100)
                       : typeof v.pricePerItem === 'number'
-                      ? `${(v.pricePerItem / 100).toFixed(2).replace('.', ',')}€`
+                      ? formatMoney(v.pricePerItem / 100)
                       : '—'}
                   </div>
                 </button>
