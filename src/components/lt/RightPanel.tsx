@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { C, F } from '../../lib/lt/tokens'
 import { Kbd, Lbl, Pill } from '../../lib/lt/primitives'
+import { buildMediaUrl } from '../../lib/kide/api'
 import type { ScoredEvent, EventResponse, KideVariant } from '../../lib/kide/types'
 import type { SnipeSession } from '../../lib/lt/types'
 
@@ -81,7 +82,7 @@ export default function RightPanel(p: Props) {
   const tUntil = p.detail?.product.timeUntilSalesStart ?? 0
   const isUpcoming = tUntil > 0
   const salesEnded = p.detail?.product.salesEnded ?? false
-  const coverImage = ev?.media_url ?? p.detail?.product.mediaFilename
+  const coverImage = ev?.media_url ?? buildMediaUrl(p.detail?.product.mediaFilename)
 
   const canStart =
     p.tokenValid &&
@@ -211,14 +212,6 @@ export default function RightPanel(p: Props) {
           </div>
         </div>
 
-        {ev?.reason && (
-          <div style={{ padding: '12px 16px 0' }}>
-            <div className="lt-reason" style={{ borderLeftColor: col, background: col === C.buy ? 'rgba(74,222,128,0.08)' : col === C.maybe ? 'rgba(251,191,36,0.08)' : 'rgba(248,113,113,0.08)' }}>
-              {ev.reason}
-            </div>
-          </div>
-        )}
-
         {feat && (
           <div style={{ padding: '16px 16px 0' }}>
             <Lbl>Tekoälysignaalit</Lbl>
@@ -243,6 +236,14 @@ export default function RightPanel(p: Props) {
                   </div>
                 )
               })}
+            </div>
+          </div>
+        )}
+
+        {ev?.reason && (
+          <div style={{ padding: '12px 16px 0' }}>
+            <div className="lt-reason" style={{ borderLeftColor: col, background: 'rgba(255,255,255,0.03)' }}>
+              {ev.reason}
             </div>
           </div>
         )}
