@@ -133,7 +133,7 @@ export default function App() {
   }, [])
 
   // ─── server-side snipe job polling ──────────────────────────────────────
-  // Polls the Railway-resident snipe job every 2 s when one is active.
+  // Polls the server-side snipe job every 2 s when one is active.
   // If the server lands the cart while the browser is open, we mirror it here.
   useEffect(() => {
     if (!serverJobId) return
