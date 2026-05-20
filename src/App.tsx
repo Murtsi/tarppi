@@ -280,11 +280,11 @@ export default function App() {
 
           // Adaptive polling: finer steps close to open time
           const adaptiveDelay =
-            tUntil <= 2   ? pollMs :
-            tUntil <= 5   ? 200 :
-            tUntil <= 15  ? 500 :
-            tUntil <= 60  ? 2000 :
-            tUntil <= 300 ? 10_000 : 30_000
+            tUntil <= 2   ? 100 :
+            tUntil <= 5   ? 150 :
+            tUntil <= 15  ? 300 :
+            tUntil <= 60  ? 1000 :
+            tUntil <= 300 ? 5000 : 20_000
           await new Promise((r) => setTimeout(r, adaptiveDelay))
           continue
         }
