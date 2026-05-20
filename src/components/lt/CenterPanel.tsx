@@ -39,8 +39,12 @@ function decisionColor(decision: 'BUY' | 'MAYBE' | 'SKIP'): string {
 }
 
 function isVisibleEvent(event: ScoredEvent): boolean {
+  const now = Date.now()
+  const startTime = event.start_time ? Date.parse(event.start_time) : Number.NaN
+
   if (event.sales_status === 'ended' || event.sales_status === 'sold_out') return false
   if ((event.availability_pct ?? 100) <= 0 && event.sales_status !== 'upcoming') return false
+  if (!Number.isNaN(startTime) && startTime < now - 24 * 60 * 60 * 1000) return false
   if ((event.availability_pct ?? 100) <= 5 && finalDecision(event) === 'SKIP' && event.sales_status !== 'upcoming') return false
   return true
 }
