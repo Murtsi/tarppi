@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   addToCart,
+  cancelServerSnipe,
+  createServerSnipe,
   extractEventId,
   fetchEventDetail,
   fetchExtraProperties,
   fetchKideTime,
+  getServerSnipe,
   maskToken,
   scanCity,
   validateToken,
@@ -72,6 +75,8 @@ export default function App() {
   const [logs, setLogs] = useState<LogLine[]>([])
   const [latencies, setLatencies] = useState<number[]>([])
   const [landedCount, setLandedCount] = useState<number>(() => Number(readLS('kh.landed', '0')))
+  // server-side snipe job (survives browser close)
+  const [serverJobId, setServerJobId] = useState<string | null>(() => readLS('kh.serverJobId', '') || null)
 
   // tick for reactive "last updated" label (every 15s)
   const [labelTick, setTick] = useState(0)
@@ -89,6 +94,7 @@ export default function App() {
   useEffect(() => { writeLS('kh.city', city) }, [city])
   useEffect(() => { writeLS('kh.landed', String(landedCount)) }, [landedCount])
   useEffect(() => { writeLS('kh.proxy', proxyUrl) }, [proxyUrl])
+  useEffect(() => { writeLS('kh.serverJobId', serverJobId ?? '') }, [serverJobId])
 
   // Sync clock against Kide.app server time on mount
   useEffect(() => {
@@ -125,6 +131,31 @@ export default function App() {
   const pushLog = useCallback((level: LogLine['level'], text: string) => {
     setLogs((prev) => [{ id: uid(), ts: nowStr(), level, text }, ...prev].slice(0, MAX_LOG))
   }, [])
+
+  // ─── server-side snipe job polling ──────────────────────────────────────
+  // Polls the Railway-resident snipe job every 2 s when one is active.
+  // If the server lands the cart while the browser is open, we mirror it here.
+  useEffect(() => {
+    if (!serverJobId) return
+    const id = setInterval(async () => {
+      try {
+        const job = await getServerSnipe(serverJobId)
+        if (job.status === 'success') {
+          const qty = job.quantity ?? 1
+          pushLog('ok', `PALVELIN ONNISTUI — ${qty} kpl lisätty koriin (varmuusvaraus)`)
+          setSnipe((s) => (s ? { ...s, phase: 'landed' as SnipePhase, quantity: qty } : s))
+          setLandedCount((n) => n + 1)
+          setServerJobId(null)
+        } else if (job.status === 'failed' || job.status === 'cancelled') {
+          pushLog('warn', `Palvelinseuranta päättyi: ${job.message ?? job.status}`)
+          setServerJobId(null)
+        }
+      } catch {
+        // Network blip — keep polling
+      }
+    }, 2000)
+    return () => clearInterval(id)
+  }, [serverJobId, pushLog])
 
   const runScan = useCallback(async (target?: string) => {
     const c = target ?? city
@@ -174,6 +205,11 @@ export default function App() {
     if (snipeRunRef.current) snipeRunRef.current.cancelled = true
     setSnipe((s) => (s ? { ...s, phase: 'error' as SnipePhase, message: 'Pysäytetty' } : s))
     setLatencies([])
+    // Also cancel the server-side job if one is active
+    setServerJobId((prev) => {
+      if (prev) cancelServerSnipe(prev).catch(() => {})
+      return null
+    })
   }, [])
 
   const startSnipe = useCallback(async (params: { variantId: string; variantName: string; quantity: number }) => {
@@ -207,6 +243,25 @@ export default function App() {
     pushLog('ok', `Seuranta alkoi · ${eventName} · ${params.variantName} · ${params.quantity}×`)
     const run = { cancelled: false }
     snipeRunRef.current = run
+
+    // ─ Register server-side snipe job (runs on Railway even if browser closes)
+    const det = detailRef.current
+    const salesStartMs = det?.product.dateSalesFrom
+      ? new Date(det.product.dateSalesFrom).getTime()
+      : det?.product.timeUntilSalesStart && det.product.timeUntilSalesStart > 0
+        ? Date.now() + det.product.timeUntilSalesStart * 1000
+        : undefined
+    createServerSnipe(token.trim(), params.variantId, params.quantity, salesStartMs, activeId)
+      .then((job) => {
+        setServerJobId(job.jobId)
+        const whenStr = job.scheduledFor
+          ? `aukeaa ${new Date(job.scheduledFor + 1000).toLocaleTimeString('fi-FI')} — palvelin ampuu automaattisesti`
+          : 'palvelinseuranta aktiivinen'
+        pushLog('info', `Palvelinseuranta rekisteröity · ${whenStr}`)
+      })
+      .catch(() => {
+        pushLog('warn', 'Palvelinseurannan rekisteröinti epäonnistui — vain selain seuraa')
+      })
 
     let attempts = 0
     let didRefreshBeforeSale = false

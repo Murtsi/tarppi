@@ -9,6 +9,8 @@ import type {
   AuthLoginResponse,
   AuthVerifyResponse,
   DiscussResponse,
+  SnipeJobResponse,
+  CreateSnipeJobResponse,
 } from './types'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -122,4 +124,39 @@ export async function adminVerify(token: string): Promise<AuthVerifyResponse> {
 
 export async function discussEvent(event: Record<string, unknown>): Promise<DiscussResponse> {
   return apiCall<DiscussResponse>('/api/discuss', { event })
+}
+
+// ─── Server-side Snipe Jobs ──────────────────────────────────────────────────
+
+export async function createServerSnipe(
+  authorizationToken: string,
+  variantId: string,
+  quantity: number,
+  salesStartMs?: number,
+  eventId?: string,
+): Promise<CreateSnipeJobResponse> {
+  return apiCall<CreateSnipeJobResponse>('/api/snipe', {
+    authorizationToken,
+    variantId,
+    quantity,
+    ...(salesStartMs != null && { salesStartMs }),
+    ...(eventId && { eventId }),
+  })
+}
+
+export async function getServerSnipe(jobId: string): Promise<SnipeJobResponse> {
+  const url = `${API_URL}/api/snipe/${encodeURIComponent(jobId)}`
+  const response = await fetch(url)
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    const msg = (errorData as Record<string, string>).error || `HTTP ${response.status}`
+    throw new Error(msg)
+  }
+  return response.json() as Promise<SnipeJobResponse>
+}
+
+export async function cancelServerSnipe(jobId: string): Promise<{ success: boolean }> {
+  const url = `${API_URL}/api/snipe/${encodeURIComponent(jobId)}`
+  const response = await fetch(url, { method: 'DELETE' })
+  return response.json() as Promise<{ success: boolean }>
 }

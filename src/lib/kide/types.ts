@@ -162,6 +162,30 @@ export type ScanResponse = ScorerResponse & {
   city: string
 }
 
+// ─── Server-side Snipe Job Types ─────────────────────────────────────────────
+
+export type SnipeJobStatus = 'scheduled' | 'firing' | 'success' | 'failed' | 'cancelled'
+
+export type SnipeJobResponse = {
+  jobId: string
+  status: SnipeJobStatus
+  attempts: number
+  quantity?: number
+  scheduledFor?: number | null   // epoch ms
+  firedAt?: number | null
+  completedAt?: number | null
+  lastAttemptAt?: number | null
+  message?: string | null
+  result?: ReserveResponse | null
+}
+
+export type CreateSnipeJobResponse = {
+  success: boolean
+  jobId: string
+  scheduledFor?: number | null
+  status: SnipeJobStatus
+}
+
 // ─── Auth Types ──────────────────────────────────────────────────────────────
 
 export type AuthLoginResponse = {
