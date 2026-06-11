@@ -11,8 +11,9 @@ type Props = {
   pollMs: number
   fallbackMode: boolean
   notifyEnabled: boolean
+  telegramChatId: string
   proxyUrl: string
-  onSave: (next: { token: string; pollMs: number; fallbackMode: boolean; notifyEnabled: boolean; proxyUrl: string }) => void
+  onSave: (next: { token: string; pollMs: number; fallbackMode: boolean; notifyEnabled: boolean; telegramChatId: string; proxyUrl: string }) => void
   onValidate: (draftToken: string) => Promise<void>
 }
 
@@ -36,6 +37,7 @@ export default function TokenDrawer(p: Props) {
   const [pollMs, setPollMs] = useState(p.pollMs)
   const [fallback, setFallback] = useState(p.fallbackMode)
   const [notifyEnabled, setNotifyEnabled] = useState(p.notifyEnabled)
+  const [telegramChatId, setTelegramChatId] = useState(p.telegramChatId)
   const [proxyUrl, setProxyUrl] = useState(p.proxyUrl)
   const [validating, setValidating] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -46,9 +48,10 @@ export default function TokenDrawer(p: Props) {
       setPollMs(p.pollMs)
       setFallback(p.fallbackMode)
       setNotifyEnabled(p.notifyEnabled)
+      setTelegramChatId(p.telegramChatId)
       setProxyUrl(p.proxyUrl)
     }
-  }, [p.fallbackMode, p.notifyEnabled, p.open, p.pollMs, p.proxyUrl, p.token])
+  }, [p.fallbackMode, p.notifyEnabled, p.open, p.pollMs, p.proxyUrl, p.telegramChatId, p.token])
 
   // Escape käsitellään keskitetysti App.tsx:ssä, joten ei tarvita erillistä kuuntelijaa
 
@@ -162,6 +165,20 @@ export default function TokenDrawer(p: Props) {
             </label>
           </div>
 
+          <div style={{ marginBottom: 18 }}>
+            <Lbl>Telegram chat ID (valinnainen)</Lbl>
+            <input
+              type="text"
+              value={telegramChatId}
+              onChange={(e) => setTelegramChatId(e.target.value)}
+              placeholder="123456789 tai -100..."
+              className="lt-input"
+            />
+            <div style={{ fontFamily: F.mono, fontSize: 10, color: C.inkMuted, marginTop: 4, lineHeight: 1.6 }}>
+              Lähetä ensin viesti botille. Kun tähän on lisätty chat ID, saat viestin, kun liput menevät koriin.
+            </div>
+          </div>
+
           {/* Proxy URL */}
           <div style={{ marginBottom: 18 }}>
             <Lbl>Proxy URL (valinnainen)</Lbl>
@@ -209,7 +226,7 @@ export default function TokenDrawer(p: Props) {
           <button className="lt-btn lt-btn--ghost" onClick={p.onClose}>Peruuta</button>
           <button
             className="lt-btn lt-btn--primary"
-            onClick={() => { p.onSave({ token, pollMs, fallbackMode: fallback, notifyEnabled, proxyUrl }); p.onClose() }}
+            onClick={() => { p.onSave({ token, pollMs, fallbackMode: fallback, notifyEnabled, telegramChatId, proxyUrl }); p.onClose() }}
           >
             Tallenna
           </button>

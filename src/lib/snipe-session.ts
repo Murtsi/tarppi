@@ -47,3 +47,7 @@ export function writeStoredSnipeSession(session: SnipeSession, serverJobId: stri
 export function clearStoredSnipeSession(): void {
   try { localStorage.removeItem(ACTIVE_SNIPE_KEY) } catch { /* ignore */ }
 }
+
+export function snipeMatchesEvent(session: SnipeSession | null | undefined, eventId: string | undefined): boolean {
+  return Boolean(session && eventId && session.eventId === eventId)
+}

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { buildMediaUrl } from '../../lib/kide/api'
 import type { BackendHealthResponse, EventResponse, KideVariant, ScoredEvent } from '../../lib/kide/types'
 import type { LogLine, SnipeSession } from '../../lib/lt/types'
+import { KIDE_CHECKOUT_URL } from '../../lib/checkout'
+import { snipeMatchesEvent } from '../../lib/snipe-session'
 
 type BackendStatus = 'checking' | 'ready' | 'missing-config' | 'offline'
 type SortKey = 'score' | 'soon' | 'price'
@@ -38,7 +40,6 @@ type Props = {
   onStopSnipe: () => void
 }
 
-const KIDE_CART_URL = 'https://kide.app/basket'
 const EMPTY_VARIANTS: KideVariant[] = []
 
 function finalDecision(event?: ScoredEvent): 'BUY' | 'MAYBE' | 'SKIP' | undefined {
@@ -113,12 +114,13 @@ export default function SimpleDashboard(p: Props) {
   const [selectedVariantId, setSelectedVariantId] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [now, setNow] = useState(() => Date.now())
+  const snipeForActive = snipeMatchesEvent(p.snipe, p.activeId) ? p.snipe : null
 
   useEffect(() => {
-    if (p.snipe?.phase !== 'landed' || !p.snipe.paymentExpiresAt) return
+    if (snipeForActive?.phase !== 'landed' || !snipeForActive.paymentExpiresAt) return
     const timer = window.setInterval(() => setNow(Date.now()), 1_000)
     return () => window.clearInterval(timer)
-  }, [p.snipe?.paymentExpiresAt, p.snipe?.phase])
+  }, [snipeForActive?.paymentExpiresAt, snipeForActive?.phase])
 
   const variants = p.detail?.variants ?? EMPTY_VARIANTS
   const selectedVariant = useMemo(
@@ -160,11 +162,11 @@ export default function SimpleDashboard(p: Props) {
   const activeDecision = finalDecision(p.activeEvent)
   const salesUpcoming = (p.detail?.product.timeUntilSalesStart ?? 0) > 0
   const salesEnded = p.detail?.product.salesEnded ?? false
-  const activeSnipe = p.snipe && p.snipe.phase !== 'landed' && p.snipe.phase !== 'error'
+  const activeSnipe = snipeForActive && snipeForActive.phase !== 'landed' && snipeForActive.phase !== 'error'
   const canStart = Boolean(p.tokenValid && selectedVariant && !salesEnded && !activeSnipe)
   const coverImage = buildMediaUrl(p.detail?.product.mediaFilename) ?? p.activeEvent?.media_url ?? null
-  const paymentMsLeft = p.snipe?.phase === 'landed' && p.snipe.paymentExpiresAt
-    ? p.snipe.paymentExpiresAt - now
+  const paymentMsLeft = snipeForActive?.phase === 'landed' && snipeForActive.paymentExpiresAt
+    ? snipeForActive.paymentExpiresAt - now
     : null
 
   const submitUrl = () => {
@@ -291,9 +293,9 @@ export default function SimpleDashboard(p: Props) {
             <div className="simple-card__head">
               <div>
                 <h3>{p.activeEvent ? 'Tapahtuma' : 'Aloita tästä'}</h3>
-                <p>{statusText(p.snipe)}</p>
+                <p>{statusText(snipeForActive)}</p>
               </div>
-              {p.snipe && p.snipe.phase !== 'landed' && p.snipe.phase !== 'error' && (
+              {snipeForActive && snipeForActive.phase !== 'landed' && snipeForActive.phase !== 'error' && (
                 <button className="simple-button simple-button--danger" onClick={p.onStopSnipe}>Pysäytä</button>
               )}
             </div>
@@ -325,6 +327,12 @@ export default function SimpleDashboard(p: Props) {
 
                 {p.detailLoading && <div className="simple-empty"><strong>Ladataan lipputyyppejä...</strong></div>}
                 {p.detailError && <div className="simple-alert">{p.detailError}</div>}
+                {!p.detailLoading && !p.detailError && p.detail && variants.length === 0 && (
+                  <div className="simple-empty">
+                    <strong>Tälle tapahtumalle ei löytynyt varattavia lipputyyppejä.</strong>
+                    <span>Kide näyttää tapahtuman, mutta rajapinta ei anna lipputyyppejä. Kokeile myöhemmin uudelleen.</span>
+                  </div>
+                )}
 
                 {variants.length > 0 && (
                   <div className="simple-variants">
@@ -361,11 +369,11 @@ export default function SimpleDashboard(p: Props) {
                     <span>{quantity} kpl</span>
                     <button onClick={() => setQuantity((value) => Math.min(10, value + 1))}>+</button>
                   </div>
-                  {p.snipe?.phase === 'landed' ? (
+                  {snipeForActive?.phase === 'landed' ? (
                     <div className="simple-landed">
                       <strong>Liput ovat korissa.</strong>
                       <span>Maksa noin {paymentMsLeft != null ? formatCountdown(paymentMsLeft) : '25:00'} kuluessa.</span>
-                      <a className="simple-button simple-button--primary" href={KIDE_CART_URL} target="_blank" rel="noreferrer">Avaa kori</a>
+                      <a className="simple-button simple-button--primary" href={KIDE_CHECKOUT_URL} target="_blank" rel="noreferrer">Avaa kori</a>
                     </div>
                   ) : (
                     <button

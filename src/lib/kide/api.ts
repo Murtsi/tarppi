@@ -163,6 +163,7 @@ export async function createServerSnipe(
   salesStartMs?: number,
   eventId?: string,
   eventName?: string,
+  telegramChatId?: string,
 ): Promise<CreateSnipeJobResponse> {
   return apiCall<CreateSnipeJobResponse>('/api/snipe', {
     authorizationToken,
@@ -171,6 +172,7 @@ export async function createServerSnipe(
     ...(salesStartMs != null && { salesStartMs }),
     ...(eventId && { eventId }),
     ...(eventName && { eventName }),
+    ...(telegramChatId && { telegramChatId }),
   })
 }
 

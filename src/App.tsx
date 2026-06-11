@@ -59,6 +59,7 @@ export default function App() {
   const [pollMs, setPollMs] = useState<number>(() => Number(readLS('kh.pollMs', String(DEFAULT_POLL_MS))))
   const [fallbackMode, setFallbackMode] = useState<boolean>(() => readLS('kh.fallback', '1') === '1')
   const [notifyEnabled, setNotifyEnabledState] = useState<boolean>(() => notificationsEnabled())
+  const [telegramChatId, setTelegramChatId] = useState<string>(() => readLS('kh.telegramChatId', ''))
   const [proxyUrl, setProxyUrl] = useState<string>(() => readLS('kh.proxy', ''))
   const [city, setCity] = useState<string>(() => readLS('kh.city', DEFAULT_CITY))
 
@@ -140,6 +141,7 @@ export default function App() {
   useEffect(() => { writeLS('kh.city', city) }, [city])
   useEffect(() => { writeLS('kh.landed', String(landedCount)) }, [landedCount])
   useEffect(() => { writeLS('kh.proxy', proxyUrl) }, [proxyUrl])
+  useEffect(() => { writeLS('kh.telegramChatId', telegramChatId) }, [telegramChatId])
   useEffect(() => { writeLS('kh.serverJobId', serverJobId ?? '') }, [serverJobId])
   useEffect(() => { setNotificationsEnabled(notifyEnabled) }, [notifyEnabled])
   useEffect(() => {
@@ -390,7 +392,15 @@ export default function App() {
       notifyBrowser('Token vanhenee ennen myyntiä', 'Hae uusi Kide.app-token ennen kuin myynti aukeaa.')
     }
 
-    createServerSnipe(token.trim(), params.variantId, params.quantity, salesStartMs, activeId, eventName)
+    createServerSnipe(
+      token.trim(),
+      params.variantId,
+      params.quantity,
+      salesStartMs,
+      activeId,
+      eventName,
+      telegramChatId.trim() || undefined,
+    )
       .then((job) => {
         if (run.cancelled) {
           void cancelServerSnipe(job.jobId).catch(() => {})
@@ -574,7 +584,7 @@ export default function App() {
         throw err
       }
     }
-  }, [events, activeId, token, tokenValid, fallbackMode, pollMs, pushLog])
+  }, [events, activeId, token, tokenValid, fallbackMode, pollMs, telegramChatId, pushLog])
 
   // ─── event detail fetcher ───────────────────────────────────────────────
   const loadDetail = useCallback(async (id: string) => {
@@ -672,12 +682,14 @@ export default function App() {
         pollMs={pollMs}
         fallbackMode={fallbackMode}
         notifyEnabled={notifyEnabled}
+        telegramChatId={telegramChatId}
         proxyUrl={proxyUrl}
         onSave={(next) => {
           setToken(next.token)
           setPollMs(next.pollMs)
           setFallbackMode(next.fallbackMode)
           setNotifyEnabledState(next.notifyEnabled)
+          setTelegramChatId(next.telegramChatId)
           setProxyUrl(next.proxyUrl)
         }}
         onValidate={async (draftToken) => {

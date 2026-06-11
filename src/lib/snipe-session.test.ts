@@ -4,6 +4,7 @@ import {
   ACTIVE_SNIPE_KEY,
   clearStoredSnipeSession,
   readStoredSnipeSession,
+  snipeMatchesEvent,
   writeStoredSnipeSession,
 } from './snipe-session'
 import type { SnipeSession } from './lt/types'
@@ -56,4 +57,20 @@ test('clearStoredSnipeSession removes restored state', () => {
   clearStoredSnipeSession()
 
   assert.equal(readStoredSnipeSession(), null)
+})
+
+test('snipeMatchesEvent ignores restored sessions for another event', () => {
+  const session: SnipeSession = {
+    id: 's1',
+    eventId: 'event-1',
+    eventName: 'Testibileet',
+    quantity: 1,
+    phase: 'landed',
+    startedAt: 1,
+    attempts: 1,
+  }
+
+  assert.equal(snipeMatchesEvent(session, 'event-1'), true)
+  assert.equal(snipeMatchesEvent(session, 'event-2'), false)
+  assert.equal(snipeMatchesEvent(null, 'event-1'), false)
 })
