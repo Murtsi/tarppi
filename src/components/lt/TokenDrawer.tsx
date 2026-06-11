@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type ChangeEvent } from 'react'
 import { C, F } from '../../lib/lt/tokens'
 import { Lbl } from '../../lib/lt/primitives'
 
@@ -45,7 +45,7 @@ export default function TokenDrawer(p: Props) {
       setFallback(p.fallbackMode)
       setProxyUrl(p.proxyUrl)
     }
-  }, [p.open])
+  }, [p.fallbackMode, p.open, p.pollMs, p.proxyUrl, p.token])
 
   // Escape käsitellään keskitetysti App.tsx:ssä, joten ei tarvita erillistä kuuntelijaa
 
@@ -55,7 +55,7 @@ export default function TokenDrawer(p: Props) {
     try { await p.onValidate(token) } finally { setValidating(false) }
   }
 
-  const handleProxyFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProxyFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()

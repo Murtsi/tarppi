@@ -11,14 +11,27 @@ import type {
   DiscussResponse,
   SnipeJobResponse,
   CreateSnipeJobResponse,
+  BackendHealthResponse,
 } from './types'
+import { ApiConfigurationError, buildApiUrl, getApiConfig } from './api-config'
+export { ApiConfigurationError }
 
-const API_URL = import.meta.env.VITE_API_URL || ''
+const API_CONFIG = getApiConfig(import.meta.env.VITE_API_URL, import.meta.env.PROD)
+export const API_URL = API_CONFIG.apiUrl
 const KIDE_MEDIA_BASE = 'https://portalvhdsp62n0yt356llm.blob.core.windows.net/bailataan-mediaitems/'
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
+export function getApiStatus() {
+  return {
+    configured: API_CONFIG.configured,
+    apiUrl: API_CONFIG.apiUrl,
+    error: API_CONFIG.error,
+    isProduction: API_CONFIG.isProduction,
+  }
+}
+
 async function apiCall<T>(path: string, body: Record<string, unknown>): Promise<T> {
-  const url = `${API_URL}${path}`
+  const url = buildApiUrl(API_CONFIG, path)
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -65,11 +78,23 @@ export async function fetchExtraProperties(): Promise<DeobfuscateResponse> {
 }
 
 export async function fetchKideTime(): Promise<{ offsetMs: number }> {
-  const url = `${API_URL}/api/kide-time`
+  const url = buildApiUrl(API_CONFIG, '/api/kide-time')
   const res = await fetch(url)
   if (!res.ok) return { offsetMs: 0 }
   const data = await res.json() as { offsetMs?: number }
   return { offsetMs: data.offsetMs ?? 0 }
+}
+
+export async function fetchBackendHealth(): Promise<BackendHealthResponse> {
+  const response = await fetch(buildApiUrl(API_CONFIG, '/health'))
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    const msg = (errorData as Record<string, string>).error
+      || (errorData as Record<string, string>).message
+      || `HTTP ${response.status}`
+    throw new Error(msg)
+  }
+  return response.json() as Promise<BackendHealthResponse>
 }
 
 export async function scoreEvents(events: EventFeatures[]): Promise<ScorerResponse> {
@@ -114,7 +139,7 @@ export async function adminLogin(username: string, password: string): Promise<Au
 }
 
 export async function adminVerify(token: string): Promise<AuthVerifyResponse> {
-  const url = `${API_URL}/api/auth/verify`
+  const url = buildApiUrl(API_CONFIG, '/api/auth/verify')
   const response = await fetch(url, {
     method: 'GET',
     headers: { Authorization: `Bearer ${token}` },
@@ -145,18 +170,20 @@ export async function createServerSnipe(
 }
 
 export async function getServerSnipe(jobId: string): Promise<SnipeJobResponse> {
-  const url = `${API_URL}/api/snipe/${encodeURIComponent(jobId)}`
+  const url = buildApiUrl(API_CONFIG, `/api/snipe/${encodeURIComponent(jobId)}`)
   const response = await fetch(url)
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
     const msg = (errorData as Record<string, string>).error || `HTTP ${response.status}`
-    throw new Error(msg)
+    const error = new Error(msg) as Error & { status?: number }
+    error.status = response.status
+    throw error
   }
   return response.json() as Promise<SnipeJobResponse>
 }
 
 export async function cancelServerSnipe(jobId: string): Promise<{ success: boolean }> {
-  const url = `${API_URL}/api/snipe/${encodeURIComponent(jobId)}`
+  const url = buildApiUrl(API_CONFIG, `/api/snipe/${encodeURIComponent(jobId)}`)
   const response = await fetch(url, { method: 'DELETE' })
   return response.json() as Promise<{ success: boolean }>
 }

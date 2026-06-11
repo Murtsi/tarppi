@@ -4,28 +4,29 @@ import {
   cancelServerSnipe,
   createServerSnipe,
   extractEventId,
+  fetchBackendHealth,
   fetchEventDetail,
   fetchExtraProperties,
   fetchKideTime,
+  getApiStatus,
   getServerSnipe,
   maskToken,
   scanCity,
   validateToken,
 } from './lib/kide/api'
-import type { EventResponse, ScoredEvent } from './lib/kide/types'
+import type { BackendHealthResponse, EventResponse, ScoredEvent } from './lib/kide/types'
 import type { LogLine, SnipeSession, SnipePhase } from './lib/lt/types'
 import { nowStr, uid } from './lib/lt/tokens'
-import LeftPanel from './components/lt/LeftPanel'
-import CenterPanel from './components/lt/CenterPanel'
-import RightPanel from './components/lt/RightPanel'
 import CommandPalette, { type Command } from './components/lt/CommandPalette'
 import TokenDrawer from './components/lt/TokenDrawer'
 import CityPicker from './components/CityPicker'
+import SimpleDashboard from './components/lt/SimpleDashboard'
 import './App.css'
 
 const MAX_LOG = 40
 const DEFAULT_POLL_MS = 800
 const DEFAULT_CITY = 'Helsinki'
+type BackendStatus = 'checking' | 'ready' | 'missing-config' | 'offline'
 
 function readLS(key: string, fallback: string): string {
   try { return localStorage.getItem(key) ?? fallback } catch { return fallback }
@@ -35,6 +36,8 @@ function writeLS(key: string, value: string) {
 }
 
 export default function App() {
+  const apiStatus = useMemo(() => getApiStatus(), [])
+
   // persistent settings
   const [token, setToken] = useState(() => readLS('kh.token', ''))
   const [tokenValid, setTokenValid] = useState(false)
@@ -49,13 +52,12 @@ export default function App() {
   const [scanning, setScanning] = useState(false)
   const [lastScanAt, setLastScanAt] = useState<number | null>(null)
   const [scanError, setScanError] = useState<string | null>(null)
+  const [backendStatus, setBackendStatus] = useState<BackendStatus>('checking')
+  const [backendMessage, setBackendMessage] = useState<string | null>(null)
+  const [backendHealth, setBackendHealth] = useState<BackendHealthResponse | null>(null)
 
-  // layout
+  // selection
   const [activeId, setActiveId] = useState<string | undefined>()
-  const [leftCollapsed, setLeftCollapsed] = useState(false)
-  const [showRight, setShowRight] = useState(true)
-  const [leftUserOverride, setLeftUserOverride] = useState(false)
-  const [rightUserOverride, setRightUserOverride] = useState(false)
 
   // overlays
   const [paletteOpen, setPaletteOpen] = useState(false)
@@ -73,7 +75,7 @@ export default function App() {
   // snipe
   const [snipe, setSnipe] = useState<SnipeSession | null>(null)
   const [logs, setLogs] = useState<LogLine[]>([])
-  const [latencies, setLatencies] = useState<number[]>([])
+  const [, setLatencies] = useState<number[]>([])
   const [landedCount, setLandedCount] = useState<number>(() => Number(readLS('kh.landed', '0')))
   // server-side snipe job (survives browser close)
   const [serverJobId, setServerJobId] = useState<string | null>(() => readLS('kh.serverJobId', '') || null)
@@ -96,11 +98,6 @@ export default function App() {
   useEffect(() => { writeLS('kh.proxy', proxyUrl) }, [proxyUrl])
   useEffect(() => { writeLS('kh.serverJobId', serverJobId ?? '') }, [serverJobId])
 
-  // Sync clock against Kide.app server time on mount
-  useEffect(() => {
-    fetchKideTime().then((r) => setClockOffsetMs(r.offsetMs)).catch(() => {})
-  }, [])
-
   // Drive the "last updated X s ago" label
   useEffect(() => {
     const id = setInterval(() => setTick((n) => n + 1), 15_000)
@@ -115,22 +112,49 @@ export default function App() {
       .catch(() => { setTokenValid(false); setTokenEmail(undefined) })
   }, [token])
 
-  // responsive sidebars
-  useEffect(() => {
-    const apply = () => {
-      const w = window.innerWidth
-      if (!leftUserOverride) setLeftCollapsed(w < 1180)
-      if (!rightUserOverride) setShowRight(w >= 980)
-    }
-    apply()
-    window.addEventListener('resize', apply)
-    return () => window.removeEventListener('resize', apply)
-  }, [leftUserOverride, rightUserOverride])
-
   // ─── scan ────────────────────────────────────────────────────────────────
   const pushLog = useCallback((level: LogLine['level'], text: string) => {
     setLogs((prev) => [{ id: uid(), ts: nowStr(), level, text }, ...prev].slice(0, MAX_LOG))
   }, [])
+
+  const checkBackend = useCallback(async () => {
+    if (!apiStatus.configured) {
+      const msg = apiStatus.error ?? 'Backend API URL puuttuu.'
+      setBackendStatus('missing-config')
+      setBackendMessage(msg)
+      setBackendHealth(null)
+      setScanning(false)
+      setScanError(msg)
+      pushLog('err', msg)
+      return
+    }
+
+    setBackendStatus('checking')
+    setBackendMessage(null)
+    try {
+      const health = await fetchBackendHealth()
+      setBackendHealth(health)
+      setBackendStatus('ready')
+      setBackendMessage(health.status === 'degraded' ? 'Backend vastaa, mutta osa palveluista on heikossa tilassa.' : null)
+      pushLog(health.status === 'ok' ? 'ok' : 'warn', `Backend ${health.status} · ${apiStatus.apiUrl || 'same-origin'}`)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Backend ei vastaa'
+      setBackendStatus('offline')
+      setBackendMessage(msg)
+      setBackendHealth(null)
+      setScanning(false)
+      setScanError(msg)
+      pushLog('err', `Backend offline: ${msg}`)
+    }
+  }, [apiStatus, pushLog])
+
+  useEffect(() => { void checkBackend() }, [checkBackend])
+
+  // Sync clock only after the backend API has been confirmed.
+  useEffect(() => {
+    if (backendStatus !== 'ready') return
+    fetchKideTime().then((r) => setClockOffsetMs(r.offsetMs)).catch(() => {})
+  }, [backendStatus])
 
   // ─── server-side snipe job polling ──────────────────────────────────────
   // Polls the server-side snipe job every 2 s when one is active.
@@ -150,7 +174,22 @@ export default function App() {
           pushLog('warn', `Palvelinseuranta päättyi: ${job.message ?? job.status}`)
           setServerJobId(null)
         }
-      } catch {
+      } catch (error) {
+        const status = typeof error === 'object' && error && 'status' in error
+          ? Number((error as { status?: number }).status)
+          : undefined
+
+        if (status === 404) {
+          pushLog('warn', 'Palvelinseuranta vanheni palvelimelta — nollaan vanhan työn')
+          setServerJobId(null)
+          return
+        }
+
+        if (status === 429) {
+          pushLog('warn', 'Palvelinseurannan tarkistus hidastettu hetkeksi')
+          return
+        }
+
         // Network blip — keep polling
       }
     }, 2000)
@@ -158,6 +197,13 @@ export default function App() {
   }, [serverJobId, pushLog])
 
   const runScan = useCallback(async (target?: string) => {
+    if (backendStatus !== 'ready') {
+      const msg = backendMessage ?? 'Backend ei ole valmis.'
+      setScanError(msg)
+      pushLog('warn', `Skannaus odottaa backendia: ${msg}`)
+      return
+    }
+
     const c = target ?? city
     setScanning(true)
     setScanError(null)
@@ -173,10 +219,11 @@ export default function App() {
     } finally {
       setScanning(false)
     }
-  }, [city, pushLog])
+  }, [backendMessage, backendStatus, city, pushLog])
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { runScan(city) }, [city])
+  useEffect(() => {
+    if (backendStatus === 'ready') void runScan(city)
+  }, [backendStatus, city, runScan])
 
   // keyboard shortcuts
   useEffect(() => {
@@ -259,8 +306,17 @@ export default function App() {
           : 'palvelinseuranta aktiivinen'
         pushLog('info', `Palvelinseuranta rekisteröity · ${whenStr}`)
       })
-      .catch(() => {
-        pushLog('warn', 'Palvelinseurannan rekisteröinti epäonnistui — vain selain seuraa')
+      .catch((error) => {
+        setServerJobId(null)
+        const status = typeof error === 'object' && error && 'status' in error
+          ? Number((error as { status?: number }).status)
+          : undefined
+        const message = error instanceof Error ? error.message : 'tuntematon virhe'
+        if (status === 429) {
+          pushLog('warn', `Palvelinseuranta hylättiin hetkeksi: ${message}`)
+          return
+        }
+        pushLog('warn', `Palvelinseurannan rekisteröinti epäonnistui — vain selain seuraa (${message})`)
       })
 
     let attempts = 0
@@ -411,14 +467,6 @@ export default function App() {
 
   // ─── derived ────────────────────────────────────────────────────────────
   const activeEvent = useMemo(() => events.find((e) => e.event_id === activeId), [events, activeId])
-  const watchlist = useMemo(
-    () => events.filter((e) => e.decision === 'BUY' || e.decision === 'MAYBE').slice(0, 8),
-    [events],
-  )
-  const avgLatency = useMemo(() => {
-    if (latencies.length === 0) return undefined
-    return Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
-  }, [latencies])
   // Recomputes on every tick (every 15s) so the label stays fresh
   const lastUpdatedLabel = useMemo(() => {
     if (!lastScanAt) return 'ei päivitetty'
@@ -427,21 +475,16 @@ export default function App() {
     return `päivitetty ${Math.floor(s / 60)} min sitten`
   }, [lastScanAt, labelTick])
 
-  const snipesForLeft = snipe ? [snipe] : []
-  const activeSnipeForPanels = snipe && snipe.phase !== 'landed' && snipe.phase !== 'error' ? snipe : undefined
-  const missionSnipe = snipe && snipe.phase !== 'error' ? snipe : undefined
 
   // ─── handlers ───────────────────────────────────────────────────────────
   const handlePick = (id: string) => {
     setActiveId(id)
-    setRightUserOverride(true)
-    setShowRight(true)
+    loadDetail(id)
   }
   const handleUrlSubmit = (url: string) => {
     const id = extractEventId(url)
     if (!id) { pushLog('err', 'URL-tunnistus epäonnistui'); return }
     setActiveId(id)
-    setShowRight(true)
     loadDetail(id)
     pushLog('info', `Tapahtuma ladattu URL:sta · ${id.slice(0, 8)}…`)
   }
@@ -456,60 +499,36 @@ export default function App() {
 
   return (
     <div className="lt-app">
-      <div className="lt-main">
-        <LeftPanel
-          snipes={snipesForLeft}
-          watchlist={watchlist}
-          logs={logs}
-          activeId={activeId}
-          onPick={handlePick}
-          onNewSnipe={() => setPaletteOpen(true)}
-          collapsed={leftCollapsed}
-          onToggle={() => { setLeftUserOverride(true); setLeftCollapsed((c) => !c) }}
-          onRescan={() => runScan()}
-          userEmail={tokenEmail ?? (token ? maskToken(token) : undefined)}
-          onOpenSettings={() => setDrawerOpen(true)}
-        />
-        <div className="lt-center-wrap">
-          <div className="lt-center-col">
-            <CenterPanel
-              events={events}
-              activeId={activeId}
-              onPick={handlePick}
-              activeSnipe={activeSnipeForPanels}
-              missionSnipe={missionSnipe}
-              pollMs={pollMs}
-              latestLog={logs[0]}
-              onStopSnipe={stopSnipe}
-              city={city}
-              onCityClick={() => setCityPickerOpen(true)}
-              avgLatencyMs={avgLatency}
-              landedCount={landedCount}
-              lastUpdatedLabel={lastUpdatedLabel}
-              loading={scanning}
-              scanError={scanError}
-              onOpenPalette={() => setPaletteOpen(true)}
-              onRescan={() => runScan()}
-            />
-          </div>
-          {showRight && (
-            <RightPanel
-              event={activeEvent}
-              detail={detail}
-              detailLoading={detailLoading}
-              detailError={detailError}
-              onClose={() => { setRightUserOverride(true); setShowRight(false) }}
-              onStart={startSnipe}
-              onLoadDetail={loadDetail}
-              tokenMasked={token ? maskToken(token) : undefined}
-              tokenValid={tokenValid}
-              pollMs={pollMs}
-              activeSnipe={activeSnipeForPanels}
-              landedSnipe={snipe?.phase === 'landed' ? snipe : undefined}
-            />
-          )}
-        </div>
-      </div>
+      <SimpleDashboard
+        events={events}
+        activeId={activeId}
+        activeEvent={activeEvent}
+        detail={detail}
+        detailLoading={detailLoading}
+        detailError={detailError}
+        backendStatus={backendStatus}
+        backendMessage={backendMessage}
+        backendHealth={backendHealth}
+        apiUrl={apiStatus.apiUrl}
+        city={city}
+        tokenValid={tokenValid}
+        tokenLabel={tokenEmail ?? (token ? maskToken(token) : undefined)}
+        loading={scanning}
+        scanError={scanError}
+        lastUpdatedLabel={lastUpdatedLabel}
+        landedCount={landedCount}
+        snipe={snipe}
+        latestLog={logs[0]}
+        pollMs={pollMs}
+        onPick={handlePick}
+        onRescan={() => runScan()}
+        onRetryBackend={checkBackend}
+        onOpenSettings={() => setDrawerOpen(true)}
+        onOpenCity={() => setCityPickerOpen(true)}
+        onSubmitUrl={handleUrlSubmit}
+        onStart={startSnipe}
+        onStopSnipe={stopSnipe}
+      />
 
       <CommandPalette
         open={paletteOpen}

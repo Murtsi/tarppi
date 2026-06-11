@@ -162,6 +162,46 @@ export type ScanResponse = ScorerResponse & {
   city: string
 }
 
+export type BackendServiceStatus = 'ok' | 'degraded' | 'disabled' | 'error'
+
+export type BackendHealthResponse = {
+  status: 'ok' | 'degraded'
+  timestamp: string
+  services: {
+    database: {
+      configured: boolean
+      status: BackendServiceStatus
+      sizeMB?: number
+      snapshotRows?: number
+      labelRows?: number
+      error?: string
+    }
+    poller: {
+      enabled: boolean
+      running: boolean
+      intervalMs: number
+      labelIntervalMs: number
+      cities: string[]
+    }
+    cleanup: {
+      enabled: boolean
+      running: boolean
+      intervalMs: number
+      snapshotKeepDays: number
+      staleUnlabelledDays: number
+      lastRunAt: string | null
+      lastResult: { deletedSnapshots: number; deletedStale: number } | null
+      lastError: string | null
+    }
+    ai: {
+      configured: boolean
+      status: BackendServiceStatus
+      url?: string
+      error?: string
+    }
+  }
+}
+
 // ─── Server-side Snipe Job Types ─────────────────────────────────────────────
 
 export type SnipeJobStatus = 'scheduled' | 'firing' | 'success' | 'failed' | 'cancelled'
