@@ -19,8 +19,8 @@ import type { LogLine, SnipeSession, SnipePhase } from './lib/lt/types'
 import { nowStr, uid } from './lib/lt/tokens'
 import CommandPalette, { type Command } from './components/lt/CommandPalette'
 import TokenDrawer from './components/lt/TokenDrawer'
-import CityPicker from './components/CityPicker'
 import SimpleDashboard from './components/lt/SimpleDashboard'
+import SimpleCityPicker from './components/lt/SimpleCityPicker'
 import './App.css'
 
 const MAX_LOG = 40
@@ -568,25 +568,13 @@ export default function App() {
       />
 
       {cityPickerOpen && (
-        <div className="lt-palette-overlay" onClick={() => setCityPickerOpen(false)}>
-          <div className="lt-drawer lt-drawer--narrow" onClick={(e) => e.stopPropagation()}>
-            <div className="lt-drawer__head">
-              <div style={{ fontFamily: "'Fraunces', Georgia, serif", fontStyle: 'italic', fontSize: 20, color: 'var(--lt-ink)', letterSpacing: '-0.02em' }}>
-                Valitse kaupunki
-              </div>
-              <span style={{ flex: 1 }} />
-              <button className="lt-iconbtn" onClick={() => setCityPickerOpen(false)}>×</button>
-            </div>
-            <div className="lt-drawer__body" style={{ paddingTop: 14 }}>
-              <CityPicker
-                value={city}
-                onChange={(c) => { setCity(c); setCityPickerOpen(false) }}
-                placeholder="Hae kaupunkia…"
-              />
-            </div>
-          </div>
-        </div>
+        <SimpleCityPicker
+          value={city}
+          onChange={(nextCity) => { setCity(nextCity); setCityPickerOpen(false) }}
+          onClose={() => setCityPickerOpen(false)}
+        />
       )}
     </div>
   )
 }
+

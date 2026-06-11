@@ -46,9 +46,9 @@ function finalDecision(event?: ScoredEvent): 'BUY' | 'MAYBE' | 'SKIP' | undefine
 }
 
 function decisionLabel(value?: 'BUY' | 'MAYBE' | 'SKIP') {
-  if (value === 'BUY') return 'Hyvä'
-  if (value === 'MAYBE') return 'Ehkä'
-  return 'Sivuun'
+  if (value === 'BUY') return 'Osta'
+  if (value === 'MAYBE') return 'Seuraa'
+  return 'Ohita'
 }
 
 function formatMoney(value?: number | null): string {
@@ -79,7 +79,7 @@ function backendLabel(status: BackendStatus, health?: BackendHealthResponse | nu
 
 function backendHelp(p: Props) {
   if (p.backendStatus === 'missing-config') {
-    return p.backendMessage ?? 'Aseta Verceliin backendin osoite ennen käyttöä.'
+    return p.backendMessage ?? 'Lisää backendin osoite ennen käyttöä.'
   }
   if (p.backendStatus === 'offline') {
     return `Backend ei vastaa: ${p.backendMessage ?? 'yhteys epäonnistui'}`
@@ -164,7 +164,7 @@ export default function SimpleDashboard(p: Props) {
           <span className="simple-brand__mark">KH</span>
           <div>
             <h1>Kidehiiri</h1>
-            <p>Valitse tapahtuma ja anna sen hoitaa loput.</p>
+            <p>Valitse tapahtuma ja anna botin hoitaa loput.</p>
           </div>
         </div>
         <div className="simple-top__actions">
@@ -179,7 +179,7 @@ export default function SimpleDashboard(p: Props) {
         <section className="simple-hero">
           <div className="simple-hero__copy">
             <span className="simple-kicker">Kaupunki: {p.city || 'Kaikki'}</span>
-            <h2>Katso lista läpi, avaa tapahtuma ja käynnistä seuranta.</h2>
+            <h2>Valitse tapahtuma ja käynnistä botti.</h2>
             <p>{backendHelp(p)}</p>
           </div>
           <div className="simple-hero__actions">
@@ -205,7 +205,7 @@ export default function SimpleDashboard(p: Props) {
 
         <section className="simple-summary" aria-label="Tilanne">
           <div><strong>{stats.total}</strong><span>tapahtumaa</span></div>
-          <div><strong>{stats.buy}</strong><span>hyvää kohdetta</span></div>
+          <div><strong>{stats.buy}</strong><span>osta heti</span></div>
           <div><strong>{stats.maybe}</strong><span>seurattavaa</span></div>
           <div><strong>{p.landedCount}</strong><span>onnistumista</span></div>
         </section>
@@ -220,9 +220,9 @@ export default function SimpleDashboard(p: Props) {
               <div className="simple-controls">
                 <select value={filter} onChange={(event) => setFilter(event.target.value as FilterKey)} aria-label="Suodata tapahtumia">
                   <option value="all">Kaikki</option>
-                  <option value="watch">Hyvät + ehkä</option>
-                  <option value="buy">Hyvät</option>
-                  <option value="maybe">Ehkä</option>
+                  <option value="watch">Kiinnostavat</option>
+                  <option value="buy">Osta</option>
+                  <option value="maybe">Seuraa</option>
                 </select>
                 <select value={sort} onChange={(event) => setSort(event.target.value as SortKey)} aria-label="Lajittele tapahtumat">
                   <option value="score">Paras ensin</option>
@@ -284,7 +284,7 @@ export default function SimpleDashboard(p: Props) {
             {!p.activeEvent ? (
               <div className="simple-empty simple-empty--large">
                 <strong>Valitse tapahtuma listasta.</strong>
-                <span>Sitten näet lipputyypit ja voit laittaa seurannan päälle.</span>
+                <span>Sitten näet lipputyypit ja voit käynnistää botin.</span>
               </div>
             ) : (
               <>
@@ -355,7 +355,7 @@ export default function SimpleDashboard(p: Props) {
                         p.onStart({ variantId: selectedVariant.inventoryId, variantName: selectedVariant.name, quantity })
                       }}
                     >
-                      {!p.tokenValid ? 'Token puuttuu' : activeSnipe ? 'Seuranta päällä' : salesUpcoming ? 'Aloita valmiiksi' : 'Käynnistä seuranta'}
+                      {!p.tokenValid ? 'Token puuttuu' : activeSnipe ? 'Botti käy' : salesUpcoming ? 'Aloita valmiiksi' : 'Käynnistä botti'}
                     </button>
                   )}
                 </div>
