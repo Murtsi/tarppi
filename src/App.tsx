@@ -82,12 +82,42 @@ export default function App() {
 
   // tick for reactive "last updated" label (every 15s)
   const [, setTick] = useState(0)
-  const snipeRunRef = useRef<{ cancelled: boolean } | null>(null)
+  const snipeRunRef = useRef<{ cancelled: boolean; abortController: AbortController } | null>(null)
   const snipeRef = useRef(snipe)
   const detailRef = useRef<EventResponse | null>(null)
 
   useEffect(() => { snipeRef.current = snipe }, [snipe])
   useEffect(() => { detailRef.current = detail }, [detail])
+
+  function isAbortError(error: unknown): boolean {
+    return error instanceof Error && error.name === 'AbortError'
+  }
+
+  function waitWithAbort(ms: number, signal: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeoutId = window.setTimeout(() => {
+        cleanup()
+        resolve()
+      }, ms)
+
+      const onAbort = () => {
+        cleanup()
+        reject(new DOMException('Aborted', 'AbortError'))
+      }
+
+      const cleanup = () => {
+        window.clearTimeout(timeoutId)
+        signal.removeEventListener('abort', onAbort)
+      }
+
+      if (signal.aborted) {
+        onAbort()
+        return
+      }
+
+      signal.addEventListener('abort', onAbort, { once: true })
+    })
+  }
 
   // ─── persistence + initial load ─────────────────────────────────────────
   useEffect(() => { writeLS('kh.token', token) }, [token])
@@ -249,7 +279,10 @@ export default function App() {
 
   // ─── sniper loop ────────────────────────────────────────────────────────
   const stopSnipe = useCallback(() => {
-    if (snipeRunRef.current) snipeRunRef.current.cancelled = true
+    if (snipeRunRef.current) {
+      snipeRunRef.current.cancelled = true
+      snipeRunRef.current.abortController.abort()
+    }
     setSnipe((s) => (s ? { ...s, phase: 'error' as SnipePhase, message: 'Pysäytetty' } : s))
     setLatencies([])
     // Also cancel the server-side job if one is active
@@ -288,7 +321,7 @@ export default function App() {
     }
     setSnipe(session)
     pushLog('ok', `Seuranta alkoi · ${eventName} · ${params.variantName} · ${params.quantity}×`)
-    const run = { cancelled: false }
+    const run = { cancelled: false, abortController: new AbortController() }
     snipeRunRef.current = run
 
     // ─ Register server-side snipe job (runs on Railway even if browser closes)
@@ -300,6 +333,10 @@ export default function App() {
         : undefined
     createServerSnipe(token.trim(), params.variantId, params.quantity, salesStartMs, activeId)
       .then((job) => {
+        if (run.cancelled) {
+          void cancelServerSnipe(job.jobId).catch(() => {})
+          return
+        }
         setServerJobId(job.jobId)
         const whenStr = job.scheduledFor
           ? `aukeaa ${new Date(job.scheduledFor + 1000).toLocaleTimeString('fi-FI')} — palvelin ampuu automaattisesti`
@@ -323,8 +360,10 @@ export default function App() {
     let didRefreshBeforeSale = false
 
     const tryCart = async (qty: number): Promise<boolean> => {
-      const r = await addToCart(token.trim(), params.variantId, qty)
+      if (run.cancelled) return false
+      const r = await addToCart(token.trim(), params.variantId, qty, activeId)
       if (r.success) {
+        if (run.cancelled) return false
         pushLog('ok', `ONNISTUI — ${qty} kpl lisätty koriin`)
         setSnipe((s) => (s ? { ...s, phase: 'landed', quantity: qty } : s))
         setLandedCount((n) => n + 1)
@@ -341,11 +380,13 @@ export default function App() {
 
       if (r.retryAfterMs && r.retryAfterMs > 0) {
         pushLog('warn', `Rate limited — odotan ${Math.round(r.retryAfterMs / 1000)}s`)
-        await new Promise((res) => setTimeout(res, r.retryAfterMs!))
+        await waitWithAbort(r.retryAfterMs, run.abortController.signal)
       }
       if (fallbackMode && r.retryWithQuantity && r.retryWithQuantity > 0) {
-        const r2 = await addToCart(token.trim(), params.variantId, r.retryWithQuantity)
+        if (run.cancelled) return false
+        const r2 = await addToCart(token.trim(), params.variantId, r.retryWithQuantity, activeId)
         if (r2.success) {
+          if (run.cancelled) return false
           pushLog('ok', `ONNISTUI (varareitti) — ${r.retryWithQuantity} kpl lisätty koriin`)
           setSnipe((s) => (s ? { ...s, phase: 'landed', quantity: r.retryWithQuantity! } : s))
           setLandedCount((n) => n + 1)
@@ -361,7 +402,7 @@ export default function App() {
       setSnipe((s) => (s ? { ...s, attempts, lastCheckedAt: Date.now() } : s))
       const started = Date.now()
       try {
-        const det = await fetchEventDetail(activeId)
+        const det = await fetchEventDetail(activeId, run.abortController.signal)
         const variant = det.variants.find((v) => v.inventoryId === params.variantId)
         const latency = Date.now() - started
         setLatencies((ls) => [...ls.slice(-19), latency])
@@ -383,7 +424,7 @@ export default function App() {
           // Refresh connection values once in the 30 s window before sale opens
           if (tUntil <= 30 && !didRefreshBeforeSale) {
             didRefreshBeforeSale = true
-            fetchExtraProperties().catch(() => {})
+            fetchExtraProperties(run.abortController.signal).catch(() => {})
             pushLog('info', `Myynti aukeaa ${Math.round(tUntil)}s päästä — yhteysarvot päivitetty`)
           } else if (tUntil <= 10) {
             pushLog('info', `Myynti aukeaa ${Math.round(tUntil)}s päästä!`)
@@ -396,7 +437,7 @@ export default function App() {
             tUntil <= 15  ? 300 :
             tUntil <= 60  ? 1000 :
             tUntil <= 300 ? 5000 : 20_000
-          await new Promise((r) => setTimeout(r, adaptiveDelay))
+          await waitWithAbort(adaptiveDelay, run.abortController.signal)
           continue
         }
 
@@ -442,11 +483,17 @@ export default function App() {
           }
         }
       } catch (err) {
+        if (isAbortError(err)) break
         pushLog('warn', `Pollausvirhe: ${err instanceof Error ? err.message : 'tuntematon'}`)
       }
       // ±100ms jitter so simultaneous snipe clients don't hit Kide at the same tick
       const jitter = Math.round(Math.random() * 200 - 100)
-      await new Promise((r) => setTimeout(r, Math.max(100, pollMs + jitter)))
+      try {
+        await waitWithAbort(Math.max(100, pollMs + jitter), run.abortController.signal)
+      } catch (err) {
+        if (isAbortError(err)) break
+        throw err
+      }
     }
   }, [events, activeId, token, tokenValid, fallbackMode, pollMs, clockOffsetMs, pushLog])
 

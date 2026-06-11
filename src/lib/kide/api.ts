@@ -30,12 +30,13 @@ export function getApiStatus() {
   }
 }
 
-async function apiCall<T>(path: string, body: Record<string, unknown>): Promise<T> {
+async function apiCall<T>(path: string, body: Record<string, unknown>, signal?: AbortSignal): Promise<T> {
   const url = buildApiUrl(API_CONFIG, path)
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+    signal,
   })
 
   if (!response.ok) {
@@ -49,12 +50,12 @@ async function apiCall<T>(path: string, body: Record<string, unknown>): Promise<
   return response.json() as Promise<T>
 }
 
-export async function fetchEventProducts(eventUrl: string): Promise<EventResponse> {
-  return apiCall<EventResponse>('/api/event', { eventUrl })
+export async function fetchEventProducts(eventUrl: string, signal?: AbortSignal): Promise<EventResponse> {
+  return apiCall<EventResponse>('/api/event', { eventUrl }, signal)
 }
 
-export async function fetchEventDetail(eventId: string): Promise<EventResponse> {
-  return apiCall<EventResponse>('/api/event', { eventUrl: `https://kide.app/events/${eventId}` })
+export async function fetchEventDetail(eventId: string, signal?: AbortSignal): Promise<EventResponse> {
+  return apiCall<EventResponse>('/api/event', { eventUrl: `https://kide.app/events/${eventId}` }, signal)
 }
 
 export async function validateToken(token: string): Promise<ValidateTokenResponse> {
@@ -65,16 +66,18 @@ export async function addToCart(
   token: string,
   variantId: string,
   quantity: number,
+  eventId?: string,
 ): Promise<ReserveResponse> {
   return apiCall<ReserveResponse>('/api/reserve', {
     variantId,
     authorizationToken: token,
     amount: quantity,
+    ...(eventId && { eventId }),
   })
 }
 
-export async function fetchExtraProperties(): Promise<DeobfuscateResponse> {
-  return apiCall<DeobfuscateResponse>('/api/deobfuscate', {})
+export async function fetchExtraProperties(signal?: AbortSignal): Promise<DeobfuscateResponse> {
+  return apiCall<DeobfuscateResponse>('/api/deobfuscate', {}, signal)
 }
 
 export async function fetchKideTime(): Promise<{ offsetMs: number }> {
