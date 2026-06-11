@@ -212,6 +212,12 @@ export default function App() {
 
   useEffect(() => {
     if (snipe?.phase !== 'landed' || !snipe.paymentExpiresAt) return
+    if (snipe.paymentExpiresAt <= Date.now()) {
+      setSnipe(null)
+      setServerJobId(null)
+      paymentWarningRef.current = null
+      return
+    }
     if (paymentWarningRef.current === snipe.id) return
 
     const warn = () => {

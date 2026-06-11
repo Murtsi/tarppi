@@ -30,6 +30,7 @@ test('writeStoredSnipeSession stores enough state to restore after reload', () =
     value: new LocalStorageStub(),
     configurable: true,
   })
+  const startedAt = Date.now()
   const session: SnipeSession = {
     id: 's1',
     eventId: 'event-1',
@@ -38,7 +39,7 @@ test('writeStoredSnipeSession stores enough state to restore after reload', () =
     variantName: 'Peruslippu',
     quantity: 2,
     phase: 'waiting',
-    startedAt: 1,
+    startedAt,
     attempts: 3,
   }
 
@@ -73,4 +74,27 @@ test('snipeMatchesEvent ignores restored sessions for another event', () => {
   assert.equal(snipeMatchesEvent(session, 'event-1'), true)
   assert.equal(snipeMatchesEvent(session, 'event-2'), false)
   assert.equal(snipeMatchesEvent(null, 'event-1'), false)
+})
+
+test('readStoredSnipeSession discards expired landed sessions', () => {
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: new LocalStorageStub(),
+    configurable: true,
+  })
+  const session: SnipeSession = {
+    id: 's1',
+    eventId: 'event-1',
+    eventName: 'Testibileet',
+    quantity: 1,
+    phase: 'landed',
+    startedAt: Date.now() - 60 * 60 * 1000,
+    landedAt: Date.now() - 60 * 60 * 1000,
+    paymentExpiresAt: Date.now() - 30 * 60 * 1000,
+    attempts: 1,
+  }
+
+  writeStoredSnipeSession(session, 'job-1')
+
+  assert.equal(readStoredSnipeSession(), null)
+  assert.equal(globalThis.localStorage.getItem(ACTIVE_SNIPE_KEY), null)
 })
