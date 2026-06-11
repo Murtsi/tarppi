@@ -1745,6 +1745,29 @@
   font-weight: 800;
 }
 
+.simple-landed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 12px;
+  width: 100%;
+}
+
+.simple-landed strong,
+.simple-landed span {
+  min-width: 0;
+}
+
+.simple-landed span {
+  color: #526057;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.simple-landed .simple-button {
+  grid-row: span 2;
+}
+
 .simple-log {
   display: flex;
   align-items: center;

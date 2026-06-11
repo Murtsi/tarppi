@@ -162,6 +162,7 @@ export async function createServerSnipe(
   quantity: number,
   salesStartMs?: number,
   eventId?: string,
+  eventName?: string,
 ): Promise<CreateSnipeJobResponse> {
   return apiCall<CreateSnipeJobResponse>('/api/snipe', {
     authorizationToken,
@@ -169,6 +170,7 @@ export async function createServerSnipe(
     quantity,
     ...(salesStartMs != null && { salesStartMs }),
     ...(eventId && { eventId }),
+    ...(eventName && { eventName }),
   })
 }
 

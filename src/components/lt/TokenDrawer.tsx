@@ -10,8 +10,9 @@ type Props = {
   tokenEmail?: string
   pollMs: number
   fallbackMode: boolean
+  notifyEnabled: boolean
   proxyUrl: string
-  onSave: (next: { token: string; pollMs: number; fallbackMode: boolean; proxyUrl: string }) => void
+  onSave: (next: { token: string; pollMs: number; fallbackMode: boolean; notifyEnabled: boolean; proxyUrl: string }) => void
   onValidate: (draftToken: string) => Promise<void>
 }
 
@@ -34,6 +35,7 @@ export default function TokenDrawer(p: Props) {
   const [token, setToken] = useState(p.token)
   const [pollMs, setPollMs] = useState(p.pollMs)
   const [fallback, setFallback] = useState(p.fallbackMode)
+  const [notifyEnabled, setNotifyEnabled] = useState(p.notifyEnabled)
   const [proxyUrl, setProxyUrl] = useState(p.proxyUrl)
   const [validating, setValidating] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -43,9 +45,10 @@ export default function TokenDrawer(p: Props) {
       setToken(p.token)
       setPollMs(p.pollMs)
       setFallback(p.fallbackMode)
+      setNotifyEnabled(p.notifyEnabled)
       setProxyUrl(p.proxyUrl)
     }
-  }, [p.fallbackMode, p.open, p.pollMs, p.proxyUrl, p.token])
+  }, [p.fallbackMode, p.notifyEnabled, p.open, p.pollMs, p.proxyUrl, p.token])
 
   // Escape käsitellään keskitetysti App.tsx:ssä, joten ei tarvita erillistä kuuntelijaa
 
@@ -151,6 +154,14 @@ export default function TokenDrawer(p: Props) {
             </label>
           </div>
 
+          <div style={{ marginBottom: 18 }}>
+            <Lbl>Äänet ja ilmoitukset</Lbl>
+            <label className="lt-toggle">
+              <input type="checkbox" checked={notifyEnabled} onChange={(e) => setNotifyEnabled(e.target.checked)} />
+              <span>{notifyEnabled ? 'Päällä' : 'Pois'}</span>
+            </label>
+          </div>
+
           {/* Proxy URL */}
           <div style={{ marginBottom: 18 }}>
             <Lbl>Proxy URL (valinnainen)</Lbl>
@@ -198,7 +209,7 @@ export default function TokenDrawer(p: Props) {
           <button className="lt-btn lt-btn--ghost" onClick={p.onClose}>Peruuta</button>
           <button
             className="lt-btn lt-btn--primary"
-            onClick={() => { p.onSave({ token, pollMs, fallbackMode: fallback, proxyUrl }); p.onClose() }}
+            onClick={() => { p.onSave({ token, pollMs, fallbackMode: fallback, notifyEnabled, proxyUrl }); p.onClose() }}
           >
             Tallenna
           </button>

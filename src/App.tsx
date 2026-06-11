@@ -7,7 +7,6 @@ import {
   fetchBackendHealth,
   fetchEventDetail,
   fetchExtraProperties,
-  fetchKideTime,
   getApiStatus,
   getServerSnipe,
   maskToken,
@@ -15,17 +14,31 @@ import {
   validateToken,
 } from './lib/kide/api'
 import type { BackendHealthResponse, EventResponse, ScoredEvent } from './lib/kide/types'
-import type { LogLine, SnipeSession, SnipePhase } from './lib/lt/types'
+import type { LogLine, SnipeSession } from './lib/lt/types'
 import { nowStr, uid } from './lib/lt/tokens'
 import CommandPalette, { type Command } from './components/lt/CommandPalette'
 import TokenDrawer from './components/lt/TokenDrawer'
 import SimpleDashboard from './components/lt/SimpleDashboard'
 import SimpleCityPicker from './components/lt/SimpleCityPicker'
+import { decodeJwtExpiryMs } from './lib/token-expiry'
+import {
+  clearStoredSnipeSession,
+  readStoredSnipeSession,
+  writeStoredSnipeSession,
+} from './lib/snipe-session'
+import {
+  notificationsEnabled,
+  notifyBrowser,
+  playFailSound,
+  playSuccessSound,
+  setNotificationsEnabled,
+} from './lib/notify'
 import './App.css'
 
 const MAX_LOG = 40
 const DEFAULT_POLL_MS = 800
 const DEFAULT_CITY = 'Helsinki'
+const PAYMENT_WINDOW_MS = 25 * 60 * 1000
 type BackendStatus = 'checking' | 'ready' | 'missing-config' | 'offline'
 
 function readLS(key: string, fallback: string): string {
@@ -37,6 +50,7 @@ function writeLS(key: string, value: string) {
 
 export default function App() {
   const apiStatus = useMemo(() => getApiStatus(), [])
+  const [initialStoredSnipe] = useState(() => readStoredSnipeSession())
 
   // persistent settings
   const [token, setToken] = useState(() => readLS('kh.token', ''))
@@ -44,6 +58,7 @@ export default function App() {
   const [tokenEmail, setTokenEmail] = useState<string | undefined>()
   const [pollMs, setPollMs] = useState<number>(() => Number(readLS('kh.pollMs', String(DEFAULT_POLL_MS))))
   const [fallbackMode, setFallbackMode] = useState<boolean>(() => readLS('kh.fallback', '1') === '1')
+  const [notifyEnabled, setNotifyEnabledState] = useState<boolean>(() => notificationsEnabled())
   const [proxyUrl, setProxyUrl] = useState<string>(() => readLS('kh.proxy', ''))
   const [city, setCity] = useState<string>(() => readLS('kh.city', DEFAULT_CITY))
 
@@ -70,21 +85,20 @@ export default function App() {
   const [detailError, setDetailError] = useState<string | null>(null)
 
   // clock sync — offset between Kide.app server time and browser clock
-  const [clockOffsetMs, setClockOffsetMs] = useState(0)
-
   // snipe
-  const [snipe, setSnipe] = useState<SnipeSession | null>(null)
+  const [snipe, setSnipe] = useState<SnipeSession | null>(() => initialStoredSnipe?.session ?? null)
   const [logs, setLogs] = useState<LogLine[]>([])
   const [, setLatencies] = useState<number[]>([])
   const [landedCount, setLandedCount] = useState<number>(() => Number(readLS('kh.landed', '0')))
   // server-side snipe job (survives browser close)
-  const [serverJobId, setServerJobId] = useState<string | null>(() => readLS('kh.serverJobId', '') || null)
+  const [serverJobId, setServerJobId] = useState<string | null>(() => initialStoredSnipe?.serverJobId ?? (readLS('kh.serverJobId', '') || null))
 
   // tick for reactive "last updated" label (every 15s)
   const [, setTick] = useState(0)
   const snipeRunRef = useRef<{ cancelled: boolean; abortController: AbortController } | null>(null)
   const snipeRef = useRef(snipe)
   const detailRef = useRef<EventResponse | null>(null)
+  const paymentWarningRef = useRef<string | null>(null)
 
   useEffect(() => { snipeRef.current = snipe }, [snipe])
   useEffect(() => { detailRef.current = detail }, [detail])
@@ -127,6 +141,14 @@ export default function App() {
   useEffect(() => { writeLS('kh.landed', String(landedCount)) }, [landedCount])
   useEffect(() => { writeLS('kh.proxy', proxyUrl) }, [proxyUrl])
   useEffect(() => { writeLS('kh.serverJobId', serverJobId ?? '') }, [serverJobId])
+  useEffect(() => { setNotificationsEnabled(notifyEnabled) }, [notifyEnabled])
+  useEffect(() => {
+    if (snipe && snipe.phase !== 'error') {
+      writeStoredSnipeSession(snipe, serverJobId)
+    } else {
+      clearStoredSnipeSession()
+    }
+  }, [serverJobId, snipe])
 
   // Drive the "last updated X s ago" label
   useEffect(() => {
@@ -180,11 +202,24 @@ export default function App() {
 
   useEffect(() => { void checkBackend() }, [checkBackend])
 
-  // Sync clock only after the backend API has been confirmed.
   useEffect(() => {
-    if (backendStatus !== 'ready') return
-    fetchKideTime().then((r) => setClockOffsetMs(r.offsetMs)).catch(() => {})
-  }, [backendStatus])
+    if (snipe?.phase !== 'landed' || !snipe.paymentExpiresAt) return
+    if (paymentWarningRef.current === snipe.id) return
+
+    const warn = () => {
+      paymentWarningRef.current = snipe.id
+      notifyBrowser('Kori vanhenee pian', 'Maksa liput Kide.app-korissa.')
+      playFailSound()
+    }
+    const delay = snipe.paymentExpiresAt - Date.now() - 5 * 60 * 1000
+    if (delay <= 0) {
+      warn()
+      return
+    }
+
+    const timer = window.setTimeout(warn, delay)
+    return () => window.clearTimeout(timer)
+  }, [snipe])
 
   // ─── server-side snipe job polling ──────────────────────────────────────
   // Polls the server-side snipe job every 2 s when one is active.
@@ -196,12 +231,26 @@ export default function App() {
         const job = await getServerSnipe(serverJobId)
         if (job.status === 'success') {
           const qty = job.quantity ?? 1
+          const landedAt = Date.now()
           pushLog('ok', `Varaus meni läpi · ${qty} kpl lisätty koriin`)
-          setSnipe((s) => (s ? { ...s, phase: 'landed' as SnipePhase, quantity: qty } : s))
+          setSnipe((s) => (s ? {
+            ...s,
+            phase: 'landed',
+            quantity: qty,
+            landedAt,
+            paymentExpiresAt: landedAt + PAYMENT_WINDOW_MS,
+          } : s))
           setLandedCount((n) => n + 1)
+          notifyBrowser('LIPUT KORISSA!', `${qty} kpl lisätty koriin. Maksa Kide.appissa.`)
+          playSuccessSound()
           setServerJobId(null)
         } else if (job.status === 'failed' || job.status === 'cancelled') {
           pushLog('warn', `Palvelinseuranta päättyi: ${job.message ?? job.status}`)
+          if (job.status === 'failed') {
+            setSnipe((s) => (s ? { ...s, phase: 'error', message: job.message ?? 'Palvelinseuranta epäonnistui' } : s))
+            notifyBrowser('Snipe epäonnistui', job.message ?? 'Palvelinseuranta pysähtyi.')
+            playFailSound()
+          }
           setServerJobId(null)
         }
       } catch (error) {
@@ -283,7 +332,7 @@ export default function App() {
       snipeRunRef.current.cancelled = true
       snipeRunRef.current.abortController.abort()
     }
-    setSnipe((s) => (s ? { ...s, phase: 'error' as SnipePhase, message: 'Pysäytetty' } : s))
+    setSnipe((s) => (s ? { ...s, phase: 'error', message: 'Pysäytetty' } : s))
     setLatencies([])
     // Also cancel the server-side job if one is active
     setServerJobId((prev) => {
@@ -306,6 +355,10 @@ export default function App() {
     if (currentSnipe && currentSnipe.phase !== 'error' && currentSnipe.phase !== 'landed') {
       pushLog('warn', 'Seuranta on jo käynnissä')
       return
+    }
+
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      void Notification.requestPermission().catch(() => {})
     }
 
     const session: SnipeSession = {
@@ -331,7 +384,13 @@ export default function App() {
       : det?.product.timeUntilSalesStart && det.product.timeUntilSalesStart > 0
         ? Date.now() + det.product.timeUntilSalesStart * 1000
         : undefined
-    createServerSnipe(token.trim(), params.variantId, params.quantity, salesStartMs, activeId)
+    const tokenExpiresAt = decodeJwtExpiryMs(token.trim())
+    if (tokenExpiresAt && salesStartMs && tokenExpiresAt <= salesStartMs) {
+      pushLog('warn', 'Token vanhenee ennen myynnin alkua')
+      notifyBrowser('Token vanhenee ennen myyntiä', 'Hae uusi Kide.app-token ennen kuin myynti aukeaa.')
+    }
+
+    createServerSnipe(token.trim(), params.variantId, params.quantity, salesStartMs, activeId, eventName)
       .then((job) => {
         if (run.cancelled) {
           void cancelServerSnipe(job.jobId).catch(() => {})
@@ -364,9 +423,18 @@ export default function App() {
       const r = await addToCart(token.trim(), params.variantId, qty, activeId)
       if (r.success) {
         if (run.cancelled) return false
+        const landedAt = Date.now()
         pushLog('ok', `ONNISTUI — ${qty} kpl lisätty koriin`)
-        setSnipe((s) => (s ? { ...s, phase: 'landed', quantity: qty } : s))
+        setSnipe((s) => (s ? {
+          ...s,
+          phase: 'landed',
+          quantity: qty,
+          landedAt,
+          paymentExpiresAt: landedAt + PAYMENT_WINDOW_MS,
+        } : s))
         setLandedCount((n) => n + 1)
+        notifyBrowser('LIPUT KORISSA!', `${qty} kpl lisätty koriin. Maksa Kide.appissa.`)
+        playSuccessSound()
         return true
       }
 
@@ -387,9 +455,18 @@ export default function App() {
         const r2 = await addToCart(token.trim(), params.variantId, r.retryWithQuantity, activeId)
         if (r2.success) {
           if (run.cancelled) return false
+          const landedAt = Date.now()
           pushLog('ok', `ONNISTUI (varareitti) — ${r.retryWithQuantity} kpl lisätty koriin`)
-          setSnipe((s) => (s ? { ...s, phase: 'landed', quantity: r.retryWithQuantity! } : s))
+          setSnipe((s) => (s ? {
+            ...s,
+            phase: 'landed',
+            quantity: r.retryWithQuantity!,
+            landedAt,
+            paymentExpiresAt: landedAt + PAYMENT_WINDOW_MS,
+          } : s))
           setLandedCount((n) => n + 1)
+          notifyBrowser('LIPUT KORISSA!', `${r.retryWithQuantity} kpl lisätty koriin. Maksa Kide.appissa.`)
+          playSuccessSound()
           return true
         }
       }
@@ -411,12 +488,13 @@ export default function App() {
         if (det.product.salesEnded) {
           pushLog('warn', 'Myynti on päättynyt — pysäytän')
           setSnipe((s) => (s ? { ...s, phase: 'error', message: 'Myynti päättynyt' } : s))
+          notifyBrowser('Snipe epäonnistui', 'Myynti on päättynyt.')
+          playFailSound()
           break
         }
 
         // ─ Pre-sale waiting phase
-        // Apply clock offset so we fire relative to Kide's clock, not the browser's.
-        const tUntil = (det.product.timeUntilSalesStart ?? 0) - clockOffsetMs / 1000
+        const tUntil = det.product.timeUntilSalesStart ?? 0
         if (tUntil > 0) {
           const salesStartAt = Date.now() + tUntil * 1000
           setSnipe((s) => (s ? { ...s, phase: 'waiting', salesStartAt } : s))
@@ -432,8 +510,7 @@ export default function App() {
 
           // Adaptive polling: finer steps close to open time
           const adaptiveDelay =
-            tUntil <= 2   ? 100 :
-            tUntil <= 5   ? 150 :
+            tUntil <= 5   ? 200 :
             tUntil <= 15  ? 300 :
             tUntil <= 60  ? 1000 :
             tUntil <= 300 ? 5000 : 20_000
@@ -462,6 +539,8 @@ export default function App() {
         if (!variant) {
           pushLog('warn', 'Lipputyyppiä ei löydy — pysäytän')
           setSnipe((s) => (s ? { ...s, phase: 'error', message: 'Lipputyyppiä ei löydy' } : s))
+          notifyBrowser('Snipe epäonnistui', 'Lipputyyppiä ei löydy.')
+          playFailSound()
           break
         }
 
@@ -489,13 +568,13 @@ export default function App() {
       // ±100ms jitter so simultaneous snipe clients don't hit Kide at the same tick
       const jitter = Math.round(Math.random() * 200 - 100)
       try {
-        await waitWithAbort(Math.max(100, pollMs + jitter), run.abortController.signal)
+        await waitWithAbort(Math.max(200, pollMs + jitter), run.abortController.signal)
       } catch (err) {
         if (isAbortError(err)) break
         throw err
       }
     }
-  }, [events, activeId, token, tokenValid, fallbackMode, pollMs, clockOffsetMs, pushLog])
+  }, [events, activeId, token, tokenValid, fallbackMode, pollMs, pushLog])
 
   // ─── event detail fetcher ───────────────────────────────────────────────
   const loadDetail = useCallback(async (id: string) => {
@@ -592,11 +671,13 @@ export default function App() {
         tokenEmail={tokenEmail}
         pollMs={pollMs}
         fallbackMode={fallbackMode}
+        notifyEnabled={notifyEnabled}
         proxyUrl={proxyUrl}
         onSave={(next) => {
           setToken(next.token)
           setPollMs(next.pollMs)
           setFallbackMode(next.fallbackMode)
+          setNotifyEnabledState(next.notifyEnabled)
           setProxyUrl(next.proxyUrl)
         }}
         onValidate={async (draftToken) => {

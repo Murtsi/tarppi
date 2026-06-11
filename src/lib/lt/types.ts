@@ -10,6 +10,8 @@ export type SnipeSession = {
   phase: SnipePhase
   startedAt: number
   salesStartAt?: number
+  landedAt?: number
+  paymentExpiresAt?: number
   message?: string
   attempts: number
   lastCheckedAt?: number

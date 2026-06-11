@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { buildMediaUrl } from '../../lib/kide/api'
 import type { BackendHealthResponse, EventResponse, KideVariant, ScoredEvent } from '../../lib/kide/types'
 import type { LogLine, SnipeSession } from '../../lib/lt/types'
@@ -99,12 +99,26 @@ function statusText(snipe?: SnipeSession | null) {
   return snipe.message ?? 'Seuranta pysäytetty'
 }
 
+function formatCountdown(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
 export default function SimpleDashboard(p: Props) {
   const [urlDraft, setUrlDraft] = useState('')
   const [sort, setSort] = useState<SortKey>('score')
   const [filter, setFilter] = useState<FilterKey>('all')
   const [selectedVariantId, setSelectedVariantId] = useState('')
   const [quantity, setQuantity] = useState(1)
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (p.snipe?.phase !== 'landed' || !p.snipe.paymentExpiresAt) return
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000)
+    return () => window.clearInterval(timer)
+  }, [p.snipe?.paymentExpiresAt, p.snipe?.phase])
 
   const variants = p.detail?.variants ?? EMPTY_VARIANTS
   const selectedVariant = useMemo(
@@ -149,6 +163,9 @@ export default function SimpleDashboard(p: Props) {
   const activeSnipe = p.snipe && p.snipe.phase !== 'landed' && p.snipe.phase !== 'error'
   const canStart = Boolean(p.tokenValid && selectedVariant && !salesEnded && !activeSnipe)
   const coverImage = buildMediaUrl(p.detail?.product.mediaFilename) ?? p.activeEvent?.media_url ?? null
+  const paymentMsLeft = p.snipe?.phase === 'landed' && p.snipe.paymentExpiresAt
+    ? p.snipe.paymentExpiresAt - now
+    : null
 
   const submitUrl = () => {
     const value = urlDraft.trim()
@@ -345,7 +362,11 @@ export default function SimpleDashboard(p: Props) {
                     <button onClick={() => setQuantity((value) => Math.min(10, value + 1))}>+</button>
                   </div>
                   {p.snipe?.phase === 'landed' ? (
-                    <a className="simple-button simple-button--primary" href={KIDE_CART_URL} target="_blank" rel="noreferrer">Avaa kori</a>
+                    <div className="simple-landed">
+                      <strong>Liput ovat korissa.</strong>
+                      <span>Maksa noin {paymentMsLeft != null ? formatCountdown(paymentMsLeft) : '25:00'} kuluessa.</span>
+                      <a className="simple-button simple-button--primary" href={KIDE_CART_URL} target="_blank" rel="noreferrer">Avaa kori</a>
+                    </div>
                   ) : (
                     <button
                       className="simple-button simple-button--primary"
