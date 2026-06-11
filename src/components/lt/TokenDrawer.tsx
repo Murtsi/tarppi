@@ -191,7 +191,19 @@ export default function TokenDrawer(p: Props) {
           </section>
 
           <section className="simple-settings__section">
-            <div className="simple-settings__label">Telegram chat ID</div>
+            <div className="simple-settings__label">Telegram-botti</div>
+            <div className="simple-settings__help">
+              Botti on <strong>@Tarppibot</strong>. Lähetä sille mikä tahansa viesti. Se vastaa:
+            </div>
+            <div className="simple-settings__hint">
+              <span>
+                Tässä on Telegram Chat ID:si (chatid)<br />
+                syötä Chat ID Kidehiiri sivulle valikkoon jotta saat ilmoituksen telegrammissa kun lippu on saatu kide.app koriisi.
+              </span>
+            </div>
+            <div className="simple-settings__help">
+              Kopioi Chat ID tähän. Sen jälkeen saat Telegramiin ilmoituksen, kun varaus menee läpi.
+            </div>
             <input
               type="text"
               value={telegramChatId}
@@ -200,7 +212,7 @@ export default function TokenDrawer(p: Props) {
               className="simple-settings__input"
             />
             <div className="simple-settings__help">
-              Lähetä ensin viesti botille. Jos jätät tämän tyhjäksi, käytetään palvelimen oletusvastaanottajaa.
+              Jos jätät kentän tyhjäksi, käytetään palvelimen oletusvastaanottajaa.
             </div>
           </section>
 
