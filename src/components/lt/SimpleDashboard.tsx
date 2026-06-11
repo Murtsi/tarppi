@@ -46,9 +46,9 @@ function finalDecision(event?: ScoredEvent): 'BUY' | 'MAYBE' | 'SKIP' | undefine
 }
 
 function decisionLabel(value?: 'BUY' | 'MAYBE' | 'SKIP') {
-  if (value === 'BUY') return 'Ota'
-  if (value === 'MAYBE') return 'Seuraa'
-  return 'Ohita'
+  if (value === 'BUY') return 'Hyvä'
+  if (value === 'MAYBE') return 'Ehkä'
+  return 'Sivuun'
 }
 
 function formatMoney(value?: number | null): string {
@@ -71,30 +71,30 @@ function formatDate(value?: string): string {
 
 function backendLabel(status: BackendStatus, health?: BackendHealthResponse | null) {
   if (status === 'checking') return { text: 'Tarkistetaan', tone: 'warn' }
-  if (status === 'ready' && health?.status === 'ok') return { text: 'Backend toimii', tone: 'ok' }
-  if (status === 'ready') return { text: 'Backend toimii osittain', tone: 'warn' }
+  if (status === 'ready' && health?.status === 'ok') return { text: 'Valmis', tone: 'ok' }
+  if (status === 'ready') return { text: 'Osittain valmis', tone: 'warn' }
   if (status === 'missing-config') return { text: 'API puuttuu', tone: 'bad' }
-  return { text: 'Backend offline', tone: 'bad' }
+  return { text: 'Yhteys poikki', tone: 'bad' }
 }
 
 function backendHelp(p: Props) {
   if (p.backendStatus === 'missing-config') {
-    return p.backendMessage ?? 'Aseta Vercelissä VITE_API_URL Railway-backendin osoitteeksi.'
+    return p.backendMessage ?? 'Aseta Verceliin backendin osoite ennen käyttöä.'
   }
   if (p.backendStatus === 'offline') {
-    return `Railway ei vastaa: ${p.backendMessage ?? 'yhteys epäonnistui'}`
+    return `Backend ei vastaa: ${p.backendMessage ?? 'yhteys epäonnistui'}`
   }
-  if (p.scanError) return `Skannaus epäonnistui: ${p.scanError}`
+  if (p.scanError) return `Skannaus ei mennyt läpi: ${p.scanError}`
   if (p.backendHealth?.services.database.status === 'ok') {
-    return `Tietokanta ok · ${p.backendHealth.services.database.snapshotRows ?? 0} snapshotia`
+    return `Tietokanta kunnossa. ${p.backendHealth.services.database.snapshotRows ?? 0} riviä seurannassa.`
   }
-  return 'Valmis skannaamaan.'
+  return 'Valitse tapahtuma tai liitä suora linkki.'
 }
 
 function statusText(snipe?: SnipeSession | null) {
-  if (!snipe) return 'Ei seurantaa'
+  if (!snipe) return 'Ei aktiivista seurantaa'
   if (snipe.phase === 'waiting') return 'Odottaa myynnin alkua'
-  if (snipe.phase === 'hunting') return 'Seuranta käynnissä'
+  if (snipe.phase === 'hunting') return 'Seuraa nyt'
   if (snipe.phase === 'landed') return 'Liput korissa'
   return snipe.message ?? 'Seuranta pysäytetty'
 }
@@ -164,13 +164,13 @@ export default function SimpleDashboard(p: Props) {
           <span className="simple-brand__mark">KH</span>
           <div>
             <h1>Kidehiiri</h1>
-            <p>Nopea lippuseuranta ilman säätöä.</p>
+            <p>Valitse tapahtuma ja anna sen hoitaa loput.</p>
           </div>
         </div>
         <div className="simple-top__actions">
           <span className={`simple-status simple-status--${backend.tone}`}>{backend.text}</span>
           <button className="simple-button simple-button--ghost" onClick={p.onOpenSettings}>
-            {p.tokenValid ? p.tokenLabel ?? 'Token ok' : 'Aseta token'}
+            {p.tokenValid ? p.tokenLabel ?? 'Token kunnossa' : 'Lisää token'}
           </button>
         </div>
       </header>
@@ -179,16 +179,16 @@ export default function SimpleDashboard(p: Props) {
         <section className="simple-hero">
           <div className="simple-hero__copy">
             <span className="simple-kicker">Kaupunki: {p.city || 'Kaikki'}</span>
-            <h2>Valitse tapahtuma. Kidehiiri hoitaa seurannan.</h2>
+            <h2>Katso lista läpi, avaa tapahtuma ja käynnistä seuranta.</h2>
             <p>{backendHelp(p)}</p>
           </div>
           <div className="simple-hero__actions">
             <button className="simple-button" onClick={p.onOpenCity}>Vaihda kaupunki</button>
             <button className="simple-button simple-button--primary" onClick={p.onRescan} disabled={p.loading || p.backendStatus !== 'ready'}>
-              {p.loading ? 'Skannataan...' : 'Skannaa nyt'}
+              {p.loading ? 'Haetaan...' : 'Hae tapahtumat'}
             </button>
             {p.backendStatus !== 'ready' && (
-              <button className="simple-button simple-button--danger" onClick={p.onRetryBackend}>Tarkista backend</button>
+              <button className="simple-button simple-button--danger" onClick={p.onRetryBackend}>Tarkista yhteys</button>
             )}
           </div>
         </section>
@@ -198,15 +198,15 @@ export default function SimpleDashboard(p: Props) {
             value={urlDraft}
             onChange={(event) => setUrlDraft(event.target.value)}
             onKeyDown={(event) => { if (event.key === 'Enter') submitUrl() }}
-            placeholder="Liitä Kide.app-tapahtuman linkki"
+            placeholder="Liitä tapahtuman linkki tähän"
           />
-          <button className="simple-button simple-button--primary" onClick={submitUrl}>Avaa</button>
+          <button className="simple-button simple-button--primary" onClick={submitUrl}>Avaa tapahtuma</button>
         </section>
 
         <section className="simple-summary" aria-label="Tilanne">
           <div><strong>{stats.total}</strong><span>tapahtumaa</span></div>
-          <div><strong>{stats.buy}</strong><span>ota heti</span></div>
-          <div><strong>{stats.maybe}</strong><span>seuraa</span></div>
+          <div><strong>{stats.buy}</strong><span>hyvää kohdetta</span></div>
+          <div><strong>{stats.maybe}</strong><span>seurattavaa</span></div>
           <div><strong>{p.landedCount}</strong><span>onnistumista</span></div>
         </section>
 
@@ -220,13 +220,13 @@ export default function SimpleDashboard(p: Props) {
               <div className="simple-controls">
                 <select value={filter} onChange={(event) => setFilter(event.target.value as FilterKey)} aria-label="Suodata tapahtumia">
                   <option value="all">Kaikki</option>
-                  <option value="watch">Ota + seuraa</option>
-                  <option value="buy">Ota</option>
-                  <option value="maybe">Seuraa</option>
+                  <option value="watch">Hyvät + ehkä</option>
+                  <option value="buy">Hyvät</option>
+                  <option value="maybe">Ehkä</option>
                 </select>
                 <select value={sort} onChange={(event) => setSort(event.target.value as SortKey)} aria-label="Lajittele tapahtumat">
                   <option value="score">Paras ensin</option>
-                  <option value="soon">Aika</option>
+                  <option value="soon">Pian</option>
                   <option value="price">Hinta</option>
                 </select>
               </div>
@@ -234,8 +234,8 @@ export default function SimpleDashboard(p: Props) {
 
             {visibleEvents.length === 0 ? (
               <div className="simple-empty">
-                <strong>{p.loading ? 'Skannataan...' : 'Ei tapahtumia'}</strong>
-                <span>{p.loading ? 'Tämä kestää yleensä pari sekuntia.' : 'Kokeile toista kaupunkia tai liitä tapahtuman linkki.'}</span>
+                <strong>{p.loading ? 'Haetaan tapahtumia...' : 'Täällä on nyt tyhjää'}</strong>
+                <span>{p.loading ? 'Tämä kestää yleensä vain hetken.' : 'Kokeile toista kaupunkia tai avaa tapahtuma suoran linkin kautta.'}</span>
               </div>
             ) : (
               <div className="simple-events">
@@ -257,7 +257,7 @@ export default function SimpleDashboard(p: Props) {
                       </span>
                       <span className="simple-event__body">
                         <strong>{event.name}</strong>
-                        <small>{formatDate(event.start_time)} · {event.organiser ?? 'Järjestäjä puuttuu'}</small>
+                        <small>{formatDate(event.start_time)} · {event.organiser ?? 'Järjestäjä ei tiedossa'}</small>
                       </span>
                       <span className="simple-event__meta">
                         <strong>{Math.round(event.resell_score)}</strong>
@@ -273,7 +273,7 @@ export default function SimpleDashboard(p: Props) {
           <section className="simple-card simple-detail">
             <div className="simple-card__head">
               <div>
-                <h3>{p.activeEvent ? 'Valittu tapahtuma' : 'Aloita tästä'}</h3>
+                <h3>{p.activeEvent ? 'Tapahtuma' : 'Aloita tästä'}</h3>
                 <p>{statusText(p.snipe)}</p>
               </div>
               {p.snipe && p.snipe.phase !== 'landed' && p.snipe.phase !== 'error' && (
@@ -284,7 +284,7 @@ export default function SimpleDashboard(p: Props) {
             {!p.activeEvent ? (
               <div className="simple-empty simple-empty--large">
                 <strong>Valitse tapahtuma listasta.</strong>
-                <span>Sen jälkeen näet lipputyypit ja voit käynnistää seurannan.</span>
+                <span>Sitten näet lipputyypit ja voit laittaa seurannan päälle.</span>
               </div>
             ) : (
               <>
@@ -329,7 +329,7 @@ export default function SimpleDashboard(p: Props) {
                         >
                           <span>
                             <strong>{variant.name}</strong>
-                            <small>{soldOut ? 'Loppuunmyyty' : salesUpcoming ? 'Odottaa myynnin alkua' : `${variant.availability} jäljellä`}</small>
+                            <small>{soldOut ? 'Loppu' : salesUpcoming ? 'Myynti ei ole vielä alkanut' : `${variant.availability} jäljellä`}</small>
                           </span>
                           <strong>{formatMoney(price)}</strong>
                         </button>
@@ -355,7 +355,7 @@ export default function SimpleDashboard(p: Props) {
                         p.onStart({ variantId: selectedVariant.inventoryId, variantName: selectedVariant.name, quantity })
                       }}
                     >
-                      {!p.tokenValid ? 'Token puuttuu' : activeSnipe ? 'Seuranta käynnissä' : salesUpcoming ? 'Aloita ennakkoseuranta' : 'Aloita seuranta'}
+                      {!p.tokenValid ? 'Token puuttuu' : activeSnipe ? 'Seuranta päällä' : salesUpcoming ? 'Aloita valmiiksi' : 'Käynnistä seuranta'}
                     </button>
                   )}
                 </div>

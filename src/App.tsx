@@ -81,7 +81,7 @@ export default function App() {
   const [serverJobId, setServerJobId] = useState<string | null>(() => readLS('kh.serverJobId', '') || null)
 
   // tick for reactive "last updated" label (every 15s)
-  const [labelTick, setTick] = useState(0)
+  const [, setTick] = useState(0)
   const snipeRunRef = useRef<{ cancelled: boolean } | null>(null)
   const snipeRef = useRef(snipe)
   const detailRef = useRef<EventResponse | null>(null)
@@ -136,7 +136,7 @@ export default function App() {
       setBackendHealth(health)
       setBackendStatus('ready')
       setBackendMessage(health.status === 'degraded' ? 'Backend vastaa, mutta osa palveluista on heikossa tilassa.' : null)
-      pushLog(health.status === 'ok' ? 'ok' : 'warn', `Backend ${health.status} · ${apiStatus.apiUrl || 'same-origin'}`)
+      pushLog(health.status === 'ok' ? 'ok' : 'warn', `Yhteys ${health.status} · ${apiStatus.apiUrl || 'same-origin'}`)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Backend ei vastaa'
       setBackendStatus('offline')
@@ -166,7 +166,7 @@ export default function App() {
         const job = await getServerSnipe(serverJobId)
         if (job.status === 'success') {
           const qty = job.quantity ?? 1
-          pushLog('ok', `PALVELIN ONNISTUI — ${qty} kpl lisätty koriin (varmuusvaraus)`)
+          pushLog('ok', `Varaus meni läpi · ${qty} kpl lisätty koriin`)
           setSnipe((s) => (s ? { ...s, phase: 'landed' as SnipePhase, quantity: qty } : s))
           setLandedCount((n) => n + 1)
           setServerJobId(null)
@@ -380,11 +380,11 @@ export default function App() {
           const salesStartAt = Date.now() + tUntil * 1000
           setSnipe((s) => (s ? { ...s, phase: 'waiting', salesStartAt } : s))
 
-          // Refresh anti-bot values once in the 30 s window before sale opens
+          // Refresh connection values once in the 30 s window before sale opens
           if (tUntil <= 30 && !didRefreshBeforeSale) {
             didRefreshBeforeSale = true
             fetchExtraProperties().catch(() => {})
-            pushLog('info', `Myynti aukeaa ${Math.round(tUntil)}s päästä — otsakkeet päivitetty`)
+            pushLog('info', `Myynti aukeaa ${Math.round(tUntil)}s päästä — yhteysarvot päivitetty`)
           } else if (tUntil <= 10) {
             pushLog('info', `Myynti aukeaa ${Math.round(tUntil)}s päästä!`)
           }
@@ -468,12 +468,12 @@ export default function App() {
   // ─── derived ────────────────────────────────────────────────────────────
   const activeEvent = useMemo(() => events.find((e) => e.event_id === activeId), [events, activeId])
   // Recomputes on every tick (every 15s) so the label stays fresh
-  const lastUpdatedLabel = useMemo(() => {
+  const lastUpdatedLabel = (() => {
     if (!lastScanAt) return 'ei päivitetty'
     const s = Math.max(0, Math.floor((Date.now() - lastScanAt) / 1000))
     if (s < 60) return `päivitetty ${s} s sitten`
     return `päivitetty ${Math.floor(s / 60)} min sitten`
-  }, [lastScanAt, labelTick])
+  })()
 
 
   // ─── handlers ───────────────────────────────────────────────────────────
@@ -494,7 +494,7 @@ export default function App() {
     { id: 'stop', icon: '⏻', label: 'Pysäytä aktiivinen seuranta', run: stopSnipe },
     { id: 'settings', icon: '⚙', label: 'Avaa asetukset', hint: 'Ctrl+,', run: () => setDrawerOpen(true) },
     { id: 'city', icon: '◉', label: 'Vaihda kaupunki', run: () => setCityPickerOpen(true) },
-    { id: 'refresh', icon: '⟳', label: 'Päivitä anti-bot-otsakkeet', run: () => { fetchExtraProperties().then(() => pushLog('ok', 'Otsakkeet päivitetty')).catch(() => pushLog('err', 'Otsakkeiden päivitys epäonnistui')) } },
+    { id: 'refresh', icon: '⟳', label: 'Päivitä yhteysarvot', run: () => { fetchExtraProperties().then(() => pushLog('ok', 'Yhteysarvot päivitetty')).catch(() => pushLog('err', 'Yhteysarvojen päivitys epäonnistui')) } },
   ]
 
   return (
