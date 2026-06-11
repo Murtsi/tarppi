@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef, type ChangeEvent } from 'react'
-import { C, F } from '../../lib/lt/tokens'
-import { Lbl } from '../../lib/lt/primitives'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import type { ThemeMode } from '../../lib/theme'
 
 type Props = {
   open: boolean
@@ -13,23 +12,28 @@ type Props = {
   notifyEnabled: boolean
   telegramChatId: string
   proxyUrl: string
-  onSave: (next: { token: string; pollMs: number; fallbackMode: boolean; notifyEnabled: boolean; telegramChatId: string; proxyUrl: string }) => void
+  theme: ThemeMode
+  onSave: (next: {
+    token: string
+    pollMs: number
+    fallbackMode: boolean
+    notifyEnabled: boolean
+    telegramChatId: string
+    proxyUrl: string
+    theme: ThemeMode
+  }) => void
   onValidate: (draftToken: string) => Promise<void>
 }
 
-// Strip Kide.app WARNING prefix and surrounding JSON quotes, then trim.
-// Handles: plain token, "token", WARNING:...! token, "WARNING:...! token"
 function stripKideWarning(raw: string): string {
-  let s = raw.trim()
-  // Remove surrounding JSON quotes (copied from DevTools Application panel)
-  if (s.startsWith('"') && s.endsWith('"')) s = s.slice(1, -1)
-  // Remove WARNING prefix (Kide.app DevTools console warning)
-  const idx = s.lastIndexOf('!')
-  if (idx !== -1) {
-    const after = s.slice(idx + 1).trim()
-    if (after.length > 10) return after
+  let value = raw.trim()
+  if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1)
+  const warningEnd = value.lastIndexOf('!')
+  if (warningEnd !== -1) {
+    const afterWarning = value.slice(warningEnd + 1).trim()
+    if (afterWarning.length > 10) return afterWarning
   }
-  return s.trim()
+  return value.trim()
 }
 
 export default function TokenDrawer(p: Props) {
@@ -39,174 +43,183 @@ export default function TokenDrawer(p: Props) {
   const [notifyEnabled, setNotifyEnabled] = useState(p.notifyEnabled)
   const [telegramChatId, setTelegramChatId] = useState(p.telegramChatId)
   const [proxyUrl, setProxyUrl] = useState(p.proxyUrl)
+  const [theme, setTheme] = useState<ThemeMode>(p.theme)
   const [validating, setValidating] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (p.open) {
-      setToken(p.token)
-      setPollMs(p.pollMs)
-      setFallback(p.fallbackMode)
-      setNotifyEnabled(p.notifyEnabled)
-      setTelegramChatId(p.telegramChatId)
-      setProxyUrl(p.proxyUrl)
-    }
-  }, [p.fallbackMode, p.notifyEnabled, p.open, p.pollMs, p.proxyUrl, p.telegramChatId, p.token])
-
-  // Escape käsitellään keskitetysti App.tsx:ssä, joten ei tarvita erillistä kuuntelijaa
+    if (!p.open) return
+    setToken(p.token)
+    setPollMs(p.pollMs)
+    setFallback(p.fallbackMode)
+    setNotifyEnabled(p.notifyEnabled)
+    setTelegramChatId(p.telegramChatId)
+    setProxyUrl(p.proxyUrl)
+    setTheme(p.theme)
+  }, [p.fallbackMode, p.notifyEnabled, p.open, p.pollMs, p.proxyUrl, p.telegramChatId, p.theme, p.token])
 
   const handleValidate = async () => {
     if (!token.trim()) return
     setValidating(true)
-    try { await p.onValidate(token) } finally { setValidating(false) }
+    try {
+      await p.onValidate(token)
+    } finally {
+      setValidating(false)
+    }
   }
 
-  const handleProxyFile = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleProxyFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => {
-      const text = (ev.target?.result as string) ?? ''
-      const line = text.split('\n').map((l) => l.trim()).find((l) => l.startsWith('http'))
+    reader.onload = (readerEvent) => {
+      const text = (readerEvent.target?.result as string) ?? ''
+      const line = text.split('\n').map((row) => row.trim()).find((row) => row.startsWith('http'))
       if (line) setProxyUrl(line)
     }
     reader.readAsText(file)
-    e.target.value = ''
+    event.target.value = ''
   }
 
   if (!p.open) return null
 
   return (
-    <div className="lt-palette-overlay" onClick={p.onClose}>
-      <div className="lt-drawer" onClick={(e) => e.stopPropagation()}>
-        <div className="lt-drawer__head">
-          <div style={{ fontFamily: F.display, fontStyle: 'italic', fontSize: 22, color: C.ink, letterSpacing: '-0.02em' }}>
-            Asetukset
+    <div className="simple-overlay" onClick={p.onClose}>
+      <div className="simple-settings" onClick={(event) => event.stopPropagation()}>
+        <div className="simple-settings__head">
+          <div>
+            <h2>Asetukset</h2>
+            <p>Token, ilmoitukset ja ulkoasu.</p>
           </div>
-          <span style={{ flex: 1 }} />
-          <button className="lt-iconbtn" onClick={p.onClose}>×</button>
+          <button className="simple-button simple-button--ghost simple-settings__close" onClick={p.onClose}>
+            ×
+          </button>
         </div>
 
-        <div className="lt-drawer__body">
-          {/* Token */}
-          <div style={{ marginBottom: 18 }}>
-            <Lbl>Kide.app-token</Lbl>
+        <div className="simple-settings__body">
+          <section className="simple-settings__section">
+            <div className="simple-settings__label">Kide.app-token</div>
             <textarea
               value={token}
-              onChange={(e) => setToken(stripKideWarning(e.target.value))}
+              onChange={(event) => setToken(stripKideWarning(event.target.value))}
               rows={3}
-              placeholder="Liitä token tai koko WARNING-viesti tähän…"
-              className="lt-input lt-input--area"
+              placeholder="Liitä token tai koko WARNING-viesti tähän"
+              className="simple-settings__input simple-settings__textarea"
             />
-            <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+            <div className="simple-settings__row">
               <button
-                className="lt-btn lt-btn--ghost"
+                className="simple-button simple-button--ghost"
                 onClick={handleValidate}
                 disabled={validating}
               >
-                {validating ? 'Tarkistetaan…' : 'Tarkista'}
+                {validating ? 'Tarkistetaan...' : 'Tarkista'}
               </button>
-              <span style={{ fontFamily: F.mono, fontSize: 11, color: p.tokenValid ? C.accent : C.skip }}>
-                {p.tokenValid ? `✓ ${p.tokenEmail ?? 'kelvollinen'}` : '✗ virheellinen'}
+              <span className={`simple-settings__tokenstate ${p.tokenValid ? 'is-ok' : 'is-bad'}`}>
+                {p.tokenValid ? `Kunnossa: ${p.tokenEmail ?? 'token toimii'}` : 'Token puuttuu tai ei toimi'}
               </span>
             </div>
-
-            <div style={{
-              marginTop: 12,
-              padding: '10px 12px',
-              background: 'rgba(255,255,255,0.03)',
-              border: `1px solid ${C.rule}`,
-              borderRadius: 8,
-              fontFamily: F.mono,
-              fontSize: 10,
-              color: C.inkSoft,
-              lineHeight: 1.7,
-            }}>
-              <div style={{ color: C.inkMuted, marginBottom: 4, letterSpacing: '0.10em', textTransform: 'uppercase', fontSize: 9 }}>Miten saan tokenin</div>
-              <div>1. Avaa <span style={{ color: C.ink }}>kide.app</span> selaimessa ja kirjaudu sisään</div>
-              <div>2. Paina <span style={{ color: C.ink }}>F12</span> → <span style={{ color: C.ink }}>Console</span>-välilehti</div>
-              <div>3. Kirjoita: <span style={{ color: C.accent, letterSpacing: 0 }}>copy(localStorage.getItem('authorization.token'))</span></div>
-              <div>4. Liitä tähän — WARNING-viesti poistetaan automaattisesti</div>
+            <div className="simple-settings__hint">
+              <strong>Mistä token löytyy?</strong>
+              <span>
+                Avaa kide.app, kirjaudu sisään, avaa Console ja aja{' '}
+                <code>copy(localStorage.getItem('authorization.token'))</code>. Liitä tulos tähän.
+              </span>
             </div>
-          </div>
+          </section>
 
-          {/* Poll interval */}
-          <div style={{ marginBottom: 18 }}>
-            <Lbl>Pollausväli · {pollMs} ms</Lbl>
+          <section className="simple-settings__section">
+            <div className="simple-settings__split">
+              <div>
+                <div className="simple-settings__label">Pollausväli</div>
+                <p>Nopeampi arvo reagoi aiemmin, mutta kuormittaa enemmän.</p>
+              </div>
+              <strong>{pollMs} ms</strong>
+            </div>
             <input
               type="range"
               min={200}
               max={2000}
               step={100}
               value={pollMs}
-              onChange={(e) => setPollMs(Number(e.target.value))}
-              className="lt-slider"
+              onChange={(event) => setPollMs(Number(event.target.value))}
+              className="simple-settings__range"
             />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: F.mono, fontSize: 10, color: C.inkMuted, marginTop: 4 }}>
-              <span>nopea 200 ms</span>
-              <span>hidas 2000 ms</span>
+            <div className="simple-settings__range-labels">
+              <span>Nopea 200 ms</span>
+              <span>Rauhallinen 2000 ms</span>
             </div>
-          </div>
+          </section>
 
-          {/* Fallback mode */}
-          <div style={{ marginBottom: 18 }}>
-            <Lbl>Varareitti</Lbl>
-            <label className="lt-toggle">
-              <input type="checkbox" checked={fallback} onChange={(e) => setFallback(e.target.checked)} />
-              <span>{fallback ? 'Päällä — kokeile pienempää määrää' : 'Pois'}</span>
+          <section className="simple-settings__section simple-settings__toggles">
+            <label className="simple-switch">
+              <input type="checkbox" checked={fallback} onChange={(event) => setFallback(event.target.checked)} />
+              <span />
+              <div>
+                <strong>Varareitti</strong>
+                <small>Kokeile pienempää määrää, jos valittu määrä ei mene koriin.</small>
+              </div>
             </label>
-          </div>
 
-          <div style={{ marginBottom: 18 }}>
-            <Lbl>Äänet ja ilmoitukset</Lbl>
-            <label className="lt-toggle">
-              <input type="checkbox" checked={notifyEnabled} onChange={(e) => setNotifyEnabled(e.target.checked)} />
-              <span>{notifyEnabled ? 'Päällä' : 'Pois'}</span>
+            <label className="simple-switch">
+              <input type="checkbox" checked={notifyEnabled} onChange={(event) => setNotifyEnabled(event.target.checked)} />
+              <span />
+              <div>
+                <strong>Äänet ja ilmoitukset</strong>
+                <small>Näytä ilmoitus ja soita merkkiääni, kun varaus onnistuu tai epäonnistuu.</small>
+              </div>
             </label>
-          </div>
+          </section>
 
-          <div style={{ marginBottom: 18 }}>
-            <Lbl>Telegram chat ID (valinnainen)</Lbl>
+          <section className="simple-settings__section">
+            <div className="simple-settings__label">Ulkoasu</div>
+            <div className="simple-segment" role="group" aria-label="Ulkoasu">
+              <button
+                type="button"
+                className={theme === 'light' ? 'is-active' : ''}
+                onClick={() => setTheme('light')}
+              >
+                Vaalea
+              </button>
+              <button
+                type="button"
+                className={theme === 'dark' ? 'is-active' : ''}
+                onClick={() => setTheme('dark')}
+              >
+                Tumma
+              </button>
+            </div>
+          </section>
+
+          <section className="simple-settings__section">
+            <div className="simple-settings__label">Telegram chat ID</div>
             <input
               type="text"
               value={telegramChatId}
-              onChange={(e) => setTelegramChatId(e.target.value)}
+              onChange={(event) => setTelegramChatId(event.target.value)}
               placeholder="123456789 tai -100..."
-              className="lt-input"
+              className="simple-settings__input"
             />
-            <div style={{ fontFamily: F.mono, fontSize: 10, color: C.inkMuted, marginTop: 4, lineHeight: 1.6 }}>
-              Lähetä ensin viesti botille. Kun tähän on lisätty chat ID, saat viestin, kun liput menevät koriin.
+            <div className="simple-settings__help">
+              Lähetä ensin viesti botille. Jos jätät tämän tyhjäksi, käytetään palvelimen oletusvastaanottajaa.
             </div>
-          </div>
+          </section>
 
-          {/* Proxy URL */}
-          <div style={{ marginBottom: 18 }}>
-            <Lbl>Proxy URL (valinnainen)</Lbl>
-            <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+          <section className="simple-settings__section">
+            <div className="simple-settings__label">Proxy URL</div>
+            <div className="simple-settings__inline">
               <input
                 type="text"
                 value={proxyUrl}
-                onChange={(e) => setProxyUrl(e.target.value)}
+                onChange={(event) => setProxyUrl(event.target.value)}
                 placeholder="http://proxy:8080"
-                style={{
-                  flex: 1,
-                  background: 'var(--lt-panel2)',
-                  border: '1px solid var(--lt-rule)',
-                  color: 'var(--lt-ink)',
-                  borderRadius: 6,
-                  padding: '8px 10px',
-                  fontFamily: F.mono,
-                  fontSize: 12,
-                  outline: 'none',
-                }}
+                className="simple-settings__input"
               />
               <button
-                className="lt-btn lt-btn--ghost"
+                className="simple-button simple-button--ghost"
                 onClick={() => fileInputRef.current?.click()}
-                title="Lataa proxy-osoite tiedostosta"
-                style={{ flexShrink: 0, padding: '0 12px', fontSize: 13 }}
+                type="button"
               >
-                📂
+                Tiedosto
               </button>
               <input
                 ref={fileInputRef}
@@ -216,17 +229,20 @@ export default function TokenDrawer(p: Props) {
                 onChange={handleProxyFile}
               />
             </div>
-            <div style={{ fontFamily: F.mono, fontSize: 10, color: C.inkMuted, marginTop: 4 }}>
-              Kirjoita osoite tai lataa tiedostosta (etsii ensimmäisen http-rivin)
+            <div className="simple-settings__help">
+              Valinnainen. Jos et käytä proxya, jätä tyhjäksi.
             </div>
-          </div>
+          </section>
         </div>
 
-        <div className="lt-drawer__foot">
-          <button className="lt-btn lt-btn--ghost" onClick={p.onClose}>Peruuta</button>
+        <div className="simple-settings__foot">
+          <button className="simple-button simple-button--ghost" onClick={p.onClose}>Peruuta</button>
           <button
-            className="lt-btn lt-btn--primary"
-            onClick={() => { p.onSave({ token, pollMs, fallbackMode: fallback, notifyEnabled, telegramChatId, proxyUrl }); p.onClose() }}
+            className="simple-button simple-button--primary"
+            onClick={() => {
+              p.onSave({ token, pollMs, fallbackMode: fallback, notifyEnabled, telegramChatId, proxyUrl, theme })
+              p.onClose()
+            }}
           >
             Tallenna
           </button>

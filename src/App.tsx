@@ -33,6 +33,7 @@ import {
   playSuccessSound,
   setNotificationsEnabled,
 } from './lib/notify'
+import { applyThemeMode, readThemeMode, writeThemeMode, type ThemeMode } from './lib/theme'
 import './App.css'
 
 const MAX_LOG = 40
@@ -61,6 +62,7 @@ export default function App() {
   const [notifyEnabled, setNotifyEnabledState] = useState<boolean>(() => notificationsEnabled())
   const [telegramChatId, setTelegramChatId] = useState<string>(() => readLS('kh.telegramChatId', ''))
   const [proxyUrl, setProxyUrl] = useState<string>(() => readLS('kh.proxy', ''))
+  const [theme, setTheme] = useState<ThemeMode>(() => readThemeMode('light'))
   const [city, setCity] = useState<string>(() => readLS('kh.city', DEFAULT_CITY))
 
   // scan
@@ -144,6 +146,10 @@ export default function App() {
   useEffect(() => { writeLS('kh.telegramChatId', telegramChatId) }, [telegramChatId])
   useEffect(() => { writeLS('kh.serverJobId', serverJobId ?? '') }, [serverJobId])
   useEffect(() => { setNotificationsEnabled(notifyEnabled) }, [notifyEnabled])
+  useEffect(() => {
+    applyThemeMode(theme)
+    writeThemeMode(theme)
+  }, [theme])
   useEffect(() => {
     if (snipe && snipe.phase !== 'error') {
       writeStoredSnipeSession(snipe, serverJobId)
@@ -684,6 +690,7 @@ export default function App() {
         notifyEnabled={notifyEnabled}
         telegramChatId={telegramChatId}
         proxyUrl={proxyUrl}
+        theme={theme}
         onSave={(next) => {
           setToken(next.token)
           setPollMs(next.pollMs)
@@ -691,6 +698,7 @@ export default function App() {
           setNotifyEnabledState(next.notifyEnabled)
           setTelegramChatId(next.telegramChatId)
           setProxyUrl(next.proxyUrl)
+          setTheme(next.theme)
         }}
         onValidate={async (draftToken) => {
           const t = draftToken.trim()

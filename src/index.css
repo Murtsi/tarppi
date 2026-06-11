@@ -11,6 +11,29 @@
   --lt-rule-strong: rgba(236, 234, 226, 0.16);
   --lt-accent: #4ade80;
   --lt-accent-dim: rgba(74, 222, 128, 0.22);
+  --simple-bg: #edf3f7;
+  --simple-bg-2: #f3f7f4;
+  --simple-surface: rgba(255, 255, 255, 0.92);
+  --simple-surface-solid: #ffffff;
+  --simple-surface-soft: #f7faf8;
+  --simple-surface-hover: #f0f7f2;
+  --simple-border: #dbe7df;
+  --simple-border-strong: #cad9d0;
+  --simple-ink: #14221a;
+  --simple-muted: #66756d;
+  --simple-muted-strong: #526057;
+  --simple-accent: #147a4d;
+  --simple-accent-strong: #157347;
+  --simple-accent-soft: #e7f6ed;
+  --simple-danger-bg: #fff0ef;
+  --simple-danger-border: #efbeb8;
+  --simple-danger: #b42318;
+  --simple-warn-bg: #fff6dc;
+  --simple-warn-border: #ead28b;
+  --simple-warn: #855f12;
+  --simple-shadow: rgba(20, 34, 26, 0.08);
+  --simple-overlay: rgba(20, 33, 27, 0.18);
+  color-scheme: light;
 
   font-family: 'Geist', -apple-system, system-ui, sans-serif;
   line-height: 1.5;
@@ -22,6 +45,32 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+}
+
+:root[data-theme='dark'] {
+  --simple-bg: #090d0b;
+  --simple-bg-2: #101612;
+  --simple-surface: rgba(18, 25, 21, 0.94);
+  --simple-surface-solid: #121915;
+  --simple-surface-soft: #18221d;
+  --simple-surface-hover: #1d2d24;
+  --simple-border: rgba(220, 244, 229, 0.12);
+  --simple-border-strong: rgba(220, 244, 229, 0.22);
+  --simple-ink: #ecf4ee;
+  --simple-muted: #9aac9f;
+  --simple-muted-strong: #c0cec4;
+  --simple-accent: #44d178;
+  --simple-accent-strong: #74e39b;
+  --simple-accent-soft: rgba(68, 209, 120, 0.16);
+  --simple-danger-bg: rgba(248, 113, 113, 0.12);
+  --simple-danger-border: rgba(248, 113, 113, 0.32);
+  --simple-danger: #fca5a5;
+  --simple-warn-bg: rgba(251, 191, 36, 0.12);
+  --simple-warn-border: rgba(251, 191, 36, 0.3);
+  --simple-warn: #fcd77d;
+  --simple-shadow: rgba(0, 0, 0, 0.36);
+  --simple-overlay: rgba(2, 6, 4, 0.64);
+  color-scheme: dark;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
