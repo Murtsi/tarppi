@@ -87,7 +87,7 @@ function backendHelp(p: Props) {
   if (p.backendStatus === 'offline') {
     return `Backend ei vastaa: ${p.backendMessage ?? 'yhteys epäonnistui'}`
   }
-  if (p.scanError) return `Skannaus ei mennyt läpi: ${p.scanError}`
+  if (p.scanError) return `Tapahtumien haku ei mennyt läpi: ${p.scanError}`
   if (p.backendHealth?.services.database.status === 'ok') {
     const currentEvents = p.events.length
     const trackedEvents = p.backendHealth.services.database.trackedEvents ?? 0
@@ -191,7 +191,7 @@ export default function SimpleDashboard(p: Props) {
           <span className="simple-brand__mark">T</span>
           <div>
             <h1>Tärppi</h1>
-            <p>Valitse tapahtuma. Tärppi vahtii liput puolestasi.</p>
+            <p>Valitse tapahtuma. Botti lisää liput puolestasi.</p>
           </div>
         </div>
         <div className="simple-top__actions">
@@ -243,10 +243,9 @@ export default function SimpleDashboard(p: Props) {
         </section>
 
         <section className="simple-summary" aria-label="Tilanne">
-          <div><strong>{stats.total}</strong><span>tapahtumaa</span></div>
-          <div><strong>{stats.buy}</strong><span>osta heti</span></div>
-          <div><strong>{stats.maybe}</strong><span>seurattavaa</span></div>
-          <div><strong>{p.landedCount}</strong><span>onnistumista</span></div>
+          <div><strong>{stats.total}</strong><span>Tapahtumaa</span></div>
+          <div><strong>{stats.buy}</strong><span>Ostokehotus</span></div>
+          <div><strong>{stats.maybe}</strong><span>Seurattava</span></div>
         </section>
 
         <div className="simple-grid">
@@ -404,7 +403,7 @@ export default function SimpleDashboard(p: Props) {
                         p.onStart({ variantId: selectedVariant.inventoryId, variantName: selectedVariant.name, quantity })
                       }}
                     >
-                      {!p.tokenValid ? 'Token puuttuu' : activeSnipe ? 'Vahti päällä' : salesUpcoming ? 'Aloita valmiiksi' : 'Laita vahtiin'}
+                      {!p.tokenValid ? 'Token puuttuu' : activeSnipe ? 'Botti käynnissä' : 'Käynnistä botti'}
                     </button>
                   )}
                 </div>
@@ -415,8 +414,9 @@ export default function SimpleDashboard(p: Props) {
 
         {p.latestLog && (
           <section className={`simple-log simple-log--${p.latestLog.level}`}>
-            <span>{p.latestLog.ts}</span>
+            <span>Live-logi</span>
             <strong>{p.latestLog.text}</strong>
+            <time>{p.latestLog.ts}</time>
           </section>
         )}
       </main>

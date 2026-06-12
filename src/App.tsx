@@ -293,7 +293,7 @@ export default function App() {
     if (backendStatus !== 'ready') {
       const msg = backendMessage ?? 'Backend ei ole valmis.'
       setScanError(msg)
-      pushLog('warn', `Skannaus odottaa backendia: ${msg}`)
+      pushLog('warn', `Live-loki odottaa backendia: ${msg}`)
       return
     }
 
@@ -304,11 +304,11 @@ export default function App() {
       const r = await scanCity(c)
       setEvents(r.events)
       setLastScanAt(Date.now())
-      pushLog('ok', `Skannaus · ${c || 'Kaikkialla'} · ${r.events.length} tapahtumaa`)
+      pushLog('ok', `Tapahtumalista päivitetty · ${c || 'Kaikkialla'} · ${r.events.length} tapahtumaa`)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'virhe'
       setScanError(msg)
-      pushLog('err', `Skannaus epäonnistui: ${msg}`)
+      pushLog('err', `Tapahtumien haku epäonnistui: ${msg}`)
     } finally {
       setScanning(false)
     }
@@ -420,7 +420,7 @@ export default function App() {
         }
         setServerJobId(job.jobId)
         const whenStr = job.scheduledFor
-          ? `aukeaa ${new Date(job.scheduledFor + 1000).toLocaleTimeString('fi-FI')} — palvelin ampuu automaattisesti`
+          ? `aukeaa ${new Date(job.scheduledFor + 1000).toLocaleTimeString('fi-FI')} — botti yrittää lisätä liput automaattisesti`
           : 'palvelinseuranta aktiivinen'
         pushLog('info', `Palvelinseuranta rekisteröity · ${whenStr}`)
       })
@@ -547,7 +547,7 @@ export default function App() {
         const wasWaiting = snipeRef.current?.phase === 'waiting'
         if (wasWaiting) {
           setSnipe((s) => (s ? { ...s, phase: 'hunting', salesStartAt: undefined } : s))
-          pushLog('ok', 'Myynti avautui — ammutaan heti!')
+          pushLog('ok', 'Myynti avautui — botti yrittää lisätä liput koriin')
           if (variant) {
             try {
               const landed = await tryCart(params.quantity)

@@ -479,7 +479,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     // Info Modal
     technicalDetails: 'Tekniset tiedot',
     howItWorks: 'Kuinka se toimii',
-    howItWorksText: 'Tärppi vahtii kide.appia ja lisää liput koriin, kun myynti aukeaa. Maksun teet itse.',
+    howItWorksText: 'Botti lisää liput puolestasi, kun myynti aukeaa. Maksun teet itse.',
     authentication: 'Tunnistaminen',
     authenticationText: 'Bearer-tokenia käytetään kide.app:n kanssa todentamiseen. Älä koskaan jaa sitä kenelle tahansa. Sovellus lähettää pyynnöt turvallisen palvelimen kautta.',
     pollingInterval: 'Kyselyväli',
@@ -543,7 +543,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     scorerAlmostSoldOut: 'Lähes loppuunmyyty',
     scorerPaused: 'Tauolla',
     scorerFavorites: 'suosikkia',
-    scorerTriggerBot: 'Laita vahtiin',
+    scorerTriggerBot: 'Käynnistä botti',
     scorerNoResults: 'Ei tuloksia vielä. Valitse kaupunki ja klikkaa Skannaa tapahtumat.',
 
     // AI Scoring
