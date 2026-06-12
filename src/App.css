@@ -1214,6 +1214,13 @@
   line-height: 1.25;
 }
 
+.simple-telegram__bot {
+  color: var(--simple-accent);
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .simple-telegram input {
   width: 100%;
   height: 34px;

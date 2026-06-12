@@ -198,7 +198,7 @@ export default function SimpleDashboard(p: Props) {
           <section className="simple-telegram" aria-label="Telegram-botti">
             <div className="simple-telegram__copy">
               <strong>Telegram-botti</strong>
-              <span>Kirjoita <b>@Tarppibotille</b> ja liitä Chat ID tähän.</span>
+              <span>Avaa <b className="simple-telegram__bot">@Tarppibot</b> ja liitä sieltä saamasi Chat ID tähän.</span>
             </div>
             <input
               aria-label="Telegram Chat ID"
