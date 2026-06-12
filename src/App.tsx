@@ -668,11 +668,13 @@ export default function App() {
         snipe={snipe}
         latestLog={logs[0]}
         pollMs={pollMs}
+        telegramChatId={telegramChatId}
         onPick={handlePick}
         onRescan={() => runScan()}
         onRetryBackend={checkBackend}
         onOpenSettings={() => setDrawerOpen(true)}
         onOpenCity={() => setCityPickerOpen(true)}
+        onTelegramChatIdChange={setTelegramChatId}
         onSubmitUrl={handleUrlSubmit}
         onStart={startSnipe}
         onStopSnipe={stopSnipe}

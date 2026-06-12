@@ -30,11 +30,13 @@ type Props = {
   snipe?: SnipeSession | null
   latestLog?: LogLine
   pollMs: number
+  telegramChatId: string
   onPick: (id: string) => void
   onRescan: () => void
   onRetryBackend: () => void
   onOpenSettings: () => void
   onOpenCity: () => void
+  onTelegramChatIdChange: (chatId: string) => void
   onSubmitUrl: (url: string) => void
   onStart: (params: { variantId: string; variantName: string; quantity: number }) => void
   onStopSnipe: () => void
@@ -187,6 +189,18 @@ export default function SimpleDashboard(p: Props) {
           </div>
         </div>
         <div className="simple-top__actions">
+          <section className="simple-telegram" aria-label="Telegram-botti">
+            <div className="simple-telegram__copy">
+              <strong>Telegram-botti</strong>
+              <span>Kirjoita <b>@Tarppibot</b>:lle ja liitä Chat ID tähän.</span>
+            </div>
+            <input
+              aria-label="Telegram Chat ID"
+              value={p.telegramChatId}
+              onChange={(event) => p.onTelegramChatIdChange(event.target.value)}
+              placeholder="Chat ID"
+            />
+          </section>
           <span className={`simple-status simple-status--${backend.tone}`}>{backend.text}</span>
           <button className="simple-button simple-button--ghost" onClick={p.onOpenSettings}>
             {p.tokenValid ? p.tokenLabel ?? 'Token kunnossa' : 'Lisää token'}
