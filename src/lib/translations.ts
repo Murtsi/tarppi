@@ -3,8 +3,8 @@ export type LanguageCode = 'en' | 'fi'
 export const translations: Record<LanguageCode, Record<string, string>> = {
   en: {
     // Header
-    appTitle: 'Kidehiiri',
-    appSubtitle: 'Automatic ticket buying bot for kide.app',
+    appTitle: 'Tärppi',
+    appSubtitle: 'Ticket watch for kide.app',
     
     // Steps
     step1: 'Event',
@@ -42,7 +42,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
 
     // Token instruction guide
     tokenGuideTitle: 'How to get your authorization token',
-    tokenGuideIntro: 'Your authorization token lets Kidehiiri add tickets to your kide.app cart on your behalf. Follow these steps to find it:',
+    tokenGuideIntro: 'Your authorization token lets Tärppi add tickets to your kide.app cart on your behalf. Follow these steps to find it:',
     tokenGuideStep1Title: 'Step 1 — Log in to kide.app',
     tokenGuideStep1Text: 'Open your browser and go to kide.app. Log in with your account.',
     tokenGuideStep2Title: 'Step 2 — Open Developer Tools',
@@ -54,7 +54,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tokenGuideStep5Title: 'Step 5 — Copy the token',
     tokenGuideStep5Text: 'Look for a key called "authorization.token" (or similar). The value is a long string starting with "eyJ...". Double-click the value to select it, then copy it (Ctrl+C).',
     tokenGuideStep6Title: 'Step 6 — Paste it here',
-    tokenGuideStep6Text: 'Come back to Kidehiiri and paste the token into the Authorization token field above. Click "Validate token" to confirm it works.',
+    tokenGuideStep6Text: 'Come back to Tärppi and paste the token into the Authorization token field above. Click "Validate token" to confirm it works.',
     tokenGuideNote: 'Note: Your token expires periodically. If it stops working, repeat these steps to get a fresh one.',
     tokenGuideClose: 'Got it',
 
@@ -127,7 +127,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     // Info Modal
     technicalDetails: 'Technical Details',
     howItWorks: 'How It Works',
-    howItWorksText: 'Kidehiiri monitors Kide.app for event availability and automatically adds tickets to your cart when they go on sale. You then complete the checkout manually.',
+    howItWorksText: 'Tärppi watches Kide.app and adds tickets to your cart when sales open. You still pay manually.',
     authentication: 'Authentication',
     authenticationText: 'Your Bearer token is used to authenticate with Kide.app. Never share it with anyone. The app sends requests through a secure backend server.',
     pollingInterval: 'Polling Interval',
@@ -155,7 +155,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
 
     // AI Scorer
     scorerTab: 'AI Scorer',
-    sniperTab: 'Sniper',
+    sniperTab: 'Watch',
     scorerTitle: 'AI Resell Scorer',
     scorerSubtitle: 'Automatically scan Kide.app events by city and score resell potential',
     scorerCityLabel: 'City (Finland)',
@@ -186,7 +186,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     scorerPricing: 'Price positioning',
     scorerTiming: 'Timing',
     scorerOrganiser: 'Organiser',
-    scorerTriggerBot: 'Snipe This',
+    scorerTriggerBot: 'Watch this',
     scorerNoResults: 'No results yet. Select a city to scan events.',
     scorerUpcoming: 'Upcoming',
     scorerOnSale: 'On sale',
@@ -274,12 +274,12 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tikettiLastUpdated: 'Last updated',
 
     // Tiketti sub-tabs
-    tikettiSniperTab: 'Sniper',
+    tikettiSniperTab: 'Tiketti arrives',
     tikettiEventsTab: 'Events',
 
-    // Tiketti Sniper
+    // Tiketti watch
     tikettiSniperTitle: 'Tiketti.fi Monitor',
-    tikettiSniperSubtitle: 'Paste a Tiketti.fi event URL — get alerted when tickets become available',
+    tikettiSniperSubtitle: 'Paste a Tiketti.fi event URL and get alerted when tickets appear',
     tikettiSniperUrlLabel: 'Event URL',
     tikettiSniperFetchBtn: 'Fetch',
     tikettiSniperFetching: 'Loading...',
@@ -290,7 +290,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tikettiSniperTicketsFree: 'tickets free',
     tikettiSniperWaiting: 'Waiting for sale',
     tikettiSniperNoVariants: 'No ticket types found on this page',
-    tikettiSniperHowItWorks: 'This monitor polls tiketti.fi for ticket availability. When tickets appear, it will try to add them to your cart automatically using the selected method, and alert you with a sound + link.',
+    tikettiSniperHowItWorks: 'Tärppi watches tiketti.fi. When tickets appear, it tries to add them to your cart and alerts you with a sound and link.',
     tikettiSniperQtyLabel: 'Quantity',
     tikettiSniperCookieLabel: 'Browser cookies',
     tikettiSniperCookiePlaceholder: 'CookieConsent=...; QueueITAccepted-...=...; wwwtikettifi=...',
@@ -355,8 +355,8 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
 
   fi: {
     // Header
-    appTitle: 'Kidehiiri',
-    appSubtitle: 'Automaattinen lipunostaja kide.app:iin',
+    appTitle: 'Tärppi',
+    appSubtitle: 'Lippuvahti kide.appiin',
     
     // Steps
     step1: 'Tapahtuma',
@@ -394,7 +394,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
 
     // Token instruction guide
     tokenGuideTitle: 'Kuinka saat valtuutustokenin',
-    tokenGuideIntro: 'Valtuutustokenin avulla Kidehiiri voi lisätä lippuja kide.app-ostoskoriisi puolestasi. Seuraa näitä ohjeita löytääksesi sen:',
+    tokenGuideIntro: 'Valtuutustokenilla Tärppi voi lisätä liput kide.app-koriisi puolestasi. Näin löydät sen:',
     tokenGuideStep1Title: 'Vaihe 1 — Kirjaudu kide.app:iin',
     tokenGuideStep1Text: 'Avaa selain ja siirry osoitteeseen kide.app. Kirjaudu sisään omalla tililläsi.',
     tokenGuideStep2Title: 'Vaihe 2 — Avaa kehittäjätyökalut',
@@ -406,7 +406,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tokenGuideStep5Title: 'Vaihe 5 — Kopioi token',
     tokenGuideStep5Text: 'Etsi avain nimeltä "authorization.token" (tai vastaava). Arvo on pitkä merkkijono, joka alkaa "eyJ...". Kaksoisnapsauta arvoa valitaksesi sen ja kopioi se (Ctrl+C).',
     tokenGuideStep6Title: 'Vaihe 6 — Liitä se tähän',
-    tokenGuideStep6Text: 'Palaa Kidehiiriin ja liitä token Valtuutustoken-kenttään yllä. Napsauta "Vahvista token" varmistaaksesi, että se toimii.',
+    tokenGuideStep6Text: 'Palaa Tärppiin ja liitä token Valtuutustoken-kenttään. Paina "Vahvista token" niin näet toimiiko se.',
     tokenGuideNote: 'Huomio: Tokenisi vanhenee ajoittain. Jos se lakkaa toimimasta, toista nämä vaiheet saadaksesi uuden.',
     tokenGuideClose: 'Selvä',
 
@@ -479,7 +479,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     // Info Modal
     technicalDetails: 'Tekniset tiedot',
     howItWorks: 'Kuinka se toimii',
-    howItWorksText: 'Kidehiiri valvoo kide.app:ia tapahtumien saatavuuden osalta ja lisää liput automaattisesti ostoskoriin niiden tultua myynnille. Tämän jälkeen voit tehdä kaupan itse.',
+    howItWorksText: 'Tärppi vahtii kide.appia ja lisää liput koriin, kun myynti aukeaa. Maksun teet itse.',
     authentication: 'Tunnistaminen',
     authenticationText: 'Bearer-tokenia käytetään kide.app:n kanssa todentamiseen. Älä koskaan jaa sitä kenelle tahansa. Sovellus lähettää pyynnöt turvallisen palvelimen kautta.',
     pollingInterval: 'Kyselyväli',
@@ -507,7 +507,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
 
     // AI Scorer
     scorerTab: 'AI-pisteyttäjä',
-    sniperTab: 'Sniper',
+    sniperTab: 'Vahti',
     scorerTitle: 'AI-jälleenmyyntipisteyttäjä',
     scorerSubtitle: 'Skannaa Kide.app-tapahtumat kaupungin mukaan ja arvioi jälleenmyyntipotentiaali',
     scorerCityLabel: 'Kaupunki (Suomi)',
@@ -543,7 +543,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     scorerAlmostSoldOut: 'Lähes loppuunmyyty',
     scorerPaused: 'Tauolla',
     scorerFavorites: 'suosikkia',
-    scorerTriggerBot: 'Snippaa tämä',
+    scorerTriggerBot: 'Laita vahtiin',
     scorerNoResults: 'Ei tuloksia vielä. Valitse kaupunki ja klikkaa Skannaa tapahtumat.',
 
     // AI Scoring
@@ -625,12 +625,12 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tikettiLastUpdated: 'Päivitetty viimeksi',
 
     // Tiketti sub-tabs
-    tikettiSniperTab: 'Botti',
+    tikettiSniperTab: 'Tiketti saapuu',
     tikettiEventsTab: 'Tapahtumat',
 
-    // Tiketti Sniper
+    // Tiketti-vahti
     tikettiSniperTitle: 'Tiketti.fi-seuranta',
-    tikettiSniperSubtitle: 'Liitä tiketti.fi-tapahtuman URL — saat hälytyksen kun lippuja tulee saataville',
+    tikettiSniperSubtitle: 'Liitä tiketti.fi-linkki. Saat ilmoituksen kun lippuja tulee.',
     tikettiSniperUrlLabel: 'Tapahtuman URL',
     tikettiSniperFetchBtn: 'Hae',
     tikettiSniperFetching: 'Ladataan...',
@@ -641,7 +641,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     tikettiSniperTicketsFree: 'lippua vapaana',
     tikettiSniperWaiting: 'Odottaa myyntiä',
     tikettiSniperNoVariants: 'Lipputyyppejä ei löytynyt sivulta',
-    tikettiSniperHowItWorks: 'Tämä seuranta pollaa tiketti.fi:tä lippujen saatavuudesta. Kun lippuja löytyy, se yrittää lisätä ne ostoskoriin automaattisesti valitulla menetelmällä, ja ilmoittaa äänellä + linkillä.',
+    tikettiSniperHowItWorks: 'Tärppi vahtii tiketti.fi:tä. Kun lippuja tulee, se yrittää lisätä ne koriin ja ilmoittaa äänellä sekä linkillä.',
     tikettiSniperQtyLabel: 'Määrä',
     tikettiSniperCookieLabel: 'Selaimen evästeet',
     tikettiSniperCookiePlaceholder: 'CookieConsent=...; QueueITAccepted-...=...; wwwtikettifi=...',

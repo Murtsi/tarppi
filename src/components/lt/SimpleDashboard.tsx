@@ -89,7 +89,13 @@ function backendHelp(p: Props) {
   }
   if (p.scanError) return `Skannaus ei mennyt läpi: ${p.scanError}`
   if (p.backendHealth?.services.database.status === 'ok') {
-    return `Tietokanta kunnossa. ${p.backendHealth.services.database.snapshotRows ?? 0} riviä seurannassa.`
+    const currentEvents = p.events.length
+    const trackedEvents = p.backendHealth.services.database.trackedEvents ?? 0
+    const eventCount = currentEvents > 0 ? currentEvents : trackedEvents
+    if (eventCount > 0) {
+      return `Tietokanta kunnossa. ${eventCount.toLocaleString('fi-FI')} tapahtumaa listalla.`
+    }
+    return 'Tietokanta kunnossa. Odotetaan tapahtumia.'
   }
   return 'Valitse tapahtuma tai liitä suora linkki.'
 }
@@ -182,17 +188,17 @@ export default function SimpleDashboard(p: Props) {
     <div className="simple-app">
       <header className="simple-top">
         <div className="simple-brand">
-          <span className="simple-brand__mark">KH</span>
+          <span className="simple-brand__mark">T</span>
           <div>
-            <h1>Kidehiiri</h1>
-            <p>Valitse tapahtuma ja anna botin hoitaa loput.</p>
+            <h1>Tärppi</h1>
+            <p>Valitse tapahtuma. Tärppi vahtii liput puolestasi.</p>
           </div>
         </div>
         <div className="simple-top__actions">
           <section className="simple-telegram" aria-label="Telegram-botti">
             <div className="simple-telegram__copy">
               <strong>Telegram-botti</strong>
-              <span>Kirjoita <b>@Tarppibot</b>:lle ja liitä Chat ID tähän.</span>
+              <span>Kirjoita <b>@Tarppibotille</b> ja liitä Chat ID tähän.</span>
             </div>
             <input
               aria-label="Telegram Chat ID"
@@ -212,7 +218,7 @@ export default function SimpleDashboard(p: Props) {
         <section className="simple-hero">
           <div className="simple-hero__copy">
             <span className="simple-kicker">Kaupunki: {p.city || 'Kaikki'}</span>
-            <h2>Valitse tapahtuma ja käynnistä botti.</h2>
+            <h2>Valitse tapahtuma ja laita Tärppi vahtiin.</h2>
             <p>{backendHelp(p)}</p>
           </div>
           <div className="simple-hero__actions">
@@ -317,7 +323,7 @@ export default function SimpleDashboard(p: Props) {
             {!p.activeEvent ? (
               <div className="simple-empty simple-empty--large">
                 <strong>Valitse tapahtuma listasta.</strong>
-                <span>Sitten näet lipputyypit ja voit käynnistää botin.</span>
+                <span>Sitten näet lipputyypit ja voit laittaa Tärpin vahtiin.</span>
               </div>
             ) : (
               <>
@@ -398,7 +404,7 @@ export default function SimpleDashboard(p: Props) {
                         p.onStart({ variantId: selectedVariant.inventoryId, variantName: selectedVariant.name, quantity })
                       }}
                     >
-                      {!p.tokenValid ? 'Token puuttuu' : activeSnipe ? 'Botti käy' : salesUpcoming ? 'Aloita valmiiksi' : 'Käynnistä botti'}
+                      {!p.tokenValid ? 'Token puuttuu' : activeSnipe ? 'Vahti päällä' : salesUpcoming ? 'Aloita valmiiksi' : 'Laita vahtiin'}
                     </button>
                   )}
                 </div>

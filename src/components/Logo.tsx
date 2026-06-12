@@ -1,5 +1,5 @@
 /**
- * Kidehiiri SVG logo — "kide" (crystal/ticket) + "hiiri" (mouse).
+ * Tärppi SVG logo.
  * Inline SVG, no external files needed.
  */
 
@@ -12,7 +12,7 @@ export function KidehiiriIcon({ size = 40 }: { size?: number }) {
       viewBox="0 0 40 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="Kidehiiri"
+      aria-label="Tärppi"
     >
       {/* Tiketti-pohja */}
       <rect x="4" y="10" width="32" height="20" rx="3" fill="#6366f1" />
@@ -41,7 +41,7 @@ export function KidehiiriIcon({ size = 40 }: { size?: number }) {
   )
 }
 
-/** Sniper variant: ticket with bullet hole and smoke */
+/** Variant with ticket motion marks */
 export function TicketSniperIcon({ size = 40 }: { size?: number }) {
   return (
     <svg
@@ -50,7 +50,7 @@ export function TicketSniperIcon({ size = 40 }: { size?: number }) {
       viewBox="0 0 120 120"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="Kidehiiri Sniper"
+      aria-label="Tärppi"
     >
       <defs>
         <radialGradient id="bulletHole" cx="50%" cy="50%" r="50%">
@@ -106,7 +106,7 @@ export function KidehiiriLogo({ size = 32 }: { size?: number }) {
       viewBox="0 0 160 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="Kidehiiri"
+      aria-label="Tärppi"
     >
       {/* K-kirjain tiketti-muodossa */}
       <rect x="0" y="8" width="28" height="24" rx="4" fill="#6366f1" />

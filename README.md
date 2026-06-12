@@ -1,6 +1,6 @@
-# Kidehiiri Frontend
+# Tärppi Frontend
 
-React 19 + TypeScript + Vite UI for Kidehiiri. This folder is the only code that may be pushed to the public frontend repository.
+React 19 + TypeScript + Vite UI for Tärppi. This folder is the only code that may be pushed to the public frontend repository.
 
 ## Required Backend URL
 

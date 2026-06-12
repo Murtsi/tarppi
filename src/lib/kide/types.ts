@@ -173,6 +173,7 @@ export type BackendHealthResponse = {
       status: BackendServiceStatus
       sizeMB?: number
       snapshotRows?: number
+      trackedEvents?: number
       labelRows?: number
       error?: string
     }

@@ -262,7 +262,7 @@ export default function App() {
           pushLog('warn', `Palvelinseuranta päättyi: ${job.message ?? job.status}`)
           if (job.status === 'failed') {
             setSnipe((s) => (s ? { ...s, phase: 'error', message: job.message ?? 'Palvelinseuranta epäonnistui' } : s))
-            notifyBrowser('Snipe epäonnistui', job.message ?? 'Palvelinseuranta pysähtyi.')
+            notifyBrowser('Tärppi pysähtyi', job.message ?? 'Palvelinseuranta pysähtyi.')
             playFailSound()
           }
           setServerJobId(null)
@@ -510,7 +510,7 @@ export default function App() {
         if (det.product.salesEnded) {
           pushLog('warn', 'Myynti on päättynyt — pysäytän')
           setSnipe((s) => (s ? { ...s, phase: 'error', message: 'Myynti päättynyt' } : s))
-          notifyBrowser('Snipe epäonnistui', 'Myynti on päättynyt.')
+          notifyBrowser('Tärppi pysähtyi', 'Myynti on päättynyt.')
           playFailSound()
           break
         }
@@ -561,7 +561,7 @@ export default function App() {
         if (!variant) {
           pushLog('warn', 'Lipputyyppiä ei löydy — pysäytän')
           setSnipe((s) => (s ? { ...s, phase: 'error', message: 'Lipputyyppiä ei löydy' } : s))
-          notifyBrowser('Snipe epäonnistui', 'Lipputyyppiä ei löydy.')
+          notifyBrowser('Tärppi pysähtyi', 'Lipputyyppiä ei löydy.')
           playFailSound()
           break
         }
