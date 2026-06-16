@@ -154,23 +154,25 @@ export async function discussEvent(event: Record<string, unknown>): Promise<Disc
   return apiCall<DiscussResponse>('/api/discuss', { event })
 }
 
-// ─── Server-side Snipe Jobs ──────────────────────────────────────────────────
+// Server-side watch jobs
 
 export async function createServerSnipe(
   authorizationToken: string,
-  variantId: string,
+  variantId: string | undefined,
   quantity: number,
   salesStartMs?: number,
   eventId?: string,
   eventName?: string,
   telegramChatId?: string,
   variantIds?: string[],
+  ticketNameQuery?: string,
 ): Promise<CreateSnipeJobResponse> {
   return apiCall<CreateSnipeJobResponse>('/api/snipe', {
     authorizationToken,
-    variantId,
+    ...(variantId && { variantId }),
     quantity,
     ...(variantIds && variantIds.length > 0 && { variantIds }),
+    ...(ticketNameQuery && { ticketNameQuery }),
     ...(salesStartMs != null && { salesStartMs }),
     ...(eventId && { eventId }),
     ...(eventName && { eventName }),

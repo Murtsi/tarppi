@@ -39,7 +39,7 @@ type Props = {
   onOpenCity: () => void
   onTelegramChatIdChange: (chatId: string) => void
   onSubmitUrl: (url: string) => void
-  onStart: (params: { variantId: string; variantName: string; quantity: number; variantIds?: string[] }) => void
+  onStart: (params: { variantId?: string; variantName?: string; quantity: number; variantIds?: string[]; ticketNameQuery?: string }) => void
   onStopSnipe: () => void
 }
 
@@ -122,7 +122,7 @@ export default function SimpleDashboard(p: Props) {
   const [filter, setFilter] = useState<FilterKey>('all')
   const [selectedVariantId, setSelectedVariantId] = useState('')
   const [quantity, setQuantity] = useState(1)
-  const [addAllVariants, setAddAllVariants] = useState(false)
+  const [ticketNameQuery, setTicketNameQuery] = useState('')
   const [logOpen, setLogOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const snipeForActive = snipeMatchesEvent(p.snipe, p.activeId) ? p.snipe : null
@@ -142,17 +142,11 @@ export default function SimpleDashboard(p: Props) {
       ?? variants[0],
     [selectedVariantId, variants],
   )
-  const targetVariants = useMemo(() => {
-    if (!selectedVariant) return []
-    if (!addAllVariants) return [selectedVariant]
-    const fallbackVariants = salesUpcoming
-      ? variants
-      : variants.filter((variant) => variant.availability > 0)
-    return [
-      selectedVariant,
-      ...fallbackVariants.filter((variant) => variant.inventoryId !== selectedVariant.inventoryId),
-    ]
-  }, [addAllVariants, salesUpcoming, selectedVariant, variants])
+  const presaleTargets = useMemo(() => {
+    if (!salesUpcoming) return selectedVariant ? [selectedVariant] : []
+    if (selectedVariant) return [selectedVariant]
+    return variants
+  }, [salesUpcoming, selectedVariant, variants])
 
   const visibleEvents = useMemo(() => {
     const filtered = p.events.filter((event) => {
@@ -185,10 +179,10 @@ export default function SimpleDashboard(p: Props) {
   const activeDecision = finalDecision(p.activeEvent)
   const salesEnded = p.detail?.product.salesEnded ?? false
   const activeSnipe = snipeForActive && snipeForActive.phase !== 'landed' && snipeForActive.phase !== 'error'
-  const canStart = Boolean(p.tokenValid && selectedVariant && !salesEnded && !activeSnipe)
-  const targetSummary = targetVariants.length > 1
-    ? `${targetVariants.length} lipputyyppiä`
-    : selectedVariant?.name ?? 'Ei lipputyyppiä'
+  const canStart = Boolean(p.tokenValid && !salesEnded && !activeSnipe && (selectedVariant || salesUpcoming || variants.length === 0))
+  const targetSummary = presaleTargets.length > 1
+    ? `${presaleTargets.length} lipputyyppiä`
+    : presaleTargets[0]?.name ?? (ticketNameQuery.trim() ? `lähin osuma: ${ticketNameQuery.trim()}` : 'kaikki löytyvät lipputyypit')
   const coverImage = buildMediaUrl(p.detail?.product.mediaFilename) ?? p.activeEvent?.media_url ?? null
   const paymentMsLeft = snipeForActive?.phase === 'landed' && snipeForActive.paymentExpiresAt
     ? snipeForActive.paymentExpiresAt - now
@@ -303,6 +297,7 @@ export default function SimpleDashboard(p: Props) {
                       className={`simple-event ${active ? 'is-active' : ''}`}
                       onClick={() => {
                         setSelectedVariantId('')
+                        setTicketNameQuery('')
                         setQuantity(1)
                         p.onPick(event.event_id)
                       }}
@@ -366,7 +361,7 @@ export default function SimpleDashboard(p: Props) {
                 {!p.detailLoading && !p.detailError && p.detail && variants.length === 0 && (
                   <div className="simple-empty">
                     <strong>Tälle tapahtumalle ei löytynyt varattavia lipputyyppejä.</strong>
-                    <span>Kide näyttää tapahtuman, mutta rajapinta ei anna lipputyyppejä. Kokeile myöhemmin uudelleen.</span>
+                    <span>{salesUpcoming ? 'Voit silti laittaa botin odottamaan. Kun myynti aukeaa, botti hakee lipputyypit uudelleen ja yrittää sopivaa lippua.' : 'Kide näyttää tapahtuman, mutta rajapinta ei anna lipputyyppejä. Kokeile myöhemmin uudelleen.'}</span>
                   </div>
                 )}
 
@@ -374,7 +369,7 @@ export default function SimpleDashboard(p: Props) {
                   <div className="simple-variants">
                     <div className="simple-variants__head">
                       <h4>Lipputyyppi</h4>
-                      <span>Botti yrittää: {targetSummary}</span>
+                      <span>{salesUpcoming ? `Botti yrittää myynnin auetessa: ${targetSummary}` : `Botti yrittää: ${targetSummary}`}</span>
                     </div>
                     {variants.map((variant: KideVariant) => {
                       const soldOut = variant.availability <= 0 && !salesUpcoming
@@ -402,18 +397,19 @@ export default function SimpleDashboard(p: Props) {
                   </div>
                 )}
 
-                {variants.length > 1 && (
-                  <label className="simple-risk-option">
-                    <input
-                      type="checkbox"
-                      checked={addAllVariants}
-                      onChange={(event) => setAddAllVariants(event.target.checked)}
-                      disabled={Boolean(activeSnipe)}
-                    />
+                {salesUpcoming && (
+                  <label className="simple-risk-option simple-ticket-query">
                     <span>
-                      <strong>Yritä kaikkia lipputyyppejä</strong>
-                      <small>Käyttäjän omalla vastuulla, saattaa lisätä vääriä lippuja.</small>
+                      <strong>Lipputyypin vihje</strong>
+                      <small>Jos lipputyyppiä ei vielä näy, kirjoita esim. opiskelija, perjantai tai VIP. Tyhjänä botti yrittää kaikkia löytyviä lipputyyppejä käyttäjän omalla vastuulla.</small>
                     </span>
+                    <input
+                      value={ticketNameQuery}
+                      onChange={(event) => setTicketNameQuery(event.target.value)}
+                      disabled={Boolean(activeSnipe)}
+                      placeholder="esim. opiskelija"
+                      aria-label="Lipputyypin vihje"
+                    />
                   </label>
                 )}
 
@@ -434,12 +430,18 @@ export default function SimpleDashboard(p: Props) {
                       className="simple-button simple-button--primary"
                       disabled={!canStart}
                       onClick={() => {
-                        if (!selectedVariant) return
+                        const trimmedQuery = ticketNameQuery.trim()
+                        const variantIds = salesUpcoming
+                          ? presaleTargets.map((variant) => variant.inventoryId)
+                          : selectedVariant
+                            ? [selectedVariant.inventoryId]
+                            : []
                         p.onStart({
-                          variantId: selectedVariant.inventoryId,
-                          variantName: addAllVariants ? `${selectedVariant.name} + muut lipputyypit` : selectedVariant.name,
+                          variantId: selectedVariant?.inventoryId,
+                          variantName: selectedVariant?.name ?? (trimmedQuery ? `Lähin osuma: ${trimmedQuery}` : 'Kaikki löytyvät lipputyypit'),
                           quantity,
-                          variantIds: targetVariants.map((variant) => variant.inventoryId),
+                          variantIds,
+                          ticketNameQuery: trimmedQuery || undefined,
                         })
                       }}
                     >

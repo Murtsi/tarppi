@@ -7,6 +7,7 @@ export type SnipeSession = {
   variantId?: string
   variantName?: string
   variantIds?: string[]
+  ticketNameQuery?: string
   quantity: number
   phase: SnipePhase
   startedAt: number

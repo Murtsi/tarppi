@@ -4,7 +4,7 @@
  */
 
 /** Compact icon: ticket with mouse silhouette */
-export function KidehiiriIcon({ size = 40 }: { size?: number }) {
+export function TarppiIcon({ size = 40 }: { size?: number }) {
   return (
     <svg
       width={size}
@@ -42,7 +42,7 @@ export function KidehiiriIcon({ size = 40 }: { size?: number }) {
 }
 
 /** Variant with ticket motion marks */
-export function TicketSniperIcon({ size = 40 }: { size?: number }) {
+export function TicketWatchIcon({ size = 40 }: { size?: number }) {
   return (
     <svg
       width={size}
@@ -97,8 +97,8 @@ export function TicketSniperIcon({ size = 40 }: { size?: number }) {
   )
 }
 
-/** Full logo: ticket-K + "idehiiri" text + mouse silhouette */
-export function KidehiiriLogo({ size = 32 }: { size?: number }) {
+/** Full logo with ticket mark and Tärppi wordmark. */
+export function TarppiLogo({ size = 32 }: { size?: number }) {
   return (
     <svg
       width={size * 4}
@@ -116,7 +116,7 @@ export function KidehiiriLogo({ size = 32 }: { size?: number }) {
 
       {/* Teksti */}
       <text x="36" y="27" fontSize="18" fontWeight="700" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
-        idehiiri
+        Tärppi
       </text>
 
       {/* Pieni hiiri-ikoni */}

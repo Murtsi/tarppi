@@ -9,6 +9,6 @@ test('isThemeMode accepts only supported theme modes', () => {
   assert.equal(isThemeMode(''), false)
 })
 
-test('THEME_STORAGE_KEY uses the Kidehiiri namespace', () => {
+test('THEME_STORAGE_KEY keeps the legacy browser key stable', () => {
   assert.equal(THEME_STORAGE_KEY, 'kh.theme')
 })

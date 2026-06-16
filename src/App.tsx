@@ -355,7 +355,7 @@ export default function App() {
     })
   }, [])
 
-  const startSnipe = useCallback(async (params: { variantId: string; variantName: string; quantity: number; variantIds?: string[] }) => {
+  const startSnipe = useCallback(async (params: { variantId?: string; variantName?: string; quantity: number; variantIds?: string[]; ticketNameQuery?: string }) => {
     if (!activeId) return
     const ev = events.find((e) => e.event_id === activeId)
     const eventName = ev?.name ?? detailRef.current?.product.name ?? 'Tapahtuma'
@@ -375,24 +375,35 @@ export default function App() {
       void Notification.requestPermission().catch(() => {})
     }
 
-    const variantTargets = Array.from(new Set([params.variantId, ...(params.variantIds ?? [])].filter(Boolean)))
+    const initialVariantTargets = Array.from(new Set(
+      [params.variantId, ...(params.variantIds ?? [])]
+        .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+        .map((id) => id.trim()),
+    ))
+    const ticketNameQuery = params.ticketNameQuery?.trim()
+    const variantLabel = params.variantName ?? (ticketNameQuery ? `lähin osuma: ${ticketNameQuery}` : 'kaikki löytyvät lipputyypit')
 
     const session: SnipeSession = {
       id: uid(),
       eventId: activeId,
       eventName,
       variantId: params.variantId,
-      variantName: params.variantName,
-      variantIds: variantTargets,
+      variantName: variantLabel,
+      variantIds: initialVariantTargets,
+      ticketNameQuery,
       quantity: params.quantity,
       phase: 'hunting',
       startedAt: Date.now(),
       attempts: 0,
     }
     setSnipe(session)
-    pushLog('ok', `Seuranta alkoi · ${eventName} · ${params.variantName} · ${params.quantity}×`)
-    if (variantTargets.length > 1) {
-      pushLog('warn', `Käyttäjän vastuulla: botti yrittää ${variantTargets.length} lipputyyppiä järjestyksessä`)
+    pushLog('ok', `Seuranta alkoi · ${eventName} · ${variantLabel} · ${params.quantity}×`)
+    if (initialVariantTargets.length > 1) {
+      pushLog('warn', `Käyttäjän vastuulla: botti yrittää ${initialVariantTargets.length} lipputyyppiä järjestyksessä`)
+    } else if (initialVariantTargets.length === 0) {
+      pushLog('info', ticketNameQuery
+        ? `Lipputyyppiä ei vielä näy · botti hakee myynnin auetessa lähimmän osuman: ${ticketNameQuery}`
+        : 'Lipputyyppiä ei vielä näy · botti yrittää myynnin auetessa kaikkia löytyviä lipputyyppejä')
     }
     const run = { cancelled: false, abortController: new AbortController() }
     snipeRunRef.current = run
@@ -418,7 +429,8 @@ export default function App() {
       activeId,
       eventName,
       telegramChatId.trim() || undefined,
-      variantTargets,
+      initialVariantTargets,
+      ticketNameQuery,
     )
       .then((job) => {
         if (run.cancelled) {
@@ -447,9 +459,44 @@ export default function App() {
     let attempts = 0
     let didRefreshBeforeSale = false
 
-    const variantNameById = new Map(
+    const variantNameById = new Map<string, string>(
       (detailRef.current?.variants ?? []).map((variant) => [variant.inventoryId, variant.name]),
     )
+
+    const scoreVariantName = (name: string) => {
+      const query = ticketNameQuery?.toLowerCase().trim()
+      if (!query) return 0
+      const normalizedName = name.toLowerCase()
+      if (normalizedName === query) return 100
+      if (normalizedName.includes(query)) return 80 - Math.min(20, normalizedName.length - query.length)
+      return query
+        .split(/\s+/)
+        .filter(Boolean)
+        .reduce((score, part) => score + (normalizedName.includes(part) ? 10 : 0), 0)
+    }
+
+    const resolveAttemptTargets = (det: EventResponse) => {
+      for (const variant of det.variants) variantNameById.set(variant.inventoryId, variant.name)
+      const knownTargets = initialVariantTargets.filter((target) =>
+        det.variants.some((variant) => variant.inventoryId === target),
+      )
+      if (knownTargets.length > 0) return knownTargets
+
+      const candidates = det.variants
+        .filter((variant) => variant.inventoryId)
+        .filter((variant) => variant.availability > 0 || (det.product.timeUntilSalesStart ?? 0) <= 0)
+
+      if (!ticketNameQuery) return candidates.map((variant) => variant.inventoryId)
+
+      const ranked = candidates
+        .map((variant) => ({
+          id: variant.inventoryId,
+          score: scoreVariantName(variant.name),
+        }))
+        .sort((a, b) => b.score - a.score)
+
+      return ranked.map((variant) => variant.id)
+    }
 
     const tryCartTargets = async (targets: string[], qty: number) => {
       let lastResult: Awaited<ReturnType<typeof addToCart>> | null = null
@@ -477,9 +524,9 @@ export default function App() {
       return lastResult ?? { success: false, message: 'Yhtään lipputyyppiä ei voitu yrittää' }
     }
 
-    const tryCart = async (qty: number): Promise<boolean> => {
+    const tryCart = async (targets: string[], qty: number): Promise<boolean> => {
       if (run.cancelled) return false
-      const r = await tryCartTargets(variantTargets, qty)
+      const r = await tryCartTargets(targets, qty)
       if (r.success) {
         if (run.cancelled) return false
         const landedAt = Date.now()
@@ -511,7 +558,7 @@ export default function App() {
       }
       if (fallbackMode && r.retryWithQuantity && r.retryWithQuantity > 0) {
         if (run.cancelled) return false
-        const r2 = await tryCartTargets(variantTargets, r.retryWithQuantity)
+        const r2 = await tryCartTargets(targets, r.retryWithQuantity)
         if (r2.success) {
           if (run.cancelled) return false
           const landedAt = Date.now()
@@ -539,7 +586,8 @@ export default function App() {
       const started = Date.now()
       try {
         const det = await fetchEventDetail(activeId, run.abortController.signal)
-        const variant = det.variants.find((v) => variantTargets.includes(v.inventoryId))
+        const attemptTargets = resolveAttemptTargets(det)
+        const variant = det.variants.find((v) => attemptTargets.includes(v.inventoryId))
         const latency = Date.now() - started
         setLatencies((ls) => [...ls.slice(-19), latency])
 
@@ -585,9 +633,9 @@ export default function App() {
         if (wasWaiting) {
           setSnipe((s) => (s ? { ...s, phase: 'hunting', salesStartAt: undefined } : s))
           pushLog('ok', 'Myynti avautui — botti yrittää lisätä liput koriin')
-          if (variant) {
+          if (attemptTargets.length > 0) {
             try {
-              const landed = await tryCart(params.quantity)
+              const landed = await tryCart(attemptTargets, params.quantity)
               if (landed) break
             } catch (err) {
               pushLog('err', `Varausvirhe: ${err instanceof Error ? err.message : 'tuntematon'}`)
@@ -595,26 +643,24 @@ export default function App() {
           }
         }
 
-        if (!variant) {
-          pushLog('warn', 'Yhtään valittua lipputyyppiä ei löydy — pysäytän')
-          setSnipe((s) => (s ? { ...s, phase: 'error', message: 'Lipputyyppiä ei löydy' } : s))
-          notifyBrowser('Tärppi pysähtyi', 'Valittuja lipputyyppejä ei löydy.')
-          playFailSound()
-          break
+        if (attemptTargets.length === 0) {
+          pushLog('warn', 'Lipputyyppejä ei vielä löydy — jatkan hakua')
+          await waitWithAbort(Math.max(500, pollMs), run.abortController.signal)
+          continue
         }
 
-        if (variant.availability > 0) {
+        if (variant && variant.availability > 0) {
           pushLog('info', `Saatavilla ${variant.availability} kpl — yritän lisätä koriin`)
           try {
             const qty = Math.min(params.quantity, variant.availability)
-            const landed = await tryCart(qty)
+            const landed = await tryCart(attemptTargets, qty)
             if (landed) break
           } catch (err) {
             pushLog('err', `Varausvirhe: ${err instanceof Error ? err.message : 'tuntematon'}`)
           }
         } else if (!det.product.salesEnded && (det.product.timeUntilSalesStart ?? 0) <= 0) {
           try {
-            const landed = await tryCart(params.quantity)
+            const landed = await tryCart(attemptTargets, params.quantity)
             if (landed) break
           } catch (err) {
             pushLog('err', `Varausvirhe: ${err instanceof Error ? err.message : 'tuntematon'}`)

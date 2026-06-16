@@ -1,4 +1,4 @@
-/* ─── Lipputerminaali — ops-room layout ──────────────────────────────── */
+/* Tärppi app layout */
 
 .lt-app {
   display: flex;
@@ -1785,6 +1785,20 @@
 .simple-risk-option small {
   font-size: 12px;
   font-weight: 700;
+}
+
+.simple-ticket-query {
+  flex-direction: column;
+  cursor: default;
+}
+
+.simple-ticket-query input {
+  width: 100%;
+  min-height: 40px;
+  margin: 6px 0 0;
+  border-color: rgba(111, 77, 0, 0.24);
+  background: #fff;
+  color: #17231d;
 }
 
 .simple-alert {
