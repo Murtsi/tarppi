@@ -355,7 +355,7 @@ export default function App() {
     })
   }, [])
 
-  const startSnipe = useCallback(async (params: { variantId: string; variantName: string; quantity: number }) => {
+  const startSnipe = useCallback(async (params: { variantId: string; variantName: string; quantity: number; variantIds?: string[] }) => {
     if (!activeId) return
     const ev = events.find((e) => e.event_id === activeId)
     const eventName = ev?.name ?? detailRef.current?.product.name ?? 'Tapahtuma'
@@ -375,12 +375,15 @@ export default function App() {
       void Notification.requestPermission().catch(() => {})
     }
 
+    const variantTargets = Array.from(new Set([params.variantId, ...(params.variantIds ?? [])].filter(Boolean)))
+
     const session: SnipeSession = {
       id: uid(),
       eventId: activeId,
       eventName,
       variantId: params.variantId,
       variantName: params.variantName,
+      variantIds: variantTargets,
       quantity: params.quantity,
       phase: 'hunting',
       startedAt: Date.now(),
@@ -388,6 +391,9 @@ export default function App() {
     }
     setSnipe(session)
     pushLog('ok', `Seuranta alkoi · ${eventName} · ${params.variantName} · ${params.quantity}×`)
+    if (variantTargets.length > 1) {
+      pushLog('warn', `Käyttäjän vastuulla: botti yrittää ${variantTargets.length} lipputyyppiä järjestyksessä`)
+    }
     const run = { cancelled: false, abortController: new AbortController() }
     snipeRunRef.current = run
 
@@ -412,6 +418,7 @@ export default function App() {
       activeId,
       eventName,
       telegramChatId.trim() || undefined,
+      variantTargets,
     )
       .then((job) => {
         if (run.cancelled) {
@@ -440,9 +447,39 @@ export default function App() {
     let attempts = 0
     let didRefreshBeforeSale = false
 
+    const variantNameById = new Map(
+      (detailRef.current?.variants ?? []).map((variant) => [variant.inventoryId, variant.name]),
+    )
+
+    const tryCartTargets = async (targets: string[], qty: number) => {
+      let lastResult: Awaited<ReturnType<typeof addToCart>> | null = null
+
+      for (const target of targets) {
+        if (run.cancelled) break
+        const targetName = variantNameById.get(target) ?? target.slice(0, 8)
+        if (targets.length > 1) pushLog('info', `Yritän lipputyyppiä: ${targetName}`)
+        const result = await addToCart(token.trim(), target, qty, activeId)
+        if (result.success) {
+          pushLog('ok', `Koriin meni: ${targetName}`)
+          return result
+        }
+
+        lastResult = result
+        const canTryNext =
+          result.message.includes('Variant not available')
+          || result.message.includes('Already in cart or unavailable')
+          || result.message.includes('Invalid inventory ID')
+          || result.message.includes('Reservation rejected')
+
+        if (!canTryNext) return result
+      }
+
+      return lastResult ?? { success: false, message: 'Yhtään lipputyyppiä ei voitu yrittää' }
+    }
+
     const tryCart = async (qty: number): Promise<boolean> => {
       if (run.cancelled) return false
-      const r = await addToCart(token.trim(), params.variantId, qty, activeId)
+      const r = await tryCartTargets(variantTargets, qty)
       if (r.success) {
         if (run.cancelled) return false
         const landedAt = Date.now()
@@ -474,7 +511,7 @@ export default function App() {
       }
       if (fallbackMode && r.retryWithQuantity && r.retryWithQuantity > 0) {
         if (run.cancelled) return false
-        const r2 = await addToCart(token.trim(), params.variantId, r.retryWithQuantity, activeId)
+        const r2 = await tryCartTargets(variantTargets, r.retryWithQuantity)
         if (r2.success) {
           if (run.cancelled) return false
           const landedAt = Date.now()
@@ -502,7 +539,7 @@ export default function App() {
       const started = Date.now()
       try {
         const det = await fetchEventDetail(activeId, run.abortController.signal)
-        const variant = det.variants.find((v) => v.inventoryId === params.variantId)
+        const variant = det.variants.find((v) => variantTargets.includes(v.inventoryId))
         const latency = Date.now() - started
         setLatencies((ls) => [...ls.slice(-19), latency])
 
@@ -559,9 +596,9 @@ export default function App() {
         }
 
         if (!variant) {
-          pushLog('warn', 'Lipputyyppiä ei löydy — pysäytän')
+          pushLog('warn', 'Yhtään valittua lipputyyppiä ei löydy — pysäytän')
           setSnipe((s) => (s ? { ...s, phase: 'error', message: 'Lipputyyppiä ei löydy' } : s))
-          notifyBrowser('Tärppi pysähtyi', 'Lipputyyppiä ei löydy.')
+          notifyBrowser('Tärppi pysähtyi', 'Valittuja lipputyyppejä ei löydy.')
           playFailSound()
           break
         }
@@ -667,6 +704,7 @@ export default function App() {
         landedCount={landedCount}
         snipe={snipe}
         latestLog={logs[0]}
+        logs={logs}
         pollMs={pollMs}
         telegramChatId={telegramChatId}
         onPick={handlePick}

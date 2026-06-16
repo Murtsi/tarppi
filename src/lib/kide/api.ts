@@ -164,11 +164,13 @@ export async function createServerSnipe(
   eventId?: string,
   eventName?: string,
   telegramChatId?: string,
+  variantIds?: string[],
 ): Promise<CreateSnipeJobResponse> {
   return apiCall<CreateSnipeJobResponse>('/api/snipe', {
     authorizationToken,
     variantId,
     quantity,
+    ...(variantIds && variantIds.length > 0 && { variantIds }),
     ...(salesStartMs != null && { salesStartMs }),
     ...(eventId && { eventId }),
     ...(eventName && { eventName }),

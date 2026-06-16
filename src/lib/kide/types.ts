@@ -212,6 +212,7 @@ export type SnipeJobResponse = {
   status: SnipeJobStatus
   attempts: number
   quantity?: number
+  variantIds?: string[]
   scheduledFor?: number | null   // epoch ms
   firedAt?: number | null
   completedAt?: number | null
@@ -223,6 +224,7 @@ export type SnipeJobResponse = {
 export type CreateSnipeJobResponse = {
   success: boolean
   jobId: string
+  variantIds?: string[]
   scheduledFor?: number | null
   status: SnipeJobStatus
 }

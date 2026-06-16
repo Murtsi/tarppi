@@ -29,6 +29,7 @@ type Props = {
   landedCount: number
   snipe?: SnipeSession | null
   latestLog?: LogLine
+  logs: LogLine[]
   pollMs: number
   telegramChatId: string
   onPick: (id: string) => void
@@ -38,7 +39,7 @@ type Props = {
   onOpenCity: () => void
   onTelegramChatIdChange: (chatId: string) => void
   onSubmitUrl: (url: string) => void
-  onStart: (params: { variantId: string; variantName: string; quantity: number }) => void
+  onStart: (params: { variantId: string; variantName: string; quantity: number; variantIds?: string[] }) => void
   onStopSnipe: () => void
 }
 
@@ -121,6 +122,8 @@ export default function SimpleDashboard(p: Props) {
   const [filter, setFilter] = useState<FilterKey>('all')
   const [selectedVariantId, setSelectedVariantId] = useState('')
   const [quantity, setQuantity] = useState(1)
+  const [addAllVariants, setAddAllVariants] = useState(false)
+  const [logOpen, setLogOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const snipeForActive = snipeMatchesEvent(p.snipe, p.activeId) ? p.snipe : null
 
@@ -131,6 +134,7 @@ export default function SimpleDashboard(p: Props) {
   }, [snipeForActive?.paymentExpiresAt, snipeForActive?.phase])
 
   const variants = p.detail?.variants ?? EMPTY_VARIANTS
+  const salesUpcoming = (p.detail?.product.timeUntilSalesStart ?? 0) > 0
   const selectedVariant = useMemo(
     () =>
       variants.find((variant) => variant.inventoryId === selectedVariantId)
@@ -138,6 +142,17 @@ export default function SimpleDashboard(p: Props) {
       ?? variants[0],
     [selectedVariantId, variants],
   )
+  const targetVariants = useMemo(() => {
+    if (!selectedVariant) return []
+    if (!addAllVariants) return [selectedVariant]
+    const fallbackVariants = salesUpcoming
+      ? variants
+      : variants.filter((variant) => variant.availability > 0)
+    return [
+      selectedVariant,
+      ...fallbackVariants.filter((variant) => variant.inventoryId !== selectedVariant.inventoryId),
+    ]
+  }, [addAllVariants, salesUpcoming, selectedVariant, variants])
 
   const visibleEvents = useMemo(() => {
     const filtered = p.events.filter((event) => {
@@ -168,10 +183,12 @@ export default function SimpleDashboard(p: Props) {
 
   const backend = backendLabel(p.backendStatus, p.backendHealth)
   const activeDecision = finalDecision(p.activeEvent)
-  const salesUpcoming = (p.detail?.product.timeUntilSalesStart ?? 0) > 0
   const salesEnded = p.detail?.product.salesEnded ?? false
   const activeSnipe = snipeForActive && snipeForActive.phase !== 'landed' && snipeForActive.phase !== 'error'
   const canStart = Boolean(p.tokenValid && selectedVariant && !salesEnded && !activeSnipe)
+  const targetSummary = targetVariants.length > 1
+    ? `${targetVariants.length} lipputyyppiä`
+    : selectedVariant?.name ?? 'Ei lipputyyppiä'
   const coverImage = buildMediaUrl(p.detail?.product.mediaFilename) ?? p.activeEvent?.media_url ?? null
   const paymentMsLeft = snipeForActive?.phase === 'landed' && snipeForActive.paymentExpiresAt
     ? snipeForActive.paymentExpiresAt - now
@@ -355,7 +372,10 @@ export default function SimpleDashboard(p: Props) {
 
                 {variants.length > 0 && (
                   <div className="simple-variants">
-                    <h4>Lipputyyppi</h4>
+                    <div className="simple-variants__head">
+                      <h4>Lipputyyppi</h4>
+                      <span>Botti yrittää: {targetSummary}</span>
+                    </div>
                     {variants.map((variant: KideVariant) => {
                       const soldOut = variant.availability <= 0 && !salesUpcoming
                       const active = selectedVariant?.inventoryId === variant.inventoryId
@@ -382,6 +402,21 @@ export default function SimpleDashboard(p: Props) {
                   </div>
                 )}
 
+                {variants.length > 1 && (
+                  <label className="simple-risk-option">
+                    <input
+                      type="checkbox"
+                      checked={addAllVariants}
+                      onChange={(event) => setAddAllVariants(event.target.checked)}
+                      disabled={Boolean(activeSnipe)}
+                    />
+                    <span>
+                      <strong>Yritä kaikkia lipputyyppejä</strong>
+                      <small>Käyttäjän omalla vastuulla, saattaa lisätä vääriä lippuja.</small>
+                    </span>
+                  </label>
+                )}
+
                 <div className="simple-start">
                   <div className="simple-quantity">
                     <button onClick={() => setQuantity((value) => Math.max(1, value - 1))}>-</button>
@@ -400,7 +435,12 @@ export default function SimpleDashboard(p: Props) {
                       disabled={!canStart}
                       onClick={() => {
                         if (!selectedVariant) return
-                        p.onStart({ variantId: selectedVariant.inventoryId, variantName: selectedVariant.name, quantity })
+                        p.onStart({
+                          variantId: selectedVariant.inventoryId,
+                          variantName: addAllVariants ? `${selectedVariant.name} + muut lipputyypit` : selectedVariant.name,
+                          quantity,
+                          variantIds: targetVariants.map((variant) => variant.inventoryId),
+                        })
                       }}
                     >
                       {!p.tokenValid ? 'Token puuttuu' : activeSnipe ? 'Botti käynnissä' : 'Käynnistä botti'}
@@ -413,10 +453,22 @@ export default function SimpleDashboard(p: Props) {
         </div>
 
         {p.latestLog && (
-          <section className={`simple-log simple-log--${p.latestLog.level}`}>
-            <span>Live-logi</span>
-            <strong>{p.latestLog.text}</strong>
-            <time>{p.latestLog.ts}</time>
+          <section className={`simple-log simple-log--${p.latestLog.level} ${logOpen ? 'is-open' : ''}`}>
+            <button type="button" className="simple-log__summary" onClick={() => setLogOpen((open) => !open)}>
+              <span>Live-logi</span>
+              <strong>{p.latestLog.text}</strong>
+              <time>{p.latestLog.ts}</time>
+            </button>
+            {logOpen && (
+              <div className="simple-log__history">
+                {p.logs.map((log) => (
+                  <div key={log.id} className={`simple-log__row simple-log__row--${log.level}`}>
+                    <time>{log.ts}</time>
+                    <span>{log.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         )}
       </main>
