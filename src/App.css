@@ -1128,22 +1128,12 @@
 }
 
 .simple-brand__mark {
-  width: 48px;
-  height: 36px;
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  background:
-    radial-gradient(circle at left center, #f3f7f4 0 5px, transparent 5px),
-    radial-gradient(circle at right center, #f3f7f4 0 5px, transparent 5px),
-    linear-gradient(135deg, var(--simple-accent-strong) 0%, var(--simple-accent) 100%);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0;
-  box-shadow: 0 12px 26px color-mix(in srgb, var(--simple-accent) 24%, transparent);
+  color: var(--simple-accent);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--simple-accent) 55%, transparent));
 }
 
 .simple-brand h1,
@@ -1159,6 +1149,7 @@
   font-size: 32px;
   line-height: 0.92;
   font-weight: 700;
+  color: var(--simple-accent);
 }
 
 .simple-brand p,

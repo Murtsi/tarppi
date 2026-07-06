@@ -4,6 +4,7 @@ import type { BackendHealthResponse, EventResponse, KideVariant, ScoredEvent } f
 import type { LogLine, SnipeSession } from '../../lib/lt/types'
 import { KIDE_CHECKOUT_URL } from '../../lib/checkout'
 import { snipeMatchesEvent } from '../../lib/snipe-session'
+import { TarppiMark } from '../Logo'
 
 type BackendStatus = 'checking' | 'ready' | 'missing-config' | 'offline'
 type SortKey = 'score' | 'soon' | 'price'
@@ -214,7 +215,7 @@ export default function SimpleDashboard(p: Props) {
     <div className="simple-app">
       <header className="simple-top">
         <div className="simple-brand">
-          <span className="simple-brand__mark">T</span>
+          <span className="simple-brand__mark"><TarppiMark size={38} /></span>
           <div>
             <h1>Tärppi</h1>
             <p>Valitse tapahtuma. Botti lisää liput puolestasi.</p>
