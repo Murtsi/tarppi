@@ -2,6 +2,8 @@
 
 Small React 19 + TypeScript + Vite app for Tärppi.
 
+Made by [Antti Murtokangas](https://www.anttimurtokangas.com) — feedback and contact through the portfolio site. Unofficial tool, not affiliated with Kide.app.
+
 ## What this folder does
 
 | Area | Purpose |

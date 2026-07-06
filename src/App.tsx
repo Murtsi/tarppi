@@ -196,7 +196,13 @@ export default function App() {
       setBackendHealth(health)
       setBackendStatus('ready')
       setBackendMessage(health.status === 'degraded' ? 'Backend vastaa, mutta osa palveluista on heikossa tilassa.' : null)
-      pushLog(health.status === 'ok' ? 'ok' : 'warn', `Yhteys ${health.status} · ${apiStatus.apiUrl || 'same-origin'}`)
+      // Backend URL only shown in degraded states, where it helps troubleshooting
+      pushLog(
+        health.status === 'ok' ? 'ok' : 'warn',
+        health.status === 'ok'
+          ? 'Yhteys kunnossa · palvelin vastaa'
+          : `Yhteys ${health.status} · ${apiStatus.apiUrl || 'same-origin'}`,
+      )
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Backend ei vastaa'
       setBackendStatus('offline')

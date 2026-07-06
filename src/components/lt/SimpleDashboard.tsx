@@ -474,6 +474,22 @@ export default function SimpleDashboard(p: Props) {
           </section>
         )}
       </main>
+
+      <footer className="simple-footer">
+        <span>
+          Tärppi · Tekijä{' '}
+          <a href="https://www.anttimurtokangas.com" target="_blank" rel="noreferrer">
+            Antti Murtokangas
+          </a>
+        </span>
+        <span>
+          Palaute ja yhteydenotot{' '}
+          <a href="https://www.anttimurtokangas.com" target="_blank" rel="noreferrer">
+            portfolion kautta
+          </a>
+          {' '}· Epävirallinen työkalu, ei Kide.appin tuottama
+        </span>
+      </footer>
     </div>
   )
 }
