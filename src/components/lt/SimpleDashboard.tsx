@@ -23,6 +23,7 @@ type Props = {
   city: string
   tokenValid: boolean
   tokenLabel?: string
+  tokenExpiresAt?: number
   loading: boolean
   scanError?: string | null
   lastUpdatedLabel: string
@@ -188,6 +189,20 @@ export default function SimpleDashboard(p: Props) {
     ? snipeForActive.paymentExpiresAt - now
     : null
 
+  // Token expiring before the sale opens is the most common self-inflicted
+  // failure — the bot fires at open with a dead token and can't reach the cart.
+  const saleStartMs = p.detail?.product.dateSalesFrom
+    ? new Date(p.detail.product.dateSalesFrom).getTime()
+    : (p.detail?.product.timeUntilSalesStart ?? 0) > 0
+      ? now + (p.detail?.product.timeUntilSalesStart ?? 0) * 1000
+      : null
+  const tokenExpiresBeforeSale = Boolean(
+    p.tokenValid && p.tokenExpiresAt && saleStartMs && p.tokenExpiresAt <= saleStartMs,
+  )
+  const saleStartLabel = saleStartMs
+    ? new Date(saleStartMs).toLocaleTimeString('fi-FI', { hour: '2-digit', minute: '2-digit' })
+    : null
+
   const submitUrl = () => {
     const value = urlDraft.trim()
     if (!value) return
@@ -338,6 +353,20 @@ export default function SimpleDashboard(p: Props) {
               </div>
             ) : (
               <>
+                {tokenExpiresBeforeSale && (
+                  <div className="simple-tokenwarn" role="alert">
+                    <div>
+                      <strong>⚠️ Token vanhenee ennen myynnin alkua</strong>
+                      <span>
+                        Kirjautumistoken vanhenee ennen{saleStartLabel ? ` klo ${saleStartLabel}` : ' myyntiä'}.
+                        {' '}Hae uusi Kide.app-token, muuten botti ei pääse koriin.
+                      </span>
+                    </div>
+                    <button className="simple-button simple-button--danger" onClick={p.onOpenSettings}>
+                      Päivitä token
+                    </button>
+                  </div>
+                )}
                 <div className="simple-detail__cover">
                   {coverImage && <img src={coverImage} alt="" loading="lazy" />}
                   <div>
@@ -414,39 +443,43 @@ export default function SimpleDashboard(p: Props) {
                 )}
 
                 <div className="simple-start">
-                  <div className="simple-quantity">
-                    <button onClick={() => setQuantity((value) => Math.max(1, value - 1))}>-</button>
-                    <span>{quantity} kpl</span>
-                    <button onClick={() => setQuantity((value) => Math.min(10, value + 1))}>+</button>
-                  </div>
                   {snipeForActive?.phase === 'landed' ? (
                     <div className="simple-landed">
-                      <strong>Liput ovat korissa.</strong>
-                      <span>Maksa noin {paymentMsLeft != null ? formatCountdown(paymentMsLeft) : '25:00'} kuluessa.</span>
+                      <div className="simple-landed__info">
+                        <strong>Liput ovat korissa.</strong>
+                        <span>Maksa noin {paymentMsLeft != null ? formatCountdown(paymentMsLeft) : '25:00'} kuluessa.</span>
+                      </div>
                       <a className="simple-button simple-button--primary" href={KIDE_CHECKOUT_URL} target="_blank" rel="noreferrer">Avaa kori</a>
                     </div>
                   ) : (
-                    <button
-                      className="simple-button simple-button--primary"
-                      disabled={!canStart}
-                      onClick={() => {
-                        const trimmedQuery = ticketNameQuery.trim()
-                        const variantIds = salesUpcoming
-                          ? presaleTargets.map((variant) => variant.inventoryId)
-                          : selectedVariant
-                            ? [selectedVariant.inventoryId]
-                            : []
-                        p.onStart({
-                          variantId: selectedVariant?.inventoryId,
-                          variantName: selectedVariant?.name ?? (trimmedQuery ? `Lähin osuma: ${trimmedQuery}` : 'Kaikki löytyvät lipputyypit'),
-                          quantity,
-                          variantIds,
-                          ticketNameQuery: trimmedQuery || undefined,
-                        })
-                      }}
-                    >
-                      {!p.tokenValid ? 'Token puuttuu' : activeSnipe ? 'Botti käynnissä' : 'Käynnistä botti'}
-                    </button>
+                    <>
+                      <div className="simple-quantity">
+                        <button onClick={() => setQuantity((value) => Math.max(1, value - 1))}>-</button>
+                        <span>{quantity} kpl</span>
+                        <button onClick={() => setQuantity((value) => Math.min(10, value + 1))}>+</button>
+                      </div>
+                      <button
+                        className="simple-button simple-button--primary"
+                        disabled={!canStart}
+                        onClick={() => {
+                          const trimmedQuery = ticketNameQuery.trim()
+                          const variantIds = salesUpcoming
+                            ? presaleTargets.map((variant) => variant.inventoryId)
+                            : selectedVariant
+                              ? [selectedVariant.inventoryId]
+                              : []
+                          p.onStart({
+                            variantId: selectedVariant?.inventoryId,
+                            variantName: selectedVariant?.name ?? (trimmedQuery ? `Lähin osuma: ${trimmedQuery}` : 'Kaikki löytyvät lipputyypit'),
+                            quantity,
+                            variantIds,
+                            ticketNameQuery: trimmedQuery || undefined,
+                          })
+                        }}
+                      >
+                        {!p.tokenValid ? 'Token puuttuu' : activeSnipe ? 'Botti käynnissä' : 'Käynnistä botti'}
+                      </button>
+                    </>
                   )}
                 </div>
               </>

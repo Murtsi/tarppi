@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useState } from 'react'
 import type { ThemeMode } from '../../lib/theme'
 
 type Props = {
@@ -11,7 +11,6 @@ type Props = {
   fallbackMode: boolean
   notifyEnabled: boolean
   telegramChatId: string
-  proxyUrl: string
   theme: ThemeMode
   onSave: (next: {
     token: string
@@ -19,7 +18,6 @@ type Props = {
     fallbackMode: boolean
     notifyEnabled: boolean
     telegramChatId: string
-    proxyUrl: string
     theme: ThemeMode
   }) => void
   onValidate: (draftToken: string) => Promise<void>
@@ -42,10 +40,8 @@ export default function TokenDrawer(p: Props) {
   const [fallback, setFallback] = useState(p.fallbackMode)
   const [notifyEnabled, setNotifyEnabled] = useState(p.notifyEnabled)
   const [telegramChatId, setTelegramChatId] = useState(p.telegramChatId)
-  const [proxyUrl, setProxyUrl] = useState(p.proxyUrl)
   const [theme, setTheme] = useState<ThemeMode>(p.theme)
   const [validating, setValidating] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!p.open) return
@@ -54,9 +50,8 @@ export default function TokenDrawer(p: Props) {
     setFallback(p.fallbackMode)
     setNotifyEnabled(p.notifyEnabled)
     setTelegramChatId(p.telegramChatId)
-    setProxyUrl(p.proxyUrl)
     setTheme(p.theme)
-  }, [p.fallbackMode, p.notifyEnabled, p.open, p.pollMs, p.proxyUrl, p.telegramChatId, p.theme, p.token])
+  }, [p.fallbackMode, p.notifyEnabled, p.open, p.pollMs, p.telegramChatId, p.theme, p.token])
 
   const handleValidate = async () => {
     if (!token.trim()) return
@@ -66,19 +61,6 @@ export default function TokenDrawer(p: Props) {
     } finally {
       setValidating(false)
     }
-  }
-
-  const handleProxyFile = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (readerEvent) => {
-      const text = (readerEvent.target?.result as string) ?? ''
-      const line = text.split('\n').map((row) => row.trim()).find((row) => row.startsWith('http'))
-      if (line) setProxyUrl(line)
-    }
-    reader.readAsText(file)
-    event.target.value = ''
   }
 
   if (!p.open) return null
@@ -190,35 +172,6 @@ export default function TokenDrawer(p: Props) {
             </div>
           </section>
 
-          <section className="simple-settings__section">
-            <div className="simple-settings__label">Proxy URL</div>
-            <div className="simple-settings__inline">
-              <input
-                type="text"
-                value={proxyUrl}
-                onChange={(event) => setProxyUrl(event.target.value)}
-                placeholder="http://proxy:8080"
-                className="simple-settings__input"
-              />
-              <button
-                className="simple-button simple-button--ghost"
-                onClick={() => fileInputRef.current?.click()}
-                type="button"
-              >
-                Tiedosto
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".txt,.conf,.pac,.env"
-                style={{ display: 'none' }}
-                onChange={handleProxyFile}
-              />
-            </div>
-            <div className="simple-settings__help">
-              Valinnainen. Jos et käytä proxya, jätä tyhjäksi.
-            </div>
-          </section>
         </div>
 
         <div className="simple-settings__foot">
@@ -226,7 +179,7 @@ export default function TokenDrawer(p: Props) {
           <button
             className="simple-button simple-button--primary"
             onClick={() => {
-              p.onSave({ token, pollMs, fallbackMode: fallback, notifyEnabled, telegramChatId, proxyUrl, theme })
+              p.onSave({ token, pollMs, fallbackMode: fallback, notifyEnabled, telegramChatId, theme })
               p.onClose()
             }}
           >

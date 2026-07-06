@@ -61,7 +61,6 @@ export default function App() {
   const [fallbackMode, setFallbackMode] = useState<boolean>(() => readLS('kh.fallback', '1') === '1')
   const [notifyEnabled, setNotifyEnabledState] = useState<boolean>(() => notificationsEnabled())
   const [telegramChatId, setTelegramChatId] = useState<string>(() => readLS('kh.telegramChatId', ''))
-  const [proxyUrl, setProxyUrl] = useState<string>(() => readLS('kh.proxy', ''))
   const [theme, setTheme] = useState<ThemeMode>(() => readThemeMode('light'))
   const [city, setCity] = useState<string>(() => readLS('kh.city', DEFAULT_CITY))
 
@@ -142,7 +141,6 @@ export default function App() {
   useEffect(() => { writeLS('kh.fallback', fallbackMode ? '1' : '0') }, [fallbackMode])
   useEffect(() => { writeLS('kh.city', city) }, [city])
   useEffect(() => { writeLS('kh.landed', String(landedCount)) }, [landedCount])
-  useEffect(() => { writeLS('kh.proxy', proxyUrl) }, [proxyUrl])
   useEffect(() => { writeLS('kh.telegramChatId', telegramChatId) }, [telegramChatId])
   useEffect(() => { writeLS('kh.serverJobId', serverJobId ?? '') }, [serverJobId])
   useEffect(() => { setNotificationsEnabled(notifyEnabled) }, [notifyEnabled])
@@ -704,6 +702,10 @@ export default function App() {
 
   // ─── derived ────────────────────────────────────────────────────────────
   const activeEvent = useMemo(() => events.find((e) => e.event_id === activeId), [events, activeId])
+  const tokenExpiresAt = useMemo(
+    () => (token.trim() ? decodeJwtExpiryMs(token.trim()) ?? undefined : undefined),
+    [token],
+  )
   // Recomputes on every tick (every 15s) so the label stays fresh
   const lastUpdatedLabel = (() => {
     if (!lastScanAt) return 'ei päivitetty'
@@ -750,6 +752,7 @@ export default function App() {
         city={city}
         tokenValid={tokenValid}
         tokenLabel={tokenEmail ?? (token ? maskToken(token) : undefined)}
+        tokenExpiresAt={tokenExpiresAt}
         loading={scanning}
         scanError={scanError}
         lastUpdatedLabel={lastUpdatedLabel}
@@ -787,7 +790,6 @@ export default function App() {
         fallbackMode={fallbackMode}
         notifyEnabled={notifyEnabled}
         telegramChatId={telegramChatId}
-        proxyUrl={proxyUrl}
         theme={theme}
         onSave={(next) => {
           setToken(next.token)
@@ -795,7 +797,6 @@ export default function App() {
           setFallbackMode(next.fallbackMode)
           setNotifyEnabledState(next.notifyEnabled)
           setTelegramChatId(next.telegramChatId)
-          setProxyUrl(next.proxyUrl)
           setTheme(next.theme)
         }}
         onValidate={async (draftToken) => {

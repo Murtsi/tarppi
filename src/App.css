@@ -1867,16 +1867,23 @@
 }
 
 .simple-landed {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: 4px 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
   width: 100%;
 }
 
-.simple-landed strong,
-.simple-landed span {
+.simple-landed__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
+}
+
+.simple-landed strong {
+  font-size: 15px;
 }
 
 .simple-landed span {
@@ -1886,7 +1893,7 @@
 }
 
 .simple-landed .simple-button {
-  grid-row: span 2;
+  flex-shrink: 0;
 }
 
 .simple-log {
@@ -1959,6 +1966,36 @@
 .simple-log__row--ok span { color: #147a4d; }
 .simple-log__row--warn span { color: #8a6100; }
 .simple-log__row--err span { color: #b42318; }
+
+.simple-tokenwarn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid var(--simple-danger-border);
+  border-radius: 14px;
+  background: var(--simple-danger-bg);
+  color: var(--simple-danger);
+}
+
+.simple-tokenwarn strong {
+  display: block;
+  font-size: 14px;
+}
+
+.simple-tokenwarn span {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--simple-danger);
+}
+
+.simple-tokenwarn .simple-button {
+  flex-shrink: 0;
+}
 
 .simple-footer {
   display: flex;
