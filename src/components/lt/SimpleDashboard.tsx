@@ -3,6 +3,7 @@ import { buildMediaUrl } from '../../lib/kide/api'
 import type { BackendHealthResponse, EventResponse, KideVariant, ScoredEvent } from '../../lib/kide/types'
 import type { LogLine, SnipeSession } from '../../lib/lt/types'
 import { KIDE_CHECKOUT_URL } from '../../lib/checkout'
+import { TELEGRAM_BOT_URL } from '../../lib/kide-token'
 import { snipeMatchesEvent } from '../../lib/snipe-session'
 import { TarppiMark } from '../Logo'
 
@@ -191,7 +192,7 @@ export default function SimpleDashboard(p: Props) {
     : null
 
   // Token expiring before the sale opens is the most common self-inflicted
-  // failure — the bot fires at open with a dead token and can't reach the cart.
+  // failure: the bot fires at open with a dead token and can't reach the cart.
   const saleStartMs = p.detail?.product.dateSalesFrom
     ? new Date(p.detail.product.dateSalesFrom).getTime()
     : (p.detail?.product.timeUntilSalesStart ?? 0) > 0
@@ -225,7 +226,13 @@ export default function SimpleDashboard(p: Props) {
           <section className="simple-telegram" aria-label="Telegram-botti">
             <div className="simple-telegram__copy">
               <strong>Telegram-botti</strong>
-              <span>Avaa <b className="simple-telegram__bot">@Tarppibot</b> ja liitä sieltä saamasi Chat ID tähän.</span>
+              <span>
+                Avaa{' '}
+                <a className="simple-telegram__bot" href={TELEGRAM_BOT_URL} target="_blank" rel="noreferrer">
+                  @Tarppibot
+                </a>
+                , kirjoita <code>/start</code> ja liitä Chat ID.
+              </span>
             </div>
             <input
               aria-label="Telegram Chat ID"
@@ -357,7 +364,7 @@ export default function SimpleDashboard(p: Props) {
                 {tokenExpiresBeforeSale && (
                   <div className="simple-tokenwarn" role="alert">
                     <div>
-                      <strong>⚠️ Token vanhenee ennen myynnin alkua</strong>
+                      <strong>Token vanhenee ennen myynnin alkua</strong>
                       <span>
                         Kirjautumistoken vanhenee ennen{saleStartLabel ? ` klo ${saleStartLabel}` : ' myyntiä'}.
                         {' '}Hae uusi Kide.app-token, muuten botti ei pääse koriin.

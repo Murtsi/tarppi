@@ -84,7 +84,7 @@ export default function CommandPalette({ open, onClose, commands, onSubmitUrl }:
 
         {!looksLikeUrl && filtered.length === 0 && (
           <div style={{ padding: '16px', color: C.inkMuted, fontFamily: F.mono, fontSize: 12 }}>
-            Ei osumia — liitä Kide.app-URL käynnistääksesi seurannan.
+            Ei osumia. Liitä Kide.app-URL käynnistääksesi seurannan.
           </div>
         )}
 

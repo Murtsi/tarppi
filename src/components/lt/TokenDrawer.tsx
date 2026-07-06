@@ -1,4 +1,10 @@
 import { useEffect, useState } from 'react'
+import {
+  KIDE_TOKEN_COPY_COMMAND,
+  KIDE_URL,
+  TELEGRAM_BOT_URL,
+  normalisePastedKideToken,
+} from '../../lib/kide-token'
 import type { ThemeMode } from '../../lib/theme'
 
 type Props = {
@@ -23,17 +29,6 @@ type Props = {
   onValidate: (draftToken: string) => Promise<void>
 }
 
-function stripKideWarning(raw: string): string {
-  let value = raw.trim()
-  if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1)
-  const warningEnd = value.lastIndexOf('!')
-  if (warningEnd !== -1) {
-    const afterWarning = value.slice(warningEnd + 1).trim()
-    if (afterWarning.length > 10) return afterWarning
-  }
-  return value.trim()
-}
-
 export default function TokenDrawer(p: Props) {
   const [token, setToken] = useState(p.token)
   const [pollMs, setPollMs] = useState(p.pollMs)
@@ -42,6 +37,7 @@ export default function TokenDrawer(p: Props) {
   const [telegramChatId, setTelegramChatId] = useState(p.telegramChatId)
   const [theme, setTheme] = useState<ThemeMode>(p.theme)
   const [validating, setValidating] = useState(false)
+  const [commandCopyState, setCommandCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
 
   useEffect(() => {
     if (!p.open) return
@@ -51,6 +47,7 @@ export default function TokenDrawer(p: Props) {
     setNotifyEnabled(p.notifyEnabled)
     setTelegramChatId(p.telegramChatId)
     setTheme(p.theme)
+    setCommandCopyState('idle')
   }, [p.fallbackMode, p.notifyEnabled, p.open, p.pollMs, p.telegramChatId, p.theme, p.token])
 
   const handleValidate = async () => {
@@ -60,6 +57,15 @@ export default function TokenDrawer(p: Props) {
       await p.onValidate(token)
     } finally {
       setValidating(false)
+    }
+  }
+
+  const copyTokenCommand = async () => {
+    try {
+      await navigator.clipboard.writeText(KIDE_TOKEN_COPY_COMMAND)
+      setCommandCopyState('copied')
+    } catch {
+      setCommandCopyState('failed')
     }
   }
 
@@ -83,9 +89,9 @@ export default function TokenDrawer(p: Props) {
             <div className="simple-settings__label">Kide.app-token</div>
             <textarea
               value={token}
-              onChange={(event) => setToken(stripKideWarning(event.target.value))}
+              onChange={(event) => setToken(normalisePastedKideToken(event.target.value))}
               rows={3}
-              placeholder="Liitä token tai koko WARNING-viesti tähän"
+              placeholder="Liitä Kide.app-token tähän"
               className="simple-settings__input simple-settings__textarea"
             />
             <div className="simple-settings__row">
@@ -102,10 +108,45 @@ export default function TokenDrawer(p: Props) {
             </div>
             <div className="simple-settings__hint">
               <strong>Mistä token löytyy?</strong>
-              <span>
-                Avaa kide.app, kirjaudu sisään, avaa Console ja aja{' '}
-                <code>copy(localStorage.getItem('authorization.token'))</code>. Liitä tulos tähän.
-              </span>
+              <ol className="simple-token-steps">
+                <li>Avaa Kide.app ja kirjaudu sisään.</li>
+                <li>Kopioi alla oleva komento.</li>
+                <li>Avaa Kide.app-sivulla Console, liitä komento ja paina Enter.</li>
+                <li>Palaa tähän ja liitä kopioitu token kenttään.</li>
+              </ol>
+              <div className="simple-token-command">
+                <code>{KIDE_TOKEN_COPY_COMMAND}</code>
+              </div>
+              <div className="simple-settings__actions">
+                <a className="simple-button simple-button--ghost" href={KIDE_URL} target="_blank" rel="noreferrer">
+                  Avaa Kide.app
+                </a>
+                <button type="button" className="simple-button simple-button--ghost" onClick={copyTokenCommand}>
+                  {commandCopyState === 'copied' ? 'Komento kopioitu' : 'Kopioi komento'}
+                </button>
+              </div>
+              {commandCopyState === 'failed' && (
+                <span className="simple-settings__help">
+                  Kopiointi ei onnistunut. Valitse komento ja kopioi se käsin.
+                </span>
+              )}
+            </div>
+          </section>
+
+          <section className="simple-settings__section">
+            <div className="simple-settings__label">Telegram-ilmoitukset</div>
+            <p>Avaa @Tarppibot, kirjoita /start ja liitä botin antama Chat ID tähän.</p>
+            <div className="simple-settings__inline simple-settings__inline--telegram">
+              <input
+                className="simple-settings__input"
+                value={telegramChatId}
+                onChange={(event) => setTelegramChatId(event.target.value)}
+                placeholder="Chat ID"
+                aria-label="Telegram Chat ID"
+              />
+              <a className="simple-button simple-button--ghost" href={TELEGRAM_BOT_URL} target="_blank" rel="noreferrer">
+                Avaa botti
+              </a>
             </div>
           </section>
 
