@@ -33,7 +33,7 @@ export default function AboutPage() {
           <article>
             <h2>Tekniikka</h2>
             <p>
-              Käyttöliittymä on tehty Reactilla ja TypeScriptillä. Taustalla on Railwaylla ajettava backend, Telegramin ilmoitusrajapinta ja Kide.appin tapahtumatietoja lukevat integraatiot.
+              Käyttöliittymä on tehty Reactilla ja TypeScriptillä. Taustalla on Tärpin API-palvelu, Telegramin ilmoitusrajapinta ja Kide.appin tapahtumatietoja lukevat integraatiot.
             </p>
           </article>
 
@@ -54,7 +54,7 @@ export default function AboutPage() {
         <section className="seo-band">
           <h2>Frontend on julkinen</h2>
           <p>
-            Tärpin käyttöliittymän lähdekoodi löytyy GitHubista. Backend ja varauslogiikka pidetään erillisessä yksityisessä repossa.
+            Tärpin käyttöliittymän lähdekoodi löytyy GitHubista. Repo sisältää selaimessa näkyvän frontendin.
           </p>
           <a className="simple-button simple-button--ghost" href="https://github.com/Murtsi/Kidehiiri-public" target="_blank" rel="noreferrer">
             Avaa GitHub

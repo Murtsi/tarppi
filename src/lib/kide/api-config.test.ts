@@ -22,7 +22,7 @@ test('development config can use same-origin API paths', () => {
 })
 
 test('configured API URL is joined without duplicate slashes', () => {
-  const config = getApiConfig('https://backend.railway.app/', true)
+  const config = getApiConfig('https://api.example.com/', true)
 
-  assert.equal(buildApiUrl(config, '/health'), 'https://backend.railway.app/health')
+  assert.equal(buildApiUrl(config, '/health'), 'https://api.example.com/health')
 })

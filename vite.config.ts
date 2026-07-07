@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      // Proxy API calls to backend in development
+      // Proxy API calls to the local API service in development
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,

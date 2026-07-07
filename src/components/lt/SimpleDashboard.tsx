@@ -87,10 +87,10 @@ function backendLabel(status: BackendStatus, health?: BackendHealthResponse | nu
 
 function backendHelp(p: Props) {
   if (p.backendStatus === 'missing-config') {
-    return p.backendMessage ?? 'Lisää backendin osoite ennen käyttöä.'
+    return p.backendMessage ?? 'Lisää API-osoite ennen käyttöä.'
   }
   if (p.backendStatus === 'offline') {
-    return `Backend ei vastaa: ${p.backendMessage ?? 'yhteys epäonnistui'}`
+    return `Palvelu ei vastaa: ${p.backendMessage ?? 'yhteys epäonnistui'}`
   }
   if (p.scanError) return `Tapahtumien haku ei mennyt läpi: ${p.scanError}`
   if (p.backendHealth?.services.database.status === 'ok') {

@@ -11,10 +11,10 @@ import {
   extractEventId,
   fetchBackendHealth,
   fetchEventDetail,
-  fetchExtraProperties,
   getApiStatus,
   getServerSnipe,
   maskToken,
+  refreshConnectionValues,
   scanCity,
   validateToken,
 } from './lib/kide/api'
@@ -39,6 +39,7 @@ import {
   setNotificationsEnabled,
 } from './lib/notify'
 import { applyThemeMode, readThemeMode, writeThemeMode, type ThemeMode } from './lib/theme'
+import { readStoredKideToken, writeStoredKideToken } from './lib/token-storage'
 import './App.css'
 
 const MAX_LOG = 40
@@ -60,8 +61,8 @@ function DashboardApp() {
   const apiStatus = useMemo(() => getApiStatus(), [])
   const [initialStoredSnipe] = useState(() => readStoredSnipeSession())
 
-  // persistent settings
-  const [token, setToken] = useState(() => readLS('kh.token', ''))
+  // local settings
+  const [token, setToken] = useState(() => readStoredKideToken())
   const [tokenValid, setTokenValid] = useState(false)
   const [tokenEmail, setTokenEmail] = useState<string | undefined>()
   const [pollMs, setPollMs] = useState<number>(() => Number(readLS('kh.pollMs', String(DEFAULT_POLL_MS))))
@@ -143,7 +144,7 @@ function DashboardApp() {
   }
 
   // ─── persistence + initial load ─────────────────────────────────────────
-  useEffect(() => { writeLS('kh.token', token) }, [token])
+  useEffect(() => { writeStoredKideToken(token) }, [token])
   useEffect(() => { writeLS('kh.pollMs', String(pollMs)) }, [pollMs])
   useEffect(() => { writeLS('kh.fallback', fallbackMode ? '1' : '0') }, [fallbackMode])
   useEffect(() => { writeLS('kh.city', city) }, [city])
@@ -184,7 +185,7 @@ function DashboardApp() {
 
   const checkBackend = useCallback(async () => {
     if (!apiStatus.configured) {
-      const msg = apiStatus.error ?? 'Backend API URL puuttuu.'
+      const msg = apiStatus.error ?? 'API-osoite puuttuu.'
       setBackendStatus('missing-config')
       setBackendMessage(msg)
       setBackendHealth(null)
@@ -200,8 +201,8 @@ function DashboardApp() {
       const health = await fetchBackendHealth()
       setBackendHealth(health)
       setBackendStatus('ready')
-      setBackendMessage(health.status === 'degraded' ? 'Backend vastaa, mutta osa palveluista on heikossa tilassa.' : null)
-      // Backend URL only shown in degraded states, where it helps troubleshooting
+      setBackendMessage(health.status === 'degraded' ? 'Palvelu vastaa, mutta osa toiminnoista on heikossa tilassa.' : null)
+      // API URL is only shown in degraded states, where it helps troubleshooting.
       pushLog(
         health.status === 'ok' ? 'ok' : 'warn',
         health.status === 'ok'
@@ -209,13 +210,13 @@ function DashboardApp() {
           : `Yhteys ${health.status} · ${apiStatus.apiUrl || 'same-origin'}`,
       )
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Backend ei vastaa'
+      const msg = e instanceof Error ? e.message : 'Palvelu ei vastaa'
       setBackendStatus('offline')
       setBackendMessage(msg)
       setBackendHealth(null)
       setScanning(false)
       setScanError(msg)
-      pushLog('err', `Backend offline: ${msg}`)
+      pushLog('err', `Palvelu offline: ${msg}`)
     }
   }, [apiStatus, pushLog])
 
@@ -302,9 +303,9 @@ function DashboardApp() {
 
   const runScan = useCallback(async (target?: string) => {
     if (backendStatus !== 'ready') {
-      const msg = backendMessage ?? 'Backend ei ole valmis.'
+      const msg = backendMessage ?? 'Palvelu ei ole valmis.'
       setScanError(msg)
-      pushLog('warn', `Live-loki odottaa backendia: ${msg}`)
+      pushLog('warn', `Live-loki odottaa palvelua: ${msg}`)
       return
     }
 
@@ -419,7 +420,7 @@ function DashboardApp() {
     const run = { cancelled: false, abortController: new AbortController() }
     snipeRunRef.current = run
 
-    // ─ Register server-side snipe job (runs on Railway even if browser closes)
+    // ─ Register server-side watch job so the browser can be closed.
     const det = detailRef.current
     const salesStartMs = det?.product.dateSalesFrom
       ? new Date(det.product.dateSalesFrom).getTime()
@@ -560,7 +561,7 @@ function DashboardApp() {
         || r.message.includes('Invalid inventory ID')
         || r.message.includes('Token validation failed')
       ) {
-        fetchExtraProperties().catch(() => {})
+        refreshConnectionValues().catch(() => {})
       }
 
       if (r.retryAfterMs && r.retryAfterMs > 0) {
@@ -620,7 +621,7 @@ function DashboardApp() {
           // Refresh connection values once in the 30 s window before sale opens
           if (tUntil <= 30 && !didRefreshBeforeSale) {
             didRefreshBeforeSale = true
-            fetchExtraProperties(run.abortController.signal).catch(() => {})
+            refreshConnectionValues(run.abortController.signal).catch(() => {})
             pushLog('info', `Myynti aukeaa ${Math.round(tUntil)}s päästä — yhteysarvot päivitetty`)
           } else if (tUntil <= 10) {
             pushLog('info', `Myynti aukeaa ${Math.round(tUntil)}s päästä!`)
@@ -740,7 +741,7 @@ function DashboardApp() {
     { id: 'stop', icon: '⏻', label: 'Pysäytä aktiivinen seuranta', run: stopSnipe },
     { id: 'settings', icon: '⚙', label: 'Avaa asetukset', hint: 'Ctrl+,', run: () => setDrawerOpen(true) },
     { id: 'city', icon: '◉', label: 'Vaihda kaupunki', run: () => setCityPickerOpen(true) },
-    { id: 'refresh', icon: '⟳', label: 'Päivitä yhteysarvot', run: () => { fetchExtraProperties().then(() => pushLog('ok', 'Yhteysarvot päivitetty')).catch(() => pushLog('err', 'Yhteysarvojen päivitys epäonnistui')) } },
+    { id: 'refresh', icon: '⟳', label: 'Päivitä yhteysarvot', run: () => { refreshConnectionValues().then(() => pushLog('ok', 'Yhteysarvot päivitetty')).catch(() => pushLog('err', 'Yhteysarvojen päivitys epäonnistui')) } },
   ]
 
   return (

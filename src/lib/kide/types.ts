@@ -47,7 +47,7 @@ export type ValidateTokenResponse = {
   }
 }
 
-export type DeobfuscateResponse = {
+export type ConnectionValuesResponse = {
   hash: string
   headerKey: string
   extractedAt: string

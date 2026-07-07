@@ -24,7 +24,7 @@ export function getApiConfig(rawApiUrl: string | undefined, isProduction: boolea
       apiUrl,
       configured: false,
       isProduction,
-      error: 'Backend API URL puuttuu. Aseta Vercelissä VITE_API_URL Railway-backendin osoitteeksi.',
+      error: 'API-osoite puuttuu. Aseta Vercelissä VITE_API_URL palvelun osoitteeksi.',
     }
   }
 
@@ -37,7 +37,7 @@ export function getApiConfig(rawApiUrl: string | undefined, isProduction: boolea
 
 export function buildApiUrl(config: ApiConfig, path: string): string {
   if (!config.configured) {
-    throw new ApiConfigurationError(config.error ?? 'Backend API URL puuttuu.')
+    throw new ApiConfigurationError(config.error ?? 'API-osoite puuttuu.')
   }
 
   const cleanPath = path.startsWith('/') ? path : `/${path}`

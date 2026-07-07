@@ -2,7 +2,7 @@ import type {
   EventResponse,
   ReserveResponse,
   ValidateTokenResponse,
-  DeobfuscateResponse,
+  ConnectionValuesResponse,
   EventFeatures,
   ScorerResponse,
   ScanResponse,
@@ -76,8 +76,8 @@ export async function addToCart(
   })
 }
 
-export async function fetchExtraProperties(signal?: AbortSignal): Promise<DeobfuscateResponse> {
-  return apiCall<DeobfuscateResponse>('/api/deobfuscate', {}, signal)
+export async function refreshConnectionValues(signal?: AbortSignal): Promise<ConnectionValuesResponse> {
+  return apiCall<ConnectionValuesResponse>('/api/connection-values', {}, signal)
 }
 
 export async function fetchKideTime(): Promise<{ offsetMs: number }> {

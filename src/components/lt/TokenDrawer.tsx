@@ -87,6 +87,7 @@ export default function TokenDrawer(p: Props) {
         <div className="simple-settings__body">
           <section className="simple-settings__section">
             <div className="simple-settings__label">Kide.app-token</div>
+            <p>Token säilyy vain tässä selainistunnossa. Kun suljet selaimen, lisää se tarvittaessa uudelleen.</p>
             <textarea
               value={token}
               onChange={(event) => setToken(normalisePastedKideToken(event.target.value))}
