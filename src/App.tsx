@@ -1,4 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Route, Routes } from 'react-router-dom'
+import AboutPage from './pages/AboutPage'
+import FAQPage from './pages/FAQPage'
+import HowItWorksPage from './pages/HowItWorksPage'
+import { SeoMeta } from './pages/SeoMeta'
 import {
   addToCart,
   cancelServerSnipe,
@@ -40,6 +45,8 @@ const MAX_LOG = 40
 const DEFAULT_POLL_MS = 800
 const DEFAULT_CITY = 'Helsinki'
 const PAYMENT_WINDOW_MS = 25 * 60 * 1000
+const HOME_TITLE = 'Tärppi - Kide.app lippubotti opiskelijatapahtumiin'
+const HOME_DESCRIPTION = 'Laita Tärppi vahtimaan Kide.app-tapahtumaa. Saat Telegramiin tiedon, kun liput ovat korissa. Maksu tehdään itse Kide.appissa.'
 type BackendStatus = 'checking' | 'ready' | 'missing-config' | 'offline'
 
 function readLS(key: string, fallback: string): string {
@@ -49,7 +56,7 @@ function writeLS(key: string, value: string) {
   try { localStorage.setItem(key, value) } catch { /* ignore */ }
 }
 
-export default function App() {
+function DashboardApp() {
   const apiStatus = useMemo(() => getApiStatus(), [])
   const [initialStoredSnipe] = useState(() => readStoredSnipeSession())
 
@@ -822,6 +829,25 @@ export default function App() {
         />
       )}
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={(
+          <>
+            <SeoMeta title={HOME_TITLE} description={HOME_DESCRIPTION} path="/" />
+            <DashboardApp />
+          </>
+        )}
+      />
+      <Route path="/miten-toimii" element={<HowItWorksPage />} />
+      <Route path="/ukk" element={<FAQPage />} />
+      <Route path="/tietoa" element={<AboutPage />} />
+    </Routes>
   )
 }
 

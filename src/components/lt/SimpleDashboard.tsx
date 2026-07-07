@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { buildMediaUrl } from '../../lib/kide/api'
 import type { BackendHealthResponse, EventResponse, KideVariant, ScoredEvent } from '../../lib/kide/types'
 import type { LogLine, SnipeSession } from '../../lib/lt/types'
@@ -524,10 +525,13 @@ export default function SimpleDashboard(p: Props) {
           </a>
         </span>
         <span>
-          Palaute ja yhteydenotot{' '}
-          <a href="https://www.anttimurtokangas.com" target="_blank" rel="noreferrer">
-            portfolion kautta
-          </a>
+          <Link to="/miten-toimii">Miten toimii</Link>
+          {' '}·{' '}
+          <Link to="/ukk">UKK</Link>
+          {' '}·{' '}
+          <Link to="/tietoa">Tietoa</Link>
+          {' '}·{' '}
+          <a href="https://www.anttimurtokangas.com" target="_blank" rel="noreferrer">Palaute</a>
           {' '}· Epävirallinen työkalu, ei Kide.appin tuottama
         </span>
       </footer>
