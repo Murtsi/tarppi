@@ -229,19 +229,6 @@ export type CreateSnipeJobResponse = {
   status: SnipeJobStatus
 }
 
-// ─── Auth Types ──────────────────────────────────────────────────────────────
-
-export type AuthLoginResponse = {
-  token: string
-  expiresIn: string
-}
-
-export type AuthVerifyResponse = {
-  valid: boolean
-  user?: string
-  expiresAt?: string
-}
-
 // ─── Event Discussion ────────────────────────────────────────────────────────
 
 /** Finnish-language sections returned by POST /api/discuss */

@@ -6,8 +6,6 @@ import type {
   EventFeatures,
   ScorerResponse,
   ScanResponse,
-  AuthLoginResponse,
-  AuthVerifyResponse,
   DiscussResponse,
   SnipeJobResponse,
   CreateSnipeJobResponse,
@@ -135,19 +133,6 @@ export function buildMediaUrl(mediaFilename?: string | null): string | null {
   if (!mediaFilename) return null
   if (mediaFilename.startsWith('http')) return mediaFilename
   return `${KIDE_MEDIA_BASE}${mediaFilename}`
-}
-
-export async function adminLogin(username: string, password: string): Promise<AuthLoginResponse> {
-  return apiCall<AuthLoginResponse>('/api/auth/login', { username, password })
-}
-
-export async function adminVerify(token: string): Promise<AuthVerifyResponse> {
-  const url = buildApiUrl(API_CONFIG, '/api/auth/verify')
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  return response.json() as Promise<AuthVerifyResponse>
 }
 
 export async function discussEvent(event: Record<string, unknown>): Promise<DiscussResponse> {

@@ -25,7 +25,6 @@ const HOP_BY_HOP_HEADERS = new Set([
 const FORWARDED_REQUEST_HEADERS = new Set([
   'authorization',
   'content-type',
-  'x-internal-api-key',
 ])
 
 function envApiUrl(): string {
