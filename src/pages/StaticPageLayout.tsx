@@ -46,7 +46,7 @@ export function StaticPageLayout({ kicker, title, lead, children }: StaticPageLa
           {' '}·{' '}
           <Link to="/tietoa">Tietoa</Link>
           {' '}·{' '}
-          <a href="https://github.com/Murtsi/Kidehiiri-public" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://github.com/Murtsi/tarppi" target="_blank" rel="noreferrer">GitHub</a>
           {' '}· Epävirallinen työkalu, ei Kide.appin tuottama
         </span>
       </footer>

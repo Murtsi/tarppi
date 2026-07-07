@@ -56,7 +56,7 @@ export default function AboutPage() {
           <p>
             Tärpin käyttöliittymän lähdekoodi löytyy GitHubista. Repo sisältää selaimessa näkyvän frontendin.
           </p>
-          <a className="simple-button simple-button--ghost" href="https://github.com/Murtsi/Kidehiiri-public" target="_blank" rel="noreferrer">
+          <a className="simple-button simple-button--ghost" href="https://github.com/Murtsi/tarppi" target="_blank" rel="noreferrer">
             Avaa GitHub
           </a>
         </section>

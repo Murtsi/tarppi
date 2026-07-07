@@ -531,7 +531,7 @@ export default function SimpleDashboard(p: Props) {
           {' '}·{' '}
           <Link to="/tietoa">Tietoa</Link>
           {' '}·{' '}
-          <a href="https://github.com/Murtsi/Kidehiiri-public" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://github.com/Murtsi/tarppi" target="_blank" rel="noreferrer">GitHub</a>
           {' '}·{' '}
           <a href="https://www.anttimurtokangas.com" target="_blank" rel="noreferrer">Palaute</a>
           {' '}· Epävirallinen työkalu, ei Kide.appin tuottama

@@ -5,7 +5,7 @@ Tärppi on selainkäyttöinen Kide.app-seurantatyökalu opiskelijatapahtumiin. K
 Maksaminen tehdään aina itse Kide.appissa. Tärppi ei käsittele maksukortteja eikä osta lippuja loppuun asti.
 
 - Live-sivu: [tarppi.site](https://www.tarppi.site)
-- GitHub: [Tärppi frontend](https://github.com/Murtsi/Kidehiiri-public)
+- GitHub: [Tärppi frontend](https://github.com/Murtsi/tarppi)
 - Tekijä: [Antti Murtokangas](https://www.anttimurtokangas.com)
 
 ## Mitä käyttäjä tarvitsee?
