@@ -45,8 +45,8 @@ const MAX_LOG = 40
 const DEFAULT_POLL_MS = 800
 const DEFAULT_CITY = 'Helsinki'
 const PAYMENT_WINDOW_MS = 25 * 60 * 1000
-const HOME_TITLE = 'Tärppi - Kide.app lippubotti opiskelijatapahtumiin'
-const HOME_DESCRIPTION = 'Laita Tärppi vahtimaan Kide.app-tapahtumaa. Saat Telegramiin tiedon, kun liput ovat korissa. Maksu tehdään itse Kide.appissa.'
+const HOME_TITLE = 'Tärppi - Kide.app-ohjelma opiskelijatapahtumiin'
+const HOME_DESCRIPTION = 'Lisää Kide.app-token, valitse tapahtuma ja laita Tärppi vahtiin. Telegram-ilmoitukset ovat vapaaehtoinen lisä. Maksu tehdään itse Kide.appissa.'
 type BackendStatus = 'checking' | 'ready' | 'missing-config' | 'offline'
 
 function readLS(key: string, fallback: string): string {
@@ -410,11 +410,11 @@ function DashboardApp() {
     setSnipe(session)
     pushLog('ok', `Seuranta alkoi · ${eventName} · ${variantLabel} · ${params.quantity}×`)
     if (initialVariantTargets.length > 1) {
-      pushLog('warn', `Käyttäjän vastuulla: botti yrittää ${initialVariantTargets.length} lipputyyppiä järjestyksessä`)
+      pushLog('warn', `Käyttäjän vastuulla: ohjelma yrittää ${initialVariantTargets.length} lipputyyppiä järjestyksessä`)
     } else if (initialVariantTargets.length === 0) {
       pushLog('info', ticketNameQuery
-        ? `Lipputyyppiä ei vielä näy · botti hakee myynnin auetessa lähimmän osuman: ${ticketNameQuery}`
-        : 'Lipputyyppiä ei vielä näy · botti yrittää myynnin auetessa kaikkia löytyviä lipputyyppejä')
+        ? `Lipputyyppiä ei vielä näy · ohjelma hakee myynnin auetessa lähimmän osuman: ${ticketNameQuery}`
+        : 'Lipputyyppiä ei vielä näy · ohjelma yrittää myynnin auetessa kaikkia löytyviä lipputyyppejä')
     }
     const run = { cancelled: false, abortController: new AbortController() }
     snipeRunRef.current = run
@@ -450,7 +450,7 @@ function DashboardApp() {
         }
         setServerJobId(job.jobId)
         const whenStr = job.scheduledFor
-          ? `aukeaa ${new Date(job.scheduledFor + 1000).toLocaleTimeString('fi-FI')} — botti yrittää lisätä liput automaattisesti`
+          ? `aukeaa ${new Date(job.scheduledFor + 1000).toLocaleTimeString('fi-FI')} — ohjelma yrittää lisätä liput automaattisesti`
           : 'palvelinseuranta aktiivinen'
         pushLog('info', `Palvelinseuranta rekisteröity · ${whenStr}`)
       })
@@ -643,7 +643,7 @@ function DashboardApp() {
         const wasWaiting = snipeRef.current?.phase === 'waiting'
         if (wasWaiting) {
           setSnipe((s) => (s ? { ...s, phase: 'hunting', salesStartAt: undefined } : s))
-          pushLog('ok', 'Myynti avautui — botti yrittää lisätä liput koriin')
+          pushLog('ok', 'Myynti avautui — ohjelma yrittää lisätä liput koriin')
           if (attemptTargets.length > 0) {
             try {
               const landed = await tryCart(attemptTargets, params.quantity)

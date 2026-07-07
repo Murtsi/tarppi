@@ -135,7 +135,7 @@ export default function TokenDrawer(p: Props) {
 
           <section className="simple-settings__section">
             <div className="simple-settings__label">Telegram-ilmoitukset</div>
-            <p>Avaa @Tarppibot, kirjoita /start ja liitä botin antama Chat ID tähän.</p>
+            <p>Telegram on vapaaehtoinen. Jos haluat ilmoitukset, avaa @Tarppibot, kirjoita /start ja liitä saamasi Chat ID tähän.</p>
             <div className="simple-settings__inline simple-settings__inline--telegram">
               <input
                 className="simple-settings__input"
@@ -145,7 +145,7 @@ export default function TokenDrawer(p: Props) {
                 aria-label="Telegram Chat ID"
               />
               <a className="simple-button simple-button--ghost" href={TELEGRAM_BOT_URL} target="_blank" rel="noreferrer">
-                Avaa botti
+                Avaa Telegram
               </a>
             </div>
           </section>

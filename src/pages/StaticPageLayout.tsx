@@ -17,7 +17,7 @@ export function StaticPageLayout({ kicker, title, lead, children }: StaticPageLa
           <span className="simple-brand__mark"><TarppiMark size={38} /></span>
           <div>
             <h1>Tärppi</h1>
-            <p>Kide.app-botti opiskelijoille</p>
+            <p>Kide.app-ohjelma opiskelijoille</p>
           </div>
         </Link>
         <nav className="seo-nav" aria-label="Sivut">
@@ -45,6 +45,8 @@ export function StaticPageLayout({ kicker, title, lead, children }: StaticPageLa
           <Link to="/ukk">UKK</Link>
           {' '}·{' '}
           <Link to="/tietoa">Tietoa</Link>
+          {' '}·{' '}
+          <a href="https://github.com/Murtsi/Kidehiiri-public" target="_blank" rel="noreferrer">GitHub</a>
           {' '}· Epävirallinen työkalu, ei Kide.appin tuottama
         </span>
       </footer>

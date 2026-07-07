@@ -4,8 +4,8 @@ import { test } from 'node:test'
 
 const frontendRoot = new URL('..', import.meta.url)
 const canonicalOrigin = 'https://www.tarppi.site'
-const seoTitle = 'Tärppi - Kide.app lippubotti opiskelijatapahtumiin'
-const seoDescription = 'Laita Tärppi vahtimaan Kide.app-tapahtumaa. Saat Telegramiin tiedon, kun liput ovat korissa. Maksu tehdään itse Kide.appissa.'
+const seoTitle = 'Tärppi - Kide.app-ohjelma opiskelijatapahtumiin'
+const seoDescription = 'Lisää Kide.app-token, valitse tapahtuma ja laita Tärppi vahtimaan. Telegram-ilmoitukset ovat vapaaehtoinen lisä. Maksu tehdään itse Kide.appissa.'
 const staticRoutes = ['/miten-toimii', '/ukk', '/tietoa'] as const
 
 function readFrontendFile(path: string): string {
@@ -43,7 +43,7 @@ test('index.html has indexable SEO metadata for the canonical domain', () => {
   assert.ok(indexHtml.includes(`<meta data-rh="true" property="og:url" content="${canonicalOrigin}/" />`))
   assert.ok(indexHtml.includes(`<title data-rh="true">${seoTitle}</title>`))
   assert.ok(indexHtml.includes(`<meta data-rh="true" name="description" content="${seoDescription}" />`))
-  assert.ok(indexHtml.includes('<meta name="keywords" content="kide.app botti'))
+  assert.ok(indexHtml.includes('<meta name="keywords" content="kide.app ohjelma'))
   assert.ok(indexHtml.includes('<meta name="twitter:card" content="summary" />'))
   assert.ok(indexHtml.includes(`<meta data-rh="true" name="twitter:title" content="${seoTitle}" />`))
   assert.ok(indexHtml.includes(`<meta data-rh="true" name="twitter:description" content="${seoDescription}" />`))
@@ -62,7 +62,7 @@ test('React app exposes the SEO routes and page-level metadata', () => {
     assert.ok(app.includes(`path="${route}"`))
   }
 
-  assert.ok(howItWorks.includes('Miten Tärppi toimii? - Kide.app lippubotti opiskelijoille'))
+  assert.ok(howItWorks.includes('Miten Tärppi toimii? - Kide.app-ohjelma opiskelijoille'))
   assert.ok(faq.includes('UKK - Usein kysytyt kysymykset | Tärppi'))
   assert.ok(about.includes('Tietoa Tärpistä - Kide.app seuranta opiskelijoille'))
   assert.ok(faq.includes("'@type': 'FAQPage'"))

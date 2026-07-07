@@ -9,7 +9,7 @@ const questions = [
   },
   {
     question: 'Ostaako Tärppi liput automaattisesti puolestani?',
-    answer: 'Tärppi voi yrittää lisätä valitsemasi liput Kide.app-koriin ja ilmoittaa siitä Telegramissa. Maksaminen tapahtuu aina itse Kide.appissa.',
+    answer: 'Tärppi voi yrittää lisätä valitsemasi liput Kide.app-koriin ja ilmoittaa siitä, jos ilmoitukset ovat käytössä. Maksaminen tapahtuu aina itse Kide.appissa.',
   },
   {
     question: 'Tarvitseeko Tärppi Kide.app-salasanani?',
@@ -17,7 +17,11 @@ const questions = [
   },
   {
     question: 'Miten saan Telegram Chat ID:ni?',
-    answer: 'Avaa Telegram, etsi @Tarppibot ja aloita keskustelu komennolla /start. Botti lähettää Chat ID:n automaattisesti.',
+    answer: 'Telegram Chat ID on vapaaehtoinen. Jos haluat ilmoitukset Telegramiin, avaa @Tarppibot ja aloita keskustelu komennolla /start. Saat Chat ID:n, jonka voit liittää Tärppiin.',
+  },
+  {
+    question: 'Miksi Kide näyttää 68 tapahtumaa, mutta Tärppi näyttää 119?',
+    answer: 'Luvut riippuvat rajauksesta. Helsinki-haussa Kiden rajapinta palautti tarkistuksessa 68 tuotetta, joista Tärppi näytti 54 aktiivista tai tulossa olevaa tapahtumaa. Kun kaupungiksi valitaan Kaikki, Tärppi hakee koko Kide-listauksen: silloin rajapinta palautti 160 tuotetta ja Tärppi näytti niistä 119. Tärppi ei siis kopioi Kiden sivulla näkyvää lukua, vaan hakee tapahtumat backendin kautta ja suodattaa pois esimerkiksi loppuunmyydyt, päättyneet ja ilmaiset tapahtumat.',
   },
   {
     question: 'Toimiiko Tärppi kaikilla Kide.app-tapahtumilla?',
@@ -29,11 +33,11 @@ const questions = [
   },
   {
     question: 'Kuinka nopeasti Tärppi ilmoittaa vapautuneista lipuista?',
-    answer: 'Tärppi tarkistaa tapahtumia säännöllisesti. Ilmoitus tulee Telegramiin heti, kun Tärppi saa liput koriin tai huomaa seurannan kannalta olennaisen muutoksen.',
+    answer: 'Tärppi tarkistaa tapahtumia säännöllisesti. Jos Telegram-ilmoitukset ovat käytössä, viesti lähtee heti kun Tärppi saa liput koriin tai huomaa seurannan kannalta olennaisen muutoksen.',
   },
   {
     question: 'Mitä tietoja Tärppi tallentaa minusta?',
-    answer: 'Tärppi tallentaa seurannan kannalta tarvittavat tiedot, kuten Telegram Chat ID:n ja valitut tapahtumat. Salasanoja tai maksukorttitietoja ei tallenneta.',
+    answer: 'Tärppi tallentaa seurannan kannalta tarvittavat tiedot, kuten valitut tapahtumat ja asetukset. Kide.app-salasanaa tai maksukorttitietoja ei tallenneta. Telegram Chat ID tallennetaan vain, jos lisäät sen ilmoituksia varten.',
   },
   {
     question: 'Toimiiko Tärppi Helsingin lisäksi muissa kaupungeissa?',
@@ -59,7 +63,7 @@ export default function FAQPage() {
     <>
       <SeoMeta
         title="UKK - Usein kysytyt kysymykset | Tärppi"
-        description="Vastaukset yleisimpiin kysymyksiin Tärpistä: miten botti toimii, onko se ilmainen ja mitä tietoja se tarvitsee."
+        description="Vastaukset yleisimpiin kysymyksiin Tärpistä: miten ohjelma toimii, onko se ilmainen ja mitä tietoja se tarvitsee."
         path="/ukk"
       />
       <Helmet>

@@ -193,7 +193,7 @@ export default function SimpleDashboard(p: Props) {
     : null
 
   // Token expiring before the sale opens is the most common self-inflicted
-  // failure: the bot fires at open with a dead token and can't reach the cart.
+  // failure: the watch job fires at open with a dead token and can't reach the cart.
   const saleStartMs = p.detail?.product.dateSalesFrom
     ? new Date(p.detail.product.dateSalesFrom).getTime()
     : (p.detail?.product.timeUntilSalesStart ?? 0) > 0
@@ -220,13 +220,13 @@ export default function SimpleDashboard(p: Props) {
           <span className="simple-brand__mark"><TarppiMark size={38} /></span>
           <div>
             <h1>Tärppi</h1>
-            <p>Valitse tapahtuma. Botti lisää liput puolestasi.</p>
+            <p>Valitse tapahtuma. Ohjelma lisää liput koriin.</p>
           </div>
         </div>
         <div className="simple-top__actions">
-          <section className="simple-telegram" aria-label="Telegram-botti">
+          <section className="simple-telegram" aria-label="Telegram-ilmoitukset">
             <div className="simple-telegram__copy">
-              <strong>Telegram-botti</strong>
+              <strong>Telegram-ilmoitukset</strong>
               <span>
                 Avaa{' '}
                 <a className="simple-telegram__bot" href={TELEGRAM_BOT_URL} target="_blank" rel="noreferrer">
@@ -368,7 +368,7 @@ export default function SimpleDashboard(p: Props) {
                       <strong>Token vanhenee ennen myynnin alkua</strong>
                       <span>
                         Kirjautumistoken vanhenee ennen{saleStartLabel ? ` klo ${saleStartLabel}` : ' myyntiä'}.
-                        {' '}Hae uusi Kide.app-token, muuten botti ei pääse koriin.
+                        {' '}Hae uusi Kide.app-token, muuten ohjelma ei pääse koriin.
                       </span>
                     </div>
                     <button className="simple-button simple-button--danger" onClick={p.onOpenSettings}>
@@ -399,7 +399,7 @@ export default function SimpleDashboard(p: Props) {
                 {!p.detailLoading && !p.detailError && p.detail && variants.length === 0 && (
                   <div className="simple-empty">
                     <strong>Tälle tapahtumalle ei löytynyt varattavia lipputyyppejä.</strong>
-                    <span>{salesUpcoming ? 'Voit silti laittaa botin odottamaan. Kun myynti aukeaa, botti hakee lipputyypit uudelleen ja yrittää sopivaa lippua.' : 'Kide näyttää tapahtuman, mutta rajapinta ei anna lipputyyppejä. Kokeile myöhemmin uudelleen.'}</span>
+                    <span>{salesUpcoming ? 'Voit silti laittaa ohjelman odottamaan. Kun myynti aukeaa, Tärppi hakee lipputyypit uudelleen ja yrittää sopivaa lippua.' : 'Kide näyttää tapahtuman, mutta rajapinta ei anna lipputyyppejä. Kokeile myöhemmin uudelleen.'}</span>
                   </div>
                 )}
 
@@ -407,7 +407,7 @@ export default function SimpleDashboard(p: Props) {
                   <div className="simple-variants">
                     <div className="simple-variants__head">
                       <h4>Lipputyyppi</h4>
-                      <span>{salesUpcoming ? `Botti yrittää myynnin auetessa: ${targetSummary}` : `Botti yrittää: ${targetSummary}`}</span>
+                      <span>{salesUpcoming ? `Ohjelma yrittää myynnin auetessa: ${targetSummary}` : `Ohjelma yrittää: ${targetSummary}`}</span>
                     </div>
                     {variants.map((variant: KideVariant) => {
                       const soldOut = variant.availability <= 0 && !salesUpcoming
@@ -439,7 +439,7 @@ export default function SimpleDashboard(p: Props) {
                   <label className="simple-risk-option simple-ticket-query">
                     <span>
                       <strong>Lipputyypin vihje</strong>
-                      <small>Jos lipputyyppiä ei vielä näy, kirjoita esim. opiskelija, perjantai tai VIP. Tyhjänä botti yrittää kaikkia löytyviä lipputyyppejä käyttäjän omalla vastuulla.</small>
+                      <small>Jos lipputyyppiä ei vielä näy, kirjoita esim. opiskelija, perjantai tai VIP. Tyhjänä ohjelma yrittää kaikkia löytyviä lipputyyppejä käyttäjän omalla vastuulla.</small>
                     </span>
                     <input
                       value={ticketNameQuery}
@@ -486,7 +486,7 @@ export default function SimpleDashboard(p: Props) {
                           })
                         }}
                       >
-                        {!p.tokenValid ? 'Token puuttuu' : activeSnipe ? 'Botti käynnissä' : 'Käynnistä botti'}
+                        {!p.tokenValid ? 'Token puuttuu' : activeSnipe ? 'Ohjelma käynnissä' : 'Käynnistä ohjelma'}
                       </button>
                     </>
                   )}
@@ -530,6 +530,8 @@ export default function SimpleDashboard(p: Props) {
           <Link to="/ukk">UKK</Link>
           {' '}·{' '}
           <Link to="/tietoa">Tietoa</Link>
+          {' '}·{' '}
+          <a href="https://github.com/Murtsi/Kidehiiri-public" target="_blank" rel="noreferrer">GitHub</a>
           {' '}·{' '}
           <a href="https://www.anttimurtokangas.com" target="_blank" rel="noreferrer">Palaute</a>
           {' '}· Epävirallinen työkalu, ei Kide.appin tuottama
