@@ -10,6 +10,7 @@
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
     { "source": "/robots.txt", "destination": "/robots.txt" },
+    { "source": "/health", "destination": "/api/health" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

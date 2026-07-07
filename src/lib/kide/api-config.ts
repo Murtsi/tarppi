@@ -17,16 +17,15 @@ export function normaliseApiUrl(rawApiUrl?: string): string {
 }
 
 export function getApiConfig(rawApiUrl: string | undefined, isProduction: boolean): ApiConfig {
-  const apiUrl = normaliseApiUrl(rawApiUrl)
-
-  if (!apiUrl && isProduction) {
+  if (isProduction) {
     return {
-      apiUrl,
-      configured: false,
+      apiUrl: '',
+      configured: true,
       isProduction,
-      error: 'API-osoite puuttuu. Aseta Vercelissä VITE_API_URL palvelun osoitteeksi.',
     }
   }
+
+  const apiUrl = normaliseApiUrl(rawApiUrl)
 
   return {
     apiUrl,

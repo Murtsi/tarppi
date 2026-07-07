@@ -109,10 +109,16 @@ test('Vercel redirects apex to www and serves sitemap.xml and robots.txt before 
     rewrites.findIndex((rewrite) => rewrite.source === '/robots.txt' && rewrite.destination === '/robots.txt') > -1,
   )
   assert.ok(
+    rewrites.findIndex((rewrite) => rewrite.source === '/health' && rewrite.destination === '/api/health') > -1,
+  )
+  assert.ok(
     rewrites.findIndex((rewrite) => rewrite.source === '/sitemap.xml') < fallbackIndex,
   )
   assert.ok(
     rewrites.findIndex((rewrite) => rewrite.source === '/robots.txt') < fallbackIndex,
+  )
+  assert.ok(
+    rewrites.findIndex((rewrite) => rewrite.source === '/health') < fallbackIndex,
   )
 })
 

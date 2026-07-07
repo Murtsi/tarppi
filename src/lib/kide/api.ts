@@ -16,7 +16,7 @@ import type {
 import { ApiConfigurationError, buildApiUrl, getApiConfig } from './api-config'
 export { ApiConfigurationError }
 
-const API_CONFIG = getApiConfig(import.meta.env.VITE_API_URL, import.meta.env.PROD)
+const API_CONFIG = getApiConfig(import.meta.env.DEV ? import.meta.env.VITE_API_URL : undefined, import.meta.env.PROD)
 export const API_URL = API_CONFIG.apiUrl
 const KIDE_MEDIA_BASE = 'https://portalvhdsp62n0yt356llm.blob.core.windows.net/bailataan-mediaitems/'
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i

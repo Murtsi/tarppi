@@ -68,19 +68,19 @@ Staattiset SEO-tiedot ovat `index.html`-tiedostossa ja sivukohtaiset metatiedot 
 
 ## Ympäristömuuttujat
 
-Frontend tarvitsee API-palvelun osoitteen:
-
-```bash
-VITE_API_URL=https://api.example.com
-```
-
-Paikallisesti:
+Paikallinen kehitys voi kutsua API-palvelua suoraan:
 
 ```bash
 VITE_API_URL=http://localhost:3000
 ```
 
-Jos `VITE_API_URL` puuttuu, sovellus näyttää asetusten virhetilan eikä arvaa osoitetta itse.
+Vercelissä frontend käyttää same-origin `/api`-polkuja. Palvelun varsinainen osoite kuuluu server-puolen ympäristömuuttujaan:
+
+```bash
+API_PROXY_URL=https://api.example.com
+```
+
+Älä käytä tuotannossa `VITE_`-prefiksillä alkavaa muuttujaa salaiselle tai sisäiselle osoitteelle. Vite bundlaa sellaiset selaimeen.
 
 ## Kehitys
 

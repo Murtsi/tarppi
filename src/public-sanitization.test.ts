@@ -7,6 +7,7 @@ const checkedFiles = [
   'README.md',
   '.env.example',
   'vite.config.ts',
+  'api/[...path].ts',
   'src/App.tsx',
   'src/lib/kide/api.ts',
   'src/lib/kide/types.ts',
