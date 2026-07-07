@@ -16,9 +16,16 @@ type ProxyResponse = {
 
 const HOP_BY_HOP_HEADERS = new Set([
   'connection',
+  'content-encoding',
   'content-length',
   'host',
   'transfer-encoding',
+])
+
+const FORWARDED_REQUEST_HEADERS = new Set([
+  'authorization',
+  'content-type',
+  'x-internal-api-key',
 ])
 
 function envApiUrl(): string {
@@ -46,7 +53,7 @@ function requestHeaders(req: ProxyRequest): Headers {
   const headers = new Headers()
   for (const [name, value] of Object.entries(req.headers)) {
     const lower = name.toLowerCase()
-    if (HOP_BY_HOP_HEADERS.has(lower) || value == null) continue
+    if (!FORWARDED_REQUEST_HEADERS.has(lower) || value == null) continue
     headers.set(name, Array.isArray(value) ? value.join(', ') : value)
   }
   return headers
@@ -71,12 +78,18 @@ export default async function handler(req: ProxyRequest, res: ProxyResponse): Pr
     for (const item of Array.isArray(value) ? value : [value]) upstreamUrl.searchParams.append(name, item)
   }
 
-  const upstream = await fetch(upstreamUrl, {
-    method: req.method ?? 'GET',
-    headers: requestHeaders(req),
-    body: requestBody(req),
-    redirect: 'manual',
-  })
+  let upstream: Response
+  try {
+    upstream = await fetch(upstreamUrl, {
+      method: req.method ?? 'GET',
+      headers: requestHeaders(req),
+      body: requestBody(req),
+      redirect: 'manual',
+    })
+  } catch {
+    res.status(502).send(JSON.stringify({ success: false, error: 'API proxy request failed' }))
+    return
+  }
 
   res.status(upstream.status)
   for (const [name, value] of upstream.headers.entries()) {
