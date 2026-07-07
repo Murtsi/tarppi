@@ -26,8 +26,8 @@ function envApiUrl(): string {
 }
 
 function pathSegments(value: HeaderValue): string[] {
-  if (Array.isArray(value)) return value
-  return value ? [value] : []
+  if (Array.isArray(value)) return value.flatMap((item) => item.split('/')).filter(Boolean)
+  return value ? value.split('/').filter(Boolean) : []
 }
 
 function targetPath(segments: string[]): string {
