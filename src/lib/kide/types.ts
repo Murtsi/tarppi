@@ -171,34 +171,10 @@ export type BackendHealthResponse = {
     database: {
       configured: boolean
       status: BackendServiceStatus
-      sizeMB?: number
-      snapshotRows?: number
-      trackedEvents?: number
-      labelRows?: number
-      error?: string
-    }
-    poller: {
-      enabled: boolean
-      running: boolean
-      intervalMs: number
-      labelIntervalMs: number
-      cities: string[]
-    }
-    cleanup: {
-      enabled: boolean
-      running: boolean
-      intervalMs: number
-      snapshotKeepDays: number
-      staleUnlabelledDays: number
-      lastRunAt: string | null
-      lastResult: { deletedSnapshots: number; deletedStale: number } | null
-      lastError: string | null
     }
     ai: {
       configured: boolean
       status: BackendServiceStatus
-      url?: string
-      error?: string
     }
   }
 }

@@ -95,10 +95,8 @@ function backendHelp(p: Props) {
   if (p.scanError) return `Tapahtumien haku ei mennyt läpi: ${p.scanError}`
   if (p.backendHealth?.services.database.status === 'ok') {
     const currentEvents = p.events.length
-    const trackedEvents = p.backendHealth.services.database.trackedEvents ?? 0
-    const eventCount = currentEvents > 0 ? currentEvents : trackedEvents
-    if (eventCount > 0) {
-      return `Tietokanta kunnossa. ${eventCount.toLocaleString('fi-FI')} tapahtumaa listalla.`
+    if (currentEvents > 0) {
+      return `Tietokanta kunnossa. ${currentEvents.toLocaleString('fi-FI')} tapahtumaa listalla.`
     }
     return 'Tietokanta kunnossa. Odotetaan tapahtumia.'
   }
