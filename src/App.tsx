@@ -3,6 +3,8 @@ import { Route, Routes } from 'react-router-dom'
 import AboutPage from './pages/AboutPage'
 import FAQPage from './pages/FAQPage'
 import HowItWorksPage from './pages/HowItWorksPage'
+import KideTicketWatchPage from './pages/KideTicketWatchPage'
+import KideTokenGuidePage from './pages/KideTokenGuidePage'
 import { SeoMeta } from './pages/SeoMeta'
 import {
   addToCart,
@@ -46,8 +48,8 @@ const MAX_LOG = 40
 const DEFAULT_POLL_MS = 800
 const DEFAULT_CITY = 'Helsinki'
 const PAYMENT_WINDOW_MS = 25 * 60 * 1000
-const HOME_TITLE = 'Tärppi - Kide.app-ohjelma opiskelijatapahtumiin'
-const HOME_DESCRIPTION = 'Lisää Kide.app-token, valitse tapahtuma ja laita Tärppi vahtiin. Telegram-ilmoitukset ovat vapaaehtoinen lisä. Maksu tehdään itse Kide.appissa.'
+const HOME_TITLE = 'Tärppi | Kide.app-lippujen seuranta opiskelijatapahtumiin'
+const HOME_DESCRIPTION = 'Seuraa Kide.app-lippujen myyntiä, valitse lipputyyppi ja lisää liput koriin. Maksu tehdään itse Kide.appissa.'
 type BackendStatus = 'checking' | 'ready' | 'missing-config' | 'offline'
 
 function readLS(key: string, fallback: string): string {
@@ -848,6 +850,8 @@ export default function App() {
       <Route path="/miten-toimii" element={<HowItWorksPage />} />
       <Route path="/ukk" element={<FAQPage />} />
       <Route path="/tietoa" element={<AboutPage />} />
+      <Route path="/kide-app-token" element={<KideTokenGuidePage />} />
+      <Route path="/kide-app-lippujen-seuranta" element={<KideTicketWatchPage />} />
     </Routes>
   )
 }

@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
 
 const CANONICAL_ORIGIN = 'https://www.tarppi.site'
+const SOCIAL_IMAGE = `${CANONICAL_ORIGIN}/og-tarppi.png`
 
 type SeoMetaProps = {
   title: string
@@ -12,75 +12,37 @@ type SeoMetaProps = {
 export function SeoMeta({ title, description, path }: SeoMetaProps) {
   const url = `${CANONICAL_ORIGIN}${path}`
 
-  useEffect(() => {
-    upsertHeadElement<HTMLMetaElement>(
-      'meta[name="description"]',
-      () => {
-        const meta = document.createElement('meta')
-        meta.setAttribute('name', 'description')
-        return meta
-      },
-      (meta) => meta.setAttribute('content', description),
-    )
-
-    upsertHeadElement<HTMLLinkElement>(
-      'link[rel="canonical"]',
-      () => {
-        const link = document.createElement('link')
-        link.setAttribute('rel', 'canonical')
-        return link
-      },
-      (link) => link.setAttribute('href', url),
-    )
-
-    upsertMetaProperty('og:title', title)
-    upsertMetaProperty('og:description', description)
-    upsertMetaProperty('og:url', url)
-    upsertMetaName('twitter:title', title)
-    upsertMetaName('twitter:description', description)
-  }, [description, title, url])
-
   return (
-    <Helmet>
+    <Helmet prioritizeSeoTags>
       <title>{title}</title>
+      <meta name="description" content={description} />
+      <meta name="robots" content="index,follow" />
+      <link rel="canonical" href={url} />
+      <meta property="og:type" content="website" />
+      <meta property="og:locale" content="fi_FI" />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:url" content={url} />
+      <meta property="og:image" content={SOCIAL_IMAGE} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={SOCIAL_IMAGE} />
+      <script type="application/ld+json">{JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: title,
+        description,
+        url,
+        inLanguage: 'fi',
+        isPartOf: {
+          '@type': 'WebSite',
+          name: 'Tärppi',
+          url: CANONICAL_ORIGIN,
+        },
+      })}</script>
     </Helmet>
   )
-}
-
-function upsertMetaName(name: string, content: string) {
-  upsertHeadElement<HTMLMetaElement>(
-    `meta[name="${name}"]`,
-    () => {
-      const meta = document.createElement('meta')
-      meta.setAttribute('name', name)
-      return meta
-    },
-    (meta) => meta.setAttribute('content', content),
-  )
-}
-
-function upsertMetaProperty(property: string, content: string) {
-  upsertHeadElement<HTMLMetaElement>(
-    `meta[property="${property}"]`,
-    () => {
-      const meta = document.createElement('meta')
-      meta.setAttribute('property', property)
-      return meta
-    },
-    (meta) => meta.setAttribute('content', content),
-  )
-}
-
-function upsertHeadElement<T extends HTMLElement>(
-  selector: string,
-  create: () => T,
-  update: (element: T) => void,
-) {
-  const matches = Array.from(document.head.querySelectorAll<T>(selector))
-  const element = matches[0] ?? create()
-
-  if (matches.length === 0) document.head.appendChild(element)
-  for (const duplicate of matches.slice(1)) duplicate.remove()
-
-  update(element)
 }

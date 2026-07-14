@@ -6,8 +6,8 @@ export default function AboutPage() {
   return (
     <>
       <SeoMeta
-        title="Tietoa Tärpistä - Kide.app seuranta opiskelijoille"
-        description="Tärppi on opiskelijoiden tekemä ilmainen työkalu Kide.app-tapahtumien seurantaan. Telegram-ilmoitukset voi ottaa käyttöön erikseen."
+        title="Tietoa Tärpistä | Kide.app-lippujen seuranta"
+        description="Tärppi on opiskelijoiden tekemä ilmainen ohjelma Kide.app-lippujen seurantaan. Maksaminen tehdään aina Kide.appissa."
         path="/tietoa"
       />
       <StaticPageLayout

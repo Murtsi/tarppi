@@ -29,14 +29,14 @@ export default function HowItWorksPage() {
   return (
     <>
       <SeoMeta
-        title="Miten Tärppi toimii? - Kide.app-ohjelma opiskelijoille"
-        description="Lisää Kide.app-token, valitse tapahtuma ja lipputyyppi. Telegram Chat ID on vapaaehtoinen lisä ilmoituksia varten."
+        title="Miten Tärppi seuraa Kide.app-lippuja? | Tärppi"
+        description="Näin Tärppi seuraa Kide.app-lippujen myyntiä: token, tapahtuma, lipputyyppi, kori ja oma maksu Kide.appissa."
         path="/miten-toimii"
       />
       <StaticPageLayout
         kicker="Näin se menee"
         title="Miten Tärppi toimii?"
-        lead="Tärppi seuraa Kide.app-tapahtumia puolestasi. Tärkein asetus on Kide.app-token. Telegram Chat ID tarvitaan vain, jos haluat lisäilmoitukset Telegramiin."
+        lead="Tärppi seuraa Kide.app-lippujen myyntiä puolestasi. Tärkein asetus on Kide.app-token. Telegram Chat ID tarvitaan vain lisäilmoituksiin."
       >
         <section className="seo-steps" aria-label="Käyttöönoton vaiheet">
           {steps.map((step, index) => (

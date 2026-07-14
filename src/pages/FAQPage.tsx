@@ -62,8 +62,8 @@ export default function FAQPage() {
   return (
     <>
       <SeoMeta
-        title="UKK - Usein kysytyt kysymykset | Tärppi"
-        description="Vastaukset yleisimpiin kysymyksiin Tärpistä: miten ohjelma toimii, onko se ilmainen ja mitä tietoja se tarvitsee."
+        title="Kide.app-token ja lippujen seuranta | UKK | Tärppi"
+        description="Vastaukset Kide.app-tokenista, lippujen seurannasta, Telegram-ilmoituksista, tietojen käsittelystä ja maksamisesta."
         path="/ukk"
       />
       <Helmet>

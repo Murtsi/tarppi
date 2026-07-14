@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run build:client && npm run build:server && npm run prerender && npm run verify:seo",
+    "build:client": "tsc -b && vite build",
+    "build:server": "vite build --ssr src/entry-server.tsx --outDir dist-ssr",
+    "prerender": "tsx scripts/prerender-seo.ts",
+    "verify:seo": "tsx scripts/verify-prerendered-seo.ts",
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "tsx --test src/**/*.test.ts"

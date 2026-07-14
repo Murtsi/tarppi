@@ -4,9 +4,15 @@ import { test } from 'node:test'
 
 const frontendRoot = new URL('..', import.meta.url)
 const canonicalOrigin = 'https://www.tarppi.site'
-const seoTitle = 'Tärppi - Kide.app-ohjelma opiskelijatapahtumiin'
-const seoDescription = 'Lisää Kide.app-token, valitse tapahtuma ja laita Tärppi vahtimaan. Telegram-ilmoitukset ovat vapaaehtoinen lisä. Maksu tehdään itse Kide.appissa.'
-const staticRoutes = ['/miten-toimii', '/ukk', '/tietoa'] as const
+const seoTitle = 'Tärppi | Kide.app-lippujen seuranta opiskelijatapahtumiin'
+const seoDescription = 'Seuraa Kide.app-lippujen myyntiä, valitse lipputyyppi ja lisää liput koriin. Maksu tehdään itse Kide.appissa.'
+const staticRoutes = [
+  '/miten-toimii',
+  '/ukk',
+  '/tietoa',
+  '/kide-app-token',
+  '/kide-app-lippujen-seuranta',
+] as const
 
 function readFrontendFile(path: string): string {
   return readFileSync(new URL(path, frontendRoot), 'utf8')
@@ -43,10 +49,12 @@ test('index.html has indexable SEO metadata for the canonical domain', () => {
   assert.ok(indexHtml.includes(`<meta data-rh="true" property="og:url" content="${canonicalOrigin}/" />`))
   assert.ok(indexHtml.includes(`<title data-rh="true">${seoTitle}</title>`))
   assert.ok(indexHtml.includes(`<meta data-rh="true" name="description" content="${seoDescription}" />`))
-  assert.ok(indexHtml.includes('<meta name="keywords" content="kide.app ohjelma'))
-  assert.ok(indexHtml.includes('<meta name="twitter:card" content="summary" />'))
+  assert.ok(indexHtml.includes('<meta name="keywords" content="kide.app lippujen seuranta'))
+  assert.ok(indexHtml.includes('<meta name="twitter:card" content="summary_large_image" />'))
   assert.ok(indexHtml.includes(`<meta data-rh="true" name="twitter:title" content="${seoTitle}" />`))
   assert.ok(indexHtml.includes(`<meta data-rh="true" name="twitter:description" content="${seoDescription}" />`))
+  assert.ok(indexHtml.includes('<meta property="og:image" content="https://www.tarppi.site/og-tarppi.png" />'))
+  assert.ok(indexHtml.includes('<meta name="twitter:image" content="https://www.tarppi.site/og-tarppi.png" />'))
   assert.ok(indexHtml.includes('<script type="application/ld+json">'))
   assert.ok(indexHtml.includes('"@type": "WebApplication"'))
   assert.ok(indexHtml.includes('"name": "Tärppi"'))
@@ -57,15 +65,39 @@ test('React app exposes the SEO routes and page-level metadata', () => {
   const howItWorks = readFrontendFile('src/pages/HowItWorksPage.tsx')
   const faq = readFrontendFile('src/pages/FAQPage.tsx')
   const about = readFrontendFile('src/pages/AboutPage.tsx')
+  const tokenGuide = readFrontendFile('src/pages/KideTokenGuidePage.tsx')
+  const ticketWatchGuide = readFrontendFile('src/pages/KideTicketWatchPage.tsx')
 
   for (const route of staticRoutes) {
     assert.ok(app.includes(`path="${route}"`))
   }
 
-  assert.ok(howItWorks.includes('Miten Tärppi toimii? - Kide.app-ohjelma opiskelijoille'))
-  assert.ok(faq.includes('UKK - Usein kysytyt kysymykset | Tärppi'))
-  assert.ok(about.includes('Tietoa Tärpistä - Kide.app seuranta opiskelijoille'))
+  assert.ok(howItWorks.includes('Miten Tärppi seuraa Kide.app-lippuja? | Tärppi'))
+  assert.ok(faq.includes('Kide.app-token ja lippujen seuranta | UKK | Tärppi'))
+  assert.ok(about.includes('Tietoa Tärpistä | Kide.app-lippujen seuranta'))
+  assert.ok(tokenGuide.includes('Kide.app-token: mitä se on ja miten sitä käytetään? | Tärppi'))
+  assert.ok(ticketWatchGuide.includes('Kide.app-lippujen seuranta opiskelijatapahtumiin | Tärppi'))
   assert.ok(faq.includes("'@type': 'FAQPage'"))
+})
+
+test('SEO pages are prerendered with declarative head metadata', () => {
+  const packageJson = JSON.parse(readFrontendFile('package.json')) as { scripts: Record<string, string> }
+  const seoMeta = readFrontendFile('src/pages/SeoMeta.tsx')
+  const entryServer = readFrontendFile('src/entry-server.tsx')
+  const prerenderScript = readFrontendFile('scripts/prerender-seo.ts')
+
+  assert.match(packageJson.scripts.build, /build:client/)
+  assert.match(packageJson.scripts.build, /build:server/)
+  assert.match(packageJson.scripts.build, /prerender/)
+  assert.match(packageJson.scripts.build, /verify:seo/)
+  assert.ok(seoMeta.includes('<meta name="description" content={description} />'))
+  assert.ok(seoMeta.includes('<link rel="canonical" href={url} />'))
+  assert.doesNotMatch(seoMeta, /useEffect/)
+  assert.ok(entryServer.includes("StaticRouter"))
+  assert.ok(prerenderScript.includes("STATIC_SEO_ROUTES"))
+  for (const route of staticRoutes) {
+    assert.ok(prerenderScript.includes(`'${route}'`))
+  }
 })
 
 type HeaderRule = {
@@ -126,6 +158,13 @@ test('Vercel redirects apex to www and serves sitemap.xml and robots.txt before 
   assert.ok(
     rewrites.findIndex((rewrite) => rewrite.source === '/api/(.*)') < fallbackIndex,
   )
+  for (const route of staticRoutes) {
+    const staticRoute = rewrites.findIndex(
+      (rewrite) => rewrite.source === route && rewrite.destination === `${route}/index.html`,
+    )
+    assert.ok(staticRoute > -1)
+    assert.ok(staticRoute < fallbackIndex)
+  }
 })
 
 test('Vercel app preview hosts receive X-Robots-Tag noindex', () => {

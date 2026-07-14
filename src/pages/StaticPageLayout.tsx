@@ -22,6 +22,7 @@ export function StaticPageLayout({ kicker, title, lead, children }: StaticPageLa
         </Link>
         <nav className="seo-nav" aria-label="Sivut">
           <Link to="/miten-toimii">Miten toimii</Link>
+          <Link to="/kide-app-token">Token-opas</Link>
           <Link to="/ukk">UKK</Link>
           <Link to="/tietoa">Tietoa</Link>
           <Link className="simple-button simple-button--primary" to="/">Avaa Tärppi</Link>
@@ -45,6 +46,10 @@ export function StaticPageLayout({ kicker, title, lead, children }: StaticPageLa
           <Link to="/ukk">UKK</Link>
           {' '}·{' '}
           <Link to="/tietoa">Tietoa</Link>
+          {' '}·{' '}
+          <Link to="/kide-app-token">Token-opas</Link>
+          {' '}·{' '}
+          <Link to="/kide-app-lippujen-seuranta">Lippujen seuranta</Link>
           {' '}·{' '}
           <a href="https://github.com/Murtsi/tarppi" target="_blank" rel="noreferrer">GitHub</a>
           {' '}· Epävirallinen työkalu, ei Kide.appin tuottama

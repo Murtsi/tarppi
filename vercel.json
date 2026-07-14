@@ -10,6 +10,11 @@
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
     { "source": "/robots.txt", "destination": "/robots.txt" },
+    { "source": "/miten-toimii", "destination": "/miten-toimii/index.html" },
+    { "source": "/ukk", "destination": "/ukk/index.html" },
+    { "source": "/tietoa", "destination": "/tietoa/index.html" },
+    { "source": "/kide-app-token", "destination": "/kide-app-token/index.html" },
+    { "source": "/kide-app-lippujen-seuranta", "destination": "/kide-app-lippujen-seuranta/index.html" },
     { "source": "/health", "destination": "/api/proxy?path=health" },
     { "source": "/api/(.*)", "destination": "/api/proxy?path=$1" },
     { "source": "/(.*)", "destination": "/index.html" }
