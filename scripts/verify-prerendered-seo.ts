@@ -5,6 +5,10 @@ import { resolve } from 'node:path'
 const canonicalOrigin = 'https://www.tarppi.site'
 const pages = [
   {
+    route: '/',
+    title: 'Tärppi | Kide.app-lippujen seuranta opiskelijatapahtumiin',
+  },
+  {
     route: '/miten-toimii',
     title: 'Miten Tärppi seuraa Kide.app-lippuja? | Tärppi',
   },

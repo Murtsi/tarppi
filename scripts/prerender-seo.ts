@@ -31,6 +31,12 @@ function replaceSeoHead(html: string, headHtml: string): string {
   )
 }
 
+const homePage = serverModule.renderPage('/')
+const homeHtml = replaceSeoHead(template, homePage.headHtml)
+  .replace('<div id="root"></div>', `<div id="root">${homePage.appHtml}</div>`)
+
+await writeFile(resolve(distDir, 'index.html'), homeHtml)
+
 for (const route of STATIC_SEO_ROUTES) {
   const page = serverModule.renderPage(route)
   const html = replaceSeoHead(template, page.headHtml)
