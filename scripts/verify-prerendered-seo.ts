@@ -7,6 +7,7 @@ const pages = [
   {
     route: '/',
     title: 'Tärppi | Kide.app-lippujen seuranta opiskelijatapahtumiin',
+    schema: 'WebApplication',
   },
   {
     route: '/miten-toimii',

@@ -7,9 +7,10 @@ type SeoMetaProps = {
   title: string
   description: string
   path: string
+  applicationSchema?: boolean
 }
 
-export function SeoMeta({ title, description, path }: SeoMetaProps) {
+export function SeoMeta({ title, description, path, applicationSchema = false }: SeoMetaProps) {
   const url = `${CANONICAL_ORIGIN}${path}`
 
   return (
@@ -43,6 +44,23 @@ export function SeoMeta({ title, description, path }: SeoMetaProps) {
           url: CANONICAL_ORIGIN,
         },
       })}</script>
+      {applicationSchema ? (
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebApplication',
+          name: 'Tärppi',
+          url: CANONICAL_ORIGIN,
+          description,
+          applicationCategory: 'UtilitiesApplication',
+          operatingSystem: 'Web',
+          inLanguage: 'fi',
+          offers: {
+            '@type': 'Offer',
+            price: '0',
+            priceCurrency: 'EUR',
+          },
+        })}</script>
+      ) : null}
     </Helmet>
   )
 }

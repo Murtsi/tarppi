@@ -842,7 +842,7 @@ export default function App() {
         path="/"
         element={(
           <>
-            <SeoMeta title={HOME_TITLE} description={HOME_DESCRIPTION} path="/" />
+            <SeoMeta title={HOME_TITLE} description={HOME_DESCRIPTION} path="/" applicationSchema />
             <DashboardApp />
           </>
         )}
