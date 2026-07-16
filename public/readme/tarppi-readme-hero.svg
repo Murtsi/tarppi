@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">Tarppi, Kide.app-lippujen seuranta opiskelijatapahtumiin</title>
+  <desc id="desc">Tarppi auttaa seuraamaan Kide.app-tapahtumien lipputyyppejä ja lisää saatavilla olevat liput koriin. Maksu tehdään aina itse Kide.appissa.</desc>
+  <rect width="1200" height="520" fill="#10211c"/>
+  <rect x="1" y="1" width="1198" height="518" fill="none" stroke="#d8e4dc" stroke-opacity=".28"/>
+  <g transform="translate(64 48) scale(.74)" fill="none" stroke="#f2a23a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="20" y="16" width="60" height="68" rx="12"/>
+    <path d="M40 30v18M60 30v18M39 30h22M50 30v31M30 45l8 3M30 53l8-2M70 45l-8 3M70 53l-8-2M42 65q8 8 16 0"/>
+  </g>
+  <text x="146" y="92" fill="#fffdf8" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="700">T&#228;rppi</text>
+  <text x="64" y="170" fill="#fffdf8" font-family="Arial, Helvetica, sans-serif" font-size="57" font-weight="700">Kide.app-lippujen seuranta</text>
+  <text x="64" y="234" fill="#fffdf8" font-family="Arial, Helvetica, sans-serif" font-size="57" font-weight="700">opiskelijatapahtumiin.</text>
+  <text x="64" y="290" fill="#d8e4dc" font-family="Arial, Helvetica, sans-serif" font-size="23">Valitse tapahtuma, lipputyyppi ja m&#228;&#228;r&#228;. T&#228;rppi seuraa myynti&#228; ja lis&#228;&#228; saatavilla olevat liput Kide.app-koriin.</text>
+  <line x1="64" y1="346" x2="1136" y2="346" stroke="#d8e4dc" stroke-opacity=".32"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="64" y="394" fill="#f2a23a" font-size="18" font-weight="700">01</text>
+    <text x="64" y="430" fill="#fffdf8" font-size="26" font-weight="700">Valitse tapahtuma</text>
+    <text x="418" y="394" fill="#f2a23a" font-size="18" font-weight="700">02</text>
+    <text x="418" y="430" fill="#fffdf8" font-size="26" font-weight="700">Valitse lipputyyppi</text>
+    <text x="772" y="394" fill="#f2a23a" font-size="18" font-weight="700">03</text>
+    <text x="772" y="430" fill="#fffdf8" font-size="26" font-weight="700">Maksa itse Kide.appissa</text>
+  </g>
+</svg>
